@@ -1,0 +1,5 @@
+.vs
+*.user
+*.VC.db
+*.suo
+Release
