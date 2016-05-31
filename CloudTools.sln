@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloudLib.DEM", "CloudLib.DEM\CloudLib.DEM.vcxproj", "{E1F64708-EB63-4118-A6B1-7E2F9834D290}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloudTools.DEM.Compare", "CloudTools.DEM.Compare\CloudTools.DEM.Compare.vcxproj", "{F5211EE1-0DCC-4676-A964-977F6042949B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290} = {E1F64708-EB63-4118-A6B1-7E2F9834D290}
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F} = {CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloudTools.Common", "CloudTools.Common\CloudTools.Common.vcxproj", "{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloudTools.DEM.Filter", "CloudTools.DEM.Filter\CloudTools.DEM.Filter.vcxproj", "{5ADEEF3A-6465-4714-802E-3D4586692205}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290} = {E1F64708-EB63-4118-A6B1-7E2F9834D290}
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F} = {CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290}.Release|Win32.ActiveCfg = Release|Win32
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290}.Release|Win32.Build.0 = Release|Win32
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290}.Release|x64.ActiveCfg = Release|x64
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290}.Release|x64.Build.0 = Release|x64
+		{F5211EE1-0DCC-4676-A964-977F6042949B}.Release|Win32.ActiveCfg = Release|Win32
+		{F5211EE1-0DCC-4676-A964-977F6042949B}.Release|Win32.Build.0 = Release|Win32
+		{F5211EE1-0DCC-4676-A964-977F6042949B}.Release|x64.ActiveCfg = Release|x64
+		{F5211EE1-0DCC-4676-A964-977F6042949B}.Release|x64.Build.0 = Release|x64
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|Win32.ActiveCfg = Release|Win32
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|Win32.Build.0 = Release|Win32
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|x64.ActiveCfg = Release|x64
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|x64.Build.0 = Release|x64
+		{5ADEEF3A-6465-4714-802E-3D4586692205}.Release|Win32.ActiveCfg = Release|Win32
+		{5ADEEF3A-6465-4714-802E-3D4586692205}.Release|Win32.Build.0 = Release|Win32
+		{5ADEEF3A-6465-4714-802E-3D4586692205}.Release|x64.ActiveCfg = Release|x64
+		{5ADEEF3A-6465-4714-802E-3D4586692205}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
