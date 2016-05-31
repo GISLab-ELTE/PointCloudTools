@@ -83,8 +83,8 @@ int main(int argc, char* argv[]) try
 		? static_cast<Reporter*>(new TextReporter())
 		: static_cast<Reporter*>(new BarReporter());
 
-	GDALAllRegister();
 	// Define comparer with corresponding data type
+	GDALAllRegister();
 	CalculationBase *comparison;	
 	switch (dataType)
 	{
