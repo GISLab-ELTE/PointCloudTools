@@ -193,9 +193,9 @@ void SweepLine<TargetType, SourceType>::onExecute()
 				y - _range < sourceOffsetY + _sourceMetadata[i].rasterSizeY())
 			{
 				int readOffsetX = 0;
-				int readOffsetY = std::max(0, sourceOffsetY + y - _range);
+				int readOffsetY = std::max(0, -sourceOffsetY + y - _range);
 				int readSizeX = _sourceMetadata[i].rasterSizeX();
-				int readSizeY = -readOffsetY + std::min(readOffsetY + windowSize, static_cast<int>(_sourceMetadata[i].originY() / std::abs(_sourceMetadata[i].pixelSizeY())));
+				int readSizeY = -readOffsetY + std::min(readOffsetY + windowSize, _sourceMetadata[i].rasterSizeY());
 
 				sourceBands[i]->RasterIO(GF_Read,
 					readOffsetX, readOffsetY,
