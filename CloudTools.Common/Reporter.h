@@ -82,5 +82,26 @@ public:
 	/// </summary>
 	void reset() override;
 };
+
+/// <summary>
+/// Represents a mute progress reporter which outputs nothing.
+/// </summary>
+class NullReporter : public Reporter
+{
+	int _eraseSize = 0;
+
+public:
+	/// <summary>
+	/// Displays the progress of a computation.
+	/// </summary>
+	/// <param name="complete">The ratio of completeness of the process from 0.0 for just started to 1.0 for completed.</param>
+	/// <param name="message">An optional message string to display.</param>
+	void report(float complete, const std::string &message = std::string()) override { }
+
+	/// <summary>
+	/// Resets the progress.
+	/// </summary>
+	void reset() override { }
+};
 } // IO
 } // CloudTools

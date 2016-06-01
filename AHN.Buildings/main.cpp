@@ -31,12 +31,12 @@ using namespace CloudTools::IO;
 
 int CPL_STDCALL gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg);
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
 	std::string tileName = "37en1";
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
-	fs::path outputDir = fs::current_path() / "out.tif";
+	fs::path outputDir = fs::current_path();
 	fs::path consolePath = "/vsimem/input.tif"; // streaming input path
 
 	// Read console arguments
@@ -95,8 +95,8 @@ int main(int argc, char* argv[])
 	}
 	if (!(vm.count("streaming") ^ vm.count("output-dir")))
 	{
-		std::cerr << "Set output directory or use streaming mode." << std::endl;
-		argumentError = true;
+		//std::cerr << "Set output directory or use streaming mode." << std::endl;
+		//argumentError = true;
 	}
 
 	if (!useStreaming && 
@@ -146,14 +146,18 @@ int main(int argc, char* argv[])
 		interNoise = "/vsimem/noise.tif";
 		interSieve = "/vsimem/sieve.tif";
 		interCluster = "/vsimem/cluster.tif";
-		interMajority = outputDir / (tileName + "_majority.tif");
+		if (!useStreaming)
+			interMajority = outputDir / (tileName + "_majority.tif");
+		else
+			interMajority = "/vsimem/majority.tif";
 	}
-
 
 	// Program
 	std::ofstream nullStream;
 	std::ostream &out = !useStreaming ? std::cout : nullStream;
-	Reporter *reporter = new BarReporter();	
+	Reporter *reporter = !useStreaming
+		? static_cast<Reporter*>(new BarReporter())
+		: static_cast<Reporter*>(new NullReporter());
 
 	out << "=== AHN Building ===" << std::endl;
 	std::clock_t clockStart = std::clock();
@@ -262,6 +266,7 @@ int main(int argc, char* argv[])
 			reporter->report(complete, message);
 			return true;
 		};
+		comparison.spatialReference = "EPSG:28992"; //TODO
 
 		reporter->reset();
 		comparison.execute();
@@ -427,12 +432,29 @@ int main(int argc, char* argv[])
 	if (!useVSI && !vm.count("debug")) fs::remove(interCluster);
 	else if(useVSI) VSIUnlink(interCluster.string().c_str());
 
+	if (useStreaming)
+	{
+		#ifdef _MSC_VER
+		_setmode(_fileno(stdout), _O_BINARY);
+		#endif
+
+		vsi_l_offset length;
+		GByte* buffer = VSIGetMemFileBuffer(interMajority.string().c_str(), &length, true);
+		std::copy(buffer, buffer + length, std::ostream_iterator<GByte>(std::cout));
+		delete[] buffer;
+	}
+
 	// Finalization
 	std::clock_t clockEnd = std::clock();
 	out << "All completed!" << std::endl
 		<< std::fixed << std::setprecision(2) << "CPU time used: "
 		<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl;
 	return Success;
+}
+catch (std::exception &ex)
+{
+	std::cerr << "ERROR: " << ex.what() << std::endl;
+	return UnexcpectedError;
 }
 
 /// <summary>
