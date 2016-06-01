@@ -1,0 +1,16 @@
+# Programs & tools
+CXX     = g++
+AR      = ar
+RM      = rm -f
+MKDIR   = mkdir -p
+CP      = cp -f
+
+# Flags & options
+CFLAGS  = -O2 -std=c++11 -pedantic
+INCLUDE = 
+LDFLAGS = 
+LDLIBS  =
+ARFLAGS = -v
+
+# Output directory
+OBJDIR  = Release/Linux

@@ -244,5 +244,6 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
-# Sample test data
+# Customization
 /Test
+/Makefile.config

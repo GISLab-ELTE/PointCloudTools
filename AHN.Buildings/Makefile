@@ -12,7 +12,7 @@ DEPS    := $(wildcard *.h)
 DEPS    += $(wildcard *.hpp)
 SRCS     = $(wildcard *.cpp)
 OBJS     = $(SRCS:.cpp=.o)
-MAIN     = dem_filter
+MAIN     = ahn_buildings
 
 OBJECTS  = $(addprefix $(OBJDIR)/, $(OBJS))
 TARGET   = $(OBJDIR)/$(MAIN)

@@ -1,36 +1,28 @@
-CXX     = g++
-AR      = ar
-RM      = rm -f
-MKDIR   = mkdir -p
+include ../Makefile.config
 
-OBJDIR  = Release/Linux
+ARFLAGS += -rs
 
-CFLAGS  = -O2 -std=c++11 -pedantic
-INCLUDE = 
-LDFLAGS = 
-LDLIBS  = 
-ARFLAGS = -rvs
+DEPS    := $(wildcard *.h)
+DEPS    += $(wildcard *.hpp)
+SRCS     = $(wildcard *.cpp)
+OBJS     = $(SRCS:.cpp=.o)
+MAIN     = common.a
 
-DEPS   := $(wildcard *.h)
-DEPS   += $(wildcard *.hpp)
-SRCS    = $(wildcard *.cpp)
-OBJS    = $(SRCS:.cpp=.o)
-MAIN    = common.a
+OBJECTS  = $(addprefix $(OBJDIR)/, $(OBJS))
+TARGET   = $(OBJDIR)/$(MAIN)
 
-OBJECTS = $(addprefix $(OBJDIR)/, $(OBJS))
-TARGET  = $(OBJDIR)/$(MAIN)
+.PHONY: all
+all: $(TARGET)
 
-all: dirs $(TARGET)
-
-.PHONY: dirs
-dirs:
-	$(MKDIR) $(OBJDIR)
-
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJDIR) $(OBJECTS)
 	$(AR) $(ARFLAGS) $(TARGET) $(OBJECTS)
+
+$(OBJDIR):
+	$(MKDIR) $(OBJDIR)
 
 $(OBJDIR)/%.o: %.cpp $(DEPS)
 	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@ $(LDFLAGS) $(LDLIBS)
 
+.PHONY: clean
 clean:
 	$(RM) $(TARGET) $(OBJECTS)
