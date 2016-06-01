@@ -1,8 +1,17 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <iterator>
 #include <cmath>
+#include <ctime>
+
+#ifdef _MSC_VER
+#include <stdio.h>
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -27,14 +36,26 @@ int main(int argc, char* argv[])
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
 	fs::path outputDir = fs::current_path().append("out.tif").string();
+	fs::path consolePath = "/vsimem/input.tif"; // streaming input path
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("tile-name", po::value<std::string>(&tileName), "tile name (e.g. 37en1)")
-		("ahn2-dir", po::value<fs::path>(&ahn2Dir), "AHN-2 directory path")
-		("ahn3-dir", po::value<fs::path>(&ahn3Dir), "AHN-3 directory path")
-		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir), "result directory path")
+		("ahn2-dir", po::value<fs::path>(&ahn2Dir), 
+			"AHN-2 directory path\n"
+			"expected: Arc/Info Binary Grid directory structure")
+		("ahn3-dir", po::value<fs::path>(&ahn3Dir), 
+			"AHN-3 directory path\n"
+			"expected: GTiff file")
+		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir), 
+			"result directory path")
+		("streaming", 
+			"stream input and output from and to standard I/O\n"
+			"expected: double banded GTiff file\n"
+			"implies use-memory flag")
+		("in-memory", "keep intermediate results in memory")
+		("debug", "keep intermediate results on disk")
 		("help,h", "produce help message")
 		;
 
@@ -44,6 +65,8 @@ int main(int argc, char* argv[])
 
 	// Post-processing arguments
 	std::string tileGroup = tileName.substr(0, 3);
+	bool useStreaming = vm.count("streaming");
+	bool useVSI = vm.count("in-memory") || vm.count("streaming");
 
 	// Argument validation
 	if (vm.count("help"))
@@ -53,85 +76,132 @@ int main(int argc, char* argv[])
 		return Success;
 	}
 
-	if (!vm.count("tile-name") || !vm.count("ahn2-dir") || !vm.count("ahn3-dir") || !vm.count("output-dir"))
+	bool argumentError = false;
+	if (!(vm.count("streaming") ^ vm.count("tile-name")))
 	{
-		std::cerr << "Mandatory arguments: tile-name, ahn2-dir, ahn3-dir." << std::endl;
-		return InvalidInput;
-	}	
+		std::cerr << "Set tile name or use streaming mode." << std::endl;
+		argumentError = true;
+	}
+	if (!(vm.count("streaming") ^ vm.count("ahn2-dir")))
+	{
+		std::cerr << "Set AHN-2 input directory or use streaming mode." << std::endl;
+		argumentError = true;
+	}
+	if (!(vm.count("streaming") ^ vm.count("ahn3-dir")))
+	{
+		std::cerr << "Set AHN-3 input directory or use streaming mode." << std::endl;
+		argumentError = true;
+	}
+	if (!(vm.count("streaming") ^ vm.count("output-dir")))
+	{
+		std::cerr << "Set output directory or use streaming mode." << std::endl;
+		argumentError = true;
+	}
 
-	if (!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir))
+	if (!useStreaming && 
+		(!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir)))
 	{
 		std::cerr << "An input directory does not exists." << std::endl;
+		argumentError = true;
+	}
+
+	if (!useStreaming && 
+		(fs::exists(outputDir) && !fs::is_directory(outputDir)))
+	{
+		std::cerr << "The given output path exists but not a directory." << std::endl;
+		argumentError = true;
+	}
+	else if (!useStreaming && 
+		(!fs::exists(outputDir) && !fs::create_directory(outputDir)))
+	{
+		std::cerr << "Failed to create output directory." << std::endl;
+		argumentError = true;
+	}
+
+	if (useVSI && vm.count("debug"))
+	{
+		std::cerr << "WARNING: debug mode has no effect with in-memory intermediate results." << std::endl;
+	}
+
+	if (argumentError)
+	{
+		std::cerr << "Use the --help option for description." << std::endl;
 		return InvalidInput;
 	}
 
-	if (fs::exists(outputDir) && !fs::is_directory(outputDir))
+	// Define output paths
+	fs::path interChangeset, interNoise, interSieve, interCluster, interMajority;
+	if (!useVSI)
 	{
-		std::cerr << "The given output path is not a directory." << std::endl;
-		return InvalidInput;
+		interChangeset = outputDir / (tileName + "_1-diff.tif");
+		interNoise = outputDir / (tileName + "_2-noise.tif");
+		interSieve = outputDir / (tileName + "_3-sieve.tif");
+		interCluster = outputDir / (tileName + "_4-cluster.tif");
+		interMajority = outputDir / (tileName + "_5-majority.tif");
 	}
-	else if (!fs::exists(outputDir) && !fs::create_directory(outputDir))
+	else
 	{
-		std::cerr << "The output directory was failed to create." << std::endl;
-		return InvalidInput;
+		interChangeset = "/vsimem/diff.tif";
+		interNoise = "/vsimem/noise.tif";
+		interSieve = "/vsimem/sieve.tif";
+		interCluster = "/vsimem/cluster.tif";
+		interMajority = outputDir / (tileName + "_majority.tif");
 	}
 
 
 	// Program
-	std::cout << "=== AHN Building ===" << std::endl;
-	Reporter *reporter = new BarReporter();
+	std::ofstream nullStream;
+	std::ostream &out = !useStreaming ? std::cout : nullStream;
+	Reporter *reporter = new BarReporter();	
+
+	out << "=== AHN Building ===" << std::endl;
+	std::clock_t clockStart = std::clock();
 	GDALAllRegister();
 
-	// Collect input files
-	std::vector<fs::path> ahn2Files;
-	for (fs::directory_iterator itGroup(ahn2Dir); itGroup != fs::directory_iterator(); ++itGroup)
+	// Create basic changeset
+	if (!useStreaming)
 	{
-		if (fs::is_directory(itGroup->path()) &&
-			itGroup->path().filename().string().find(tileGroup) != std::string::npos)
+		// Collect input files
+		std::vector<fs::path> ahn2Files;
+		for (fs::directory_iterator itGroup(ahn2Dir); itGroup != fs::directory_iterator(); ++itGroup)
 		{
-			for (fs::directory_iterator itTile(itGroup->path()); itTile != fs::directory_iterator(); ++itTile)
+			if (fs::is_directory(itGroup->path()) &&
+				itGroup->path().filename().string().find(tileGroup) != std::string::npos)
 			{
-				if (fs::is_directory(itTile->path()) &&
-					itTile->path().filename().string().find(tileName) != std::string::npos)
-				ahn2Files.push_back(itTile->path());
+				for (fs::directory_iterator itTile(itGroup->path()); itTile != fs::directory_iterator(); ++itTile)
+				{
+					if (fs::is_directory(itTile->path()) &&
+						itTile->path().filename().string().find(tileName) != std::string::npos)
+						ahn2Files.push_back(itTile->path());
+				}
 			}
 		}
-	}
-	
-	fs::path ahn3File;
-	for (fs::directory_iterator itTile(ahn3Dir); itTile != fs::directory_iterator(); ++itTile)
-	{
-		if (fs::is_regular_file(itTile->path()) &&
-			itTile->path().filename().string().find(tileName) != std::string::npos)
+
+		fs::path ahn3File;
+		for (fs::directory_iterator itTile(ahn3Dir); itTile != fs::directory_iterator(); ++itTile)
 		{
-			ahn3File = itTile->path();
-			break;
+			if (fs::is_regular_file(itTile->path()) &&
+				itTile->path().filename().string().find(tileName) != std::string::npos)
+			{
+				ahn3File = itTile->path();
+				break;
+			}
 		}
-	}	
 
-	// Define output paths
-	fs::path resultChangeset = outputDir / (tileName + "_1-diff.tif");
-	fs::path resultNoise = outputDir / (tileName + "_2-noise.tif");
-	fs::path resultSieve = outputDir / (tileName + "_3-sieve.tif");
-	fs::path resultCluster = outputDir / (tileName + "_4-cluster.tif");
-	fs::path resultMajority = outputDir / (tileName + "_5-majority.tif");
-
-	// Create basic changeset
-	int step = 1;
-	std::cout << step++ << ". Creating changeset" << std::endl
-		<< "Path: " << resultChangeset << std::endl;
-	{
 		std::vector<std::string> ahnFiles(ahn2Files.size() + 1);
 		ahnFiles[0] = ahn3File.string();
-		std::transform(ahn2Files.begin(), ahn2Files.end(), ahnFiles.begin() + 1, 
+		std::transform(ahn2Files.begin(), ahn2Files.end(), ahnFiles.begin() + 1,
 			[](fs::path ahn2File)
 		{
 			return ahn2File.string();
 		});
 
-		SweepLine<float> comparison(ahnFiles, resultChangeset.string(), nullptr);
+		// Creating changeset
+		out << "Task: Creating changeset" << std::endl
+			<< "Path: " << interChangeset << std::endl;
+		SweepLine<float> comparison(ahnFiles, interChangeset.string(), nullptr);
 		comparison.computation = [&comparison]
-			(int x, int y, const std::vector<Window<float>>& sources)
+		(int x, int y, const std::vector<Window<float>>& sources)
 		{
 			auto ahn3 = sources.begin();
 			auto ahn2 = std::find_if(ahn3 + 1, sources.end(),
@@ -157,15 +227,53 @@ int main(int argc, char* argv[])
 
 		reporter->reset();
 		comparison.execute();
-		std::cout << std::endl;
+		out << std::endl;
+	}
+	else
+	{
+		#ifdef _MSC_VER
+		_setmode(_fileno(stdin), _O_BINARY);
+		#endif
+
+		std::vector<GByte> buffer((
+			std::istreambuf_iterator<char>(std::cin)),
+			(std::istreambuf_iterator<char>()));
+		VSILFILE* vsiFile = VSIFileFromMemBuffer(consolePath.string().c_str(), &buffer[0], buffer.size(), false);
+
+		// Creating changeset
+		out << "Task: Creating changeset" << std::endl
+			<< "Path: " << interChangeset << std::endl;
+		SweepLine<float> comparison({ consolePath.string(), consolePath.string() }, interChangeset.string(), nullptr);
+		comparison.computation = [&comparison]
+		(int x, int y, const std::vector<Window<float>>& sources)
+		{
+			const Window<float>& ahn2 = sources[0];
+			const Window<float>& ahn3 = sources[1];
+
+			float difference = ahn3.data() - ahn2.data();
+			if (std::abs(difference) >= 1000 || std::abs(difference) <= 0.2)
+				difference = static_cast<float>(comparison.nodataValue);
+			return difference;
+		};
+		comparison.nodataValue = 0;
+		comparison.progress = [&reporter](float complete, std::string message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+
+		reporter->reset();
+		comparison.execute();
+		out << std::endl;
+		VSIFCloseL(vsiFile);
 	}
 	
 	// Noise filtering
-	std::cout << step++ << ". Noise filtering" << std::endl
-		<< "Path: " << resultNoise << std::endl;
+	out << "Task: Noise filtering" << std::endl
+		<< "Path: " << interNoise << std::endl;
 	{
 		int range = 2;
-		SweepLine<float> noiseFilter({ resultChangeset.string() }, resultNoise.string(), range, nullptr);
+		SweepLine<float> noiseFilter({ interChangeset.string() }, interNoise.string(), range, nullptr);
 		noiseFilter.computation = [&noiseFilter, range]
 			(int x, int y, const std::vector<Window<float>>& sources)
 		{
@@ -196,14 +304,16 @@ int main(int argc, char* argv[])
 
 		reporter->reset();
 		noiseFilter.execute();
-		std::cout << std::endl;
+		out << std::endl;
 	}
+	if (!useVSI && !vm.count("debug")) fs::remove(interChangeset);
+	else if(useVSI) VSIUnlink(interChangeset.string().c_str());
 
 	// Binarization
-	std::cout << step++ << ". Binarization" << std::endl
-		<< "Path: " << resultSieve << std::endl;
+	out << "Task: Sieve filtering / prepare" << std::endl
+		<< "Path: " << interSieve << std::endl;
 	{
-		SweepLine<GByte, float> binarization({ resultNoise.string() }, resultSieve.string(), nullptr);
+		SweepLine<GByte, float> binarization({ interNoise.string() }, interSieve.string(), nullptr);
 		binarization.computation = [&binarization]
 			(int x, int y, const std::vector<Window<float>>& sources)
 		{
@@ -221,14 +331,14 @@ int main(int argc, char* argv[])
 
 		reporter->reset();
 		binarization.execute();
-		std::cout << std::endl;
+		out << std::endl;
 	}
 
 	// Sieve filtering
-	std::cout << step++ << ". Sieve filtering" << std::endl
-		<< "Path: " << resultSieve << std::endl;
+	out << "Task: Sieve filtering / execute" << std::endl
+		<< "Path: " << interSieve << std::endl;
 	{
-		GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(resultSieve.string().c_str(), GA_Update));
+		GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(interSieve.string().c_str(), GA_Update));
 		GDALRasterBand* band = dataset->GetRasterBand(1);
 
 		reporter->reset();
@@ -238,14 +348,14 @@ int main(int argc, char* argv[])
 			nullptr, gdalProgress, reporter);
 
 		GDALClose(dataset);
-		std::cout << std::endl;
+		out << std::endl;
 	}
 
 	// Cluster filtering
-	std::cout << step++ << ". Cluster filtering" << std::endl
-		<< "Path: " << resultCluster << std::endl;
+	out << "Task: Cluster filtering" << std::endl
+		<< "Path: " << interCluster << std::endl;
 	{
-		SweepLine<float> clusterFilter({ resultNoise.string(), resultSieve.string() }, resultCluster.string(), nullptr);
+		SweepLine<float> clusterFilter({ interNoise.string(), interSieve.string() }, interCluster.string(), nullptr);
 		clusterFilter.computation = [&clusterFilter]
 			(int x, int y, const std::vector<Window<float>>& sources)
 		{
@@ -265,15 +375,25 @@ int main(int argc, char* argv[])
 
 		reporter->reset();
 		clusterFilter.execute();
-		std::cout << std::endl;
+		out << std::endl;
+	}
+	if (!useVSI && !vm.count("debug"))
+	{
+		fs::remove(interNoise);
+		fs::remove(interSieve);
+	}
+	else if (useVSI)
+	{
+		VSIUnlink(interNoise.string().c_str());
+		VSIUnlink(interSieve.string().c_str());
 	}
 
 	// Majority filtering
-	std::cout << step++ << ". Majority filtering" << std::endl
-		<< "Path: " << resultCluster << std::endl;
+	out << "Task: Majority filtering" << std::endl
+		<< "Path: " << interMajority << std::endl;
 	{
 		int range = 1;
-		SweepLine<float> majorityFilter({ resultCluster.string() }, resultMajority.string(), range, nullptr);
+		SweepLine<float> majorityFilter({ interCluster.string() }, interMajority.string(), range, nullptr);
 		majorityFilter.computation = [&majorityFilter, range]
 		(int x, int y, const std::vector<Window<float>>& sources)
 		{
@@ -301,10 +421,16 @@ int main(int argc, char* argv[])
 
 		reporter->reset();
 		majorityFilter.execute();
-		std::cout << std::endl;
+		out << std::endl;
 	}
+	if (!useVSI && !vm.count("debug")) fs::remove(interCluster);
+	else if(useVSI) VSIUnlink(interCluster.string().c_str());
 
-	std::cout << "All completed!" << std::endl;
+	// Finalization
+	std::clock_t clockEnd = std::clock();
+	out << "All completed!" << std::endl
+		<< std::fixed << std::setprecision(2) << "CPU time used: "
+		<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl;
 	return Success;
 }
 
