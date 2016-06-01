@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <algorithm>
@@ -35,7 +36,7 @@ int main(int argc, char* argv[])
 	std::string tileName = "37en1";
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
-	fs::path outputDir = fs::current_path().append("out.tif").string();
+	fs::path outputDir = fs::current_path() / "out.tif";
 	fs::path consolePath = "/vsimem/input.tif"; // streaming input path
 
 	// Read console arguments
