@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <functional>
+#include <algorithm>
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
@@ -159,7 +160,11 @@ void SweepLine<TargetType, SourceType>::onExecute()
 	// Open and check bands
 	std::vector<GDALRasterBand*> sourceBands(sourceCount());
 	for (unsigned int i = 0; i < sourceCount(); ++i)
-		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(1);
+	{
+		// Default band index: multiplicity of same source
+		int bandIndex = std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1;
+		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(bandIndex);
+	}
 	GDALRasterBand* targetBand = _targetDataset->GetRasterBand(1);
 	targetBand->SetNoDataValue(nodataValue);
 
