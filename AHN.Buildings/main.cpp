@@ -22,6 +22,7 @@
 #include <CloudTools.Common/IO.h>
 #include <CloudTools.Common/Reporter.h>
 #include <CloudLib.DEM/SweepLine.h>
+#include "IOMode.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -33,11 +34,12 @@ int CPL_STDCALL gdalProgress(double dfComplete, const char *pszMessage, void *pP
 
 int main(int argc, char* argv[]) try
 {
-	std::string tileName = "37en1";
+	std::string tileName;
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
 	fs::path outputDir = fs::current_path();
 	fs::path consolePath = "/vsimem/input.tif"; // streaming input path
+	IOMode mode = IOMode::Files;
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
@@ -51,11 +53,9 @@ int main(int argc, char* argv[]) try
 			"expected: GTiff file")
 		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir), 
 			"result directory path")
-		("streaming", 
-			"stream input and output from and to standard I/O\n"
-			"expected: double banded GTiff file\n"
-			"implies use-memory flag")
-		("in-memory", "keep intermediate results in memory")
+		("mode", po::value<IOMode>(&mode)->default_value(mode),
+			"I/O mode, supported\n"
+			"files, in-memory, streaming, hadoop")
 		("debug", "keep intermediate results on disk")
 		("help,h", "produce help message")
 		;
@@ -66,8 +66,6 @@ int main(int argc, char* argv[]) try
 
 	// Post-processing arguments
 	std::string tileGroup = tileName.substr(0, 3);
-	bool useStreaming = vm.count("streaming");
-	bool useVSI = vm.count("in-memory") || vm.count("streaming");
 
 	// Argument validation
 	if (vm.count("help"))
@@ -99,27 +97,27 @@ int main(int argc, char* argv[]) try
 		//argumentError = true;
 	}
 
-	if (!useStreaming && 
+	if (!isValid(mode & IOMode::Streaming) &&
 		(!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir)))
 	{
 		std::cerr << "An input directory does not exists." << std::endl;
 		argumentError = true;
 	}
 
-	if (!useStreaming && 
+	if (!isValid(mode & IOMode::Streaming) &&
 		(fs::exists(outputDir) && !fs::is_directory(outputDir)))
 	{
 		std::cerr << "The given output path exists but not a directory." << std::endl;
 		argumentError = true;
 	}
-	else if (!useStreaming && 
+	else if (!isValid(mode & IOMode::Streaming) &&
 		(!fs::exists(outputDir) && !fs::create_directory(outputDir)))
 	{
 		std::cerr << "Failed to create output directory." << std::endl;
 		argumentError = true;
 	}
 
-	if (useVSI && vm.count("debug"))
+	if (isValid(mode & IOMode::Memory) && vm.count("debug"))
 	{
 		std::cerr << "WARNING: debug mode has no effect with in-memory intermediate results." << std::endl;
 	}
@@ -132,7 +130,7 @@ int main(int argc, char* argv[]) try
 
 	// Define output paths
 	fs::path interChangeset, interNoise, interSieve, interCluster, interMajority;
-	if (!useVSI)
+	if (!isValid(mode & IOMode::Memory))
 	{
 		interChangeset = outputDir / (tileName + "_1-diff.tif");
 		interNoise = outputDir / (tileName + "_2-noise.tif");
@@ -146,7 +144,7 @@ int main(int argc, char* argv[]) try
 		interNoise = "/vsimem/noise.tif";
 		interSieve = "/vsimem/sieve.tif";
 		interCluster = "/vsimem/cluster.tif";
-		if (!useStreaming)
+		if (!isValid(mode & IOMode::Streaming))
 			interMajority = outputDir / (tileName + "_majority.tif");
 		else
 			interMajority = "/vsimem/majority.tif";
@@ -154,8 +152,8 @@ int main(int argc, char* argv[]) try
 
 	// Program
 	std::ofstream nullStream;
-	std::ostream &out = !useStreaming ? std::cout : nullStream;
-	Reporter *reporter = !useStreaming
+	std::ostream &out = !isValid(mode & IOMode::Streaming) ? std::cout : nullStream;
+	Reporter *reporter = !isValid(mode & IOMode::Streaming)
 		? static_cast<Reporter*>(new BarReporter())
 		: static_cast<Reporter*>(new NullReporter());
 
@@ -164,7 +162,7 @@ int main(int argc, char* argv[]) try
 	GDALAllRegister();
 
 	// Create basic changeset
-	if (!useStreaming)
+	if (!isValid(mode & IOMode::Streaming))
 	{
 		// Collect input files
 		std::vector<fs::path> ahn2Files;
@@ -312,8 +310,8 @@ int main(int argc, char* argv[]) try
 		noiseFilter.execute();
 		out << std::endl;
 	}
-	if (!useVSI && !vm.count("debug")) fs::remove(interChangeset);
-	else if(useVSI) VSIUnlink(interChangeset.string().c_str());
+	if (!isValid(mode & IOMode::Memory) && !vm.count("debug")) fs::remove(interChangeset);
+	else if(isValid(mode & IOMode::Memory)) VSIUnlink(interChangeset.string().c_str());
 
 	// Binarization
 	out << "Task: Sieve filtering / prepare" << std::endl
@@ -383,12 +381,12 @@ int main(int argc, char* argv[]) try
 		clusterFilter.execute();
 		out << std::endl;
 	}
-	if (!useVSI && !vm.count("debug"))
+	if (!isValid(mode & IOMode::Memory) && !vm.count("debug"))
 	{
 		fs::remove(interNoise);
 		fs::remove(interSieve);
 	}
-	else if (useVSI)
+	else if (isValid(mode & IOMode::Memory))
 	{
 		VSIUnlink(interNoise.string().c_str());
 		VSIUnlink(interSieve.string().c_str());
@@ -429,10 +427,10 @@ int main(int argc, char* argv[]) try
 		majorityFilter.execute();
 		out << std::endl;
 	}
-	if (!useVSI && !vm.count("debug")) fs::remove(interCluster);
-	else if(useVSI) VSIUnlink(interCluster.string().c_str());
+	if (!isValid(mode & IOMode::Memory) && !vm.count("debug")) fs::remove(interCluster);
+	else if(isValid(mode & IOMode::Memory)) VSIUnlink(interCluster.string().c_str());
 
-	if (useStreaming)
+	if (isValid(mode & IOMode::Streaming))
 	{
 		#ifdef _MSC_VER
 		_setmode(_fileno(stdout), _O_BINARY);
