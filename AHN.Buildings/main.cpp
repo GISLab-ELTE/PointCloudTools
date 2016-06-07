@@ -18,6 +18,7 @@
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 #include <gdal_alg.h>
+#include <gdal_utils.h>
 
 #include <CloudTools.Common/IO.h>
 #include <CloudTools.Common/Reporter.h>
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Define output paths
-	fs::path interChangeset, interNoise, interSieve, interCluster;
+	fs::path interChangeset, interNoise, interSieve, interCluster, interColor;
 	fs::path interMajority[3];
 	if (hasFlag(mode, IOMode::Files))
 	{
@@ -129,7 +130,8 @@ int main(int argc, char* argv[]) try
 		interCluster = outputDir / (tileName + "_4-cluster.tif");
 		interMajority[0] = interCluster;
 		interMajority[1] = outputDir / (tileName + "_5-majority1.tif");
-		interMajority[2] = outputDir / (tileName + "_5-majority2.tif");
+		interMajority[2] = outputDir / (tileName + "_6-majority2.tif");
+		interColor = outputDir / (tileName + "_7-color.tif");
 	}
 	else
 	{
@@ -140,8 +142,9 @@ int main(int argc, char* argv[]) try
 		interMajority[0] = interCluster;
 		interMajority[1] = "/vsimem/majority1.tif";
 		interMajority[2] = "/vsimem/majority2.tif";
+		interColor = "/vsimem/color.tif";
 	}
-	fs::path &interFinal = interMajority[2];
+	fs::path &interFinal = interColor;
 	if (!hasFlag(mode, IOMode::Stream))
 		interFinal = outputDir / (tileName + ".tif");
 
@@ -423,8 +426,6 @@ int main(int argc, char* argv[]) try
 				reporter->report(complete, message);
 				return true;
 			};
-			if (range == 2)
-				majorityFilter.createOptions.emplace("COMPRESS", "DEFLATE");
 
 			reporter->reset();
 			majorityFilter.execute();
@@ -433,6 +434,34 @@ int main(int argc, char* argv[]) try
 		if (hasFlag(mode, IOMode::Files) && !vm.count("debug")) fs::remove(interMajority[range - 1]);
 		else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interMajority[range - 1].string().c_str());
 	}
+
+	// Color relief
+	out << "Task: Color relief" << std::endl
+		<< "Path: " << interColor << std::endl;
+	{
+		char **params = nullptr;
+		params = CSLAddString(params, "-co");
+		params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+
+		GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(params, nullptr);
+		GDALDEMProcessingOptionsSetProgress(options, gdalProgress, static_cast<void*>(reporter));
+
+		reporter->reset();
+		GDALDataset *demDataset = static_cast<GDALDataset*>(GDALOpen(interMajority[2].string().c_str(), GA_ReadOnly));
+		GDALDataset *colorDataset = static_cast<GDALDataset*>(
+			GDALDEMProcessing(
+				interColor.string().c_str(), demDataset,
+				"color-relief", (outputDir / "colors.txt").string().c_str(),
+				options, nullptr)
+			);
+
+		GDALDEMProcessingOptionsFree(options);
+		GDALClose(demDataset);
+		GDALClose(colorDataset);
+		out << std::endl;
+	}
+	if (hasFlag(mode, IOMode::Files) && !vm.count("debug")) fs::remove(interMajority[2]);
+	else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interMajority[2].string().c_str());
 
 	if (hasFlag(mode, IOMode::Stream))
 	{
