@@ -53,10 +53,10 @@ int main(int argc, char* argv[]) try
 			"expected: GTiff file")
 		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir), 
 			"result directory path")
-		("mode", po::value<IOMode>(&mode)->default_value(mode),
+		("mode,m", po::value<IOMode>(&mode)->default_value(mode),
 			"I/O mode, supported\n"
-			"files, in-memory, streaming, hadoop")
-		("debug", "keep intermediate results on disk")
+			"files, memory, stream, hadoop")
+		("debug,d", "keep intermediate results on disk after progress")
 		("help,h", "produce help message")
 		;
 
@@ -76,48 +76,38 @@ int main(int argc, char* argv[]) try
 	}
 
 	bool argumentError = false;
-	if (!(vm.count("streaming") ^ vm.count("tile-name")))
+	if (!hasFlag(mode, IOMode::Stream))
 	{
-		std::cerr << "Set tile name or use streaming mode." << std::endl;
-		argumentError = true;
-	}
-	if (!(vm.count("streaming") ^ vm.count("ahn2-dir")))
-	{
-		std::cerr << "Set AHN-2 input directory or use streaming mode." << std::endl;
-		argumentError = true;
-	}
-	if (!(vm.count("streaming") ^ vm.count("ahn3-dir")))
-	{
-		std::cerr << "Set AHN-3 input directory or use streaming mode." << std::endl;
-		argumentError = true;
-	}
-	if (!(vm.count("streaming") ^ vm.count("output-dir")))
-	{
-		//std::cerr << "Set output directory or use streaming mode." << std::endl;
-		//argumentError = true;
+		if (!vm.count("tile-name"))
+		{
+			std::cerr << "Tile name is mandatory when not using streaming mode." << std::endl;
+			argumentError = true;
+		}
+		if (!vm.count("ahn2-dir") || !vm.count("ahn3-dir"))
+		{
+			std::cerr << "Input directories are mandatory when not using streaming mode." << std::endl;
+			argumentError = true;
+		}
+
+		if (!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir))
+		{
+			std::cerr << "An input directory does not exists." << std::endl;
+			argumentError = true;
+		}
+
+		if (fs::exists(outputDir) && !fs::is_directory(outputDir))
+		{
+			std::cerr << "The given output path exists but not a directory." << std::endl;
+			argumentError = true;
+		}
+		else if (!fs::exists(outputDir) && !fs::create_directory(outputDir))
+		{
+			std::cerr << "Failed to create output directory." << std::endl;
+			argumentError = true;
+		}
 	}
 
-	if (!isValid(mode & IOMode::Streaming) &&
-		(!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir)))
-	{
-		std::cerr << "An input directory does not exists." << std::endl;
-		argumentError = true;
-	}
-
-	if (!isValid(mode & IOMode::Streaming) &&
-		(fs::exists(outputDir) && !fs::is_directory(outputDir)))
-	{
-		std::cerr << "The given output path exists but not a directory." << std::endl;
-		argumentError = true;
-	}
-	else if (!isValid(mode & IOMode::Streaming) &&
-		(!fs::exists(outputDir) && !fs::create_directory(outputDir)))
-	{
-		std::cerr << "Failed to create output directory." << std::endl;
-		argumentError = true;
-	}
-
-	if (isValid(mode & IOMode::Memory) && vm.count("debug"))
+	if (hasFlag(mode, IOMode::Memory) && vm.count("debug"))
 	{
 		std::cerr << "WARNING: debug mode has no effect with in-memory intermediate results." << std::endl;
 	}
@@ -129,14 +119,17 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Define output paths
-	fs::path interChangeset, interNoise, interSieve, interCluster, interMajority;
-	if (!isValid(mode & IOMode::Memory))
+	fs::path interChangeset, interNoise, interSieve, interCluster;
+	fs::path interMajority[3];
+	if (hasFlag(mode, IOMode::Files))
 	{
 		interChangeset = outputDir / (tileName + "_1-diff.tif");
 		interNoise = outputDir / (tileName + "_2-noise.tif");
 		interSieve = outputDir / (tileName + "_3-sieve.tif");
 		interCluster = outputDir / (tileName + "_4-cluster.tif");
-		interMajority = outputDir / (tileName + "_5-majority.tif");
+		interMajority[0] = interCluster;
+		interMajority[1] = outputDir / (tileName + "_5-majority1.tif");
+		interMajority[2] = outputDir / (tileName + "_5-majority2.tif");
 	}
 	else
 	{
@@ -144,16 +137,18 @@ int main(int argc, char* argv[]) try
 		interNoise = "/vsimem/noise.tif";
 		interSieve = "/vsimem/sieve.tif";
 		interCluster = "/vsimem/cluster.tif";
-		if (!isValid(mode & IOMode::Streaming))
-			interMajority = outputDir / (tileName + "_majority.tif");
-		else
-			interMajority = "/vsimem/majority.tif";
+		interMajority[0] = interCluster;
+		interMajority[1] = "/vsimem/majority1.tif";
+		interMajority[2] = "/vsimem/majority2.tif";
 	}
+	fs::path &interFinal = interMajority[2];
+	if (!hasFlag(mode, IOMode::Stream))
+		interFinal = outputDir / (tileName + ".tif");
 
 	// Program
 	std::ofstream nullStream;
-	std::ostream &out = !isValid(mode & IOMode::Streaming) ? std::cout : nullStream;
-	Reporter *reporter = !isValid(mode & IOMode::Streaming)
+	std::ostream &out = !hasFlag(mode, IOMode::Stream) ? std::cout : nullStream;
+	Reporter *reporter = !hasFlag(mode, IOMode::Stream)
 		? static_cast<Reporter*>(new BarReporter())
 		: static_cast<Reporter*>(new NullReporter());
 
@@ -162,7 +157,7 @@ int main(int argc, char* argv[]) try
 	GDALAllRegister();
 
 	// Create basic changeset
-	if (!isValid(mode & IOMode::Streaming))
+	if (!hasFlag(mode, IOMode::Stream))
 	{
 		// Collect input files
 		std::vector<fs::path> ahn2Files;
@@ -234,6 +229,12 @@ int main(int argc, char* argv[]) try
 	}
 	else
 	{
+		if (hasFlag(mode, IOMode::Hadoop))
+		{
+			std::cin >> tileName;
+			std::cin.get(); // tabulator
+		}
+
 		#ifdef _MSC_VER
 		_setmode(_fileno(stdin), _O_BINARY);
 		#endif
@@ -242,7 +243,7 @@ int main(int argc, char* argv[]) try
 			std::istreambuf_iterator<char>(std::cin)),
 			(std::istreambuf_iterator<char>()));
 		VSILFILE* vsiFile = VSIFileFromMemBuffer(consolePath.string().c_str(), &buffer[0], buffer.size(), false);
-
+		
 		// Creating changeset
 		out << "Task: Creating changeset" << std::endl
 			<< "Path: " << interChangeset << std::endl;
@@ -264,7 +265,6 @@ int main(int argc, char* argv[]) try
 			reporter->report(complete, message);
 			return true;
 		};
-		comparison.spatialReference = "EPSG:28992"; //TODO
 
 		reporter->reset();
 		comparison.execute();
@@ -310,8 +310,8 @@ int main(int argc, char* argv[]) try
 		noiseFilter.execute();
 		out << std::endl;
 	}
-	if (!isValid(mode & IOMode::Memory) && !vm.count("debug")) fs::remove(interChangeset);
-	else if(isValid(mode & IOMode::Memory)) VSIUnlink(interChangeset.string().c_str());
+	if (hasFlag(mode, IOMode::Files) && !vm.count("debug")) fs::remove(interChangeset);
+	else if(hasFlag(mode, IOMode::Memory)) VSIUnlink(interChangeset.string().c_str());
 
 	// Binarization
 	out << "Task: Sieve filtering / prepare" << std::endl
@@ -381,63 +381,68 @@ int main(int argc, char* argv[]) try
 		clusterFilter.execute();
 		out << std::endl;
 	}
-	if (!isValid(mode & IOMode::Memory) && !vm.count("debug"))
+	if (hasFlag(mode, IOMode::Files) && !vm.count("debug"))
 	{
 		fs::remove(interNoise);
 		fs::remove(interSieve);
 	}
-	else if (isValid(mode & IOMode::Memory))
+	else if (hasFlag(mode, IOMode::Memory))
 	{
 		VSIUnlink(interNoise.string().c_str());
 		VSIUnlink(interSieve.string().c_str());
 	}
 
 	// Majority filtering
-	out << "Task: Majority filtering" << std::endl
-		<< "Path: " << interMajority << std::endl;
+	for (int range = 1; range <= 2; ++range)
 	{
-		int range = 1;
-		SweepLine<float> majorityFilter({ interCluster.string() }, interMajority.string(), range, nullptr);
-		majorityFilter.computation = [&majorityFilter, range]
-		(int x, int y, const std::vector<Window<float>>& sources)
+		out << "Task: Majority filtering / r=" << range << std::endl
+			<< "Path: " << interMajority[range] << std::endl;
 		{
-			const Window<float>& source = sources[0];
+			SweepLine<float> majorityFilter({ interMajority[range - 1].string() }, interMajority[range].string(), range, nullptr);
+			majorityFilter.computation = [&majorityFilter, range]
+			(int x, int y, const std::vector<Window<float>>& sources)
+			{
+				const Window<float>& source = sources[0];
 
-			float sum = 0;
-			int counter = 0;
-			for (int i = -range; i <= range; ++i)
-				for (int j = -range; j <= range; ++j)
-					if (source.hasData(i, j))
-					{
-						sum += source.data(i, j);
-						++counter;
-					}
-			if (counter < ((range + 2) * (range + 2) / 2)) return static_cast<float>(majorityFilter.nodataValue);
-			else return source.hasData() ? source.data() : sum / counter;
+				float sum = 0;
+				int counter = 0;
+				for (int i = -range; i <= range; ++i)
+					for (int j = -range; j <= range; ++j)
+						if (source.hasData(i, j))
+						{
+							sum += source.data(i, j);
+							++counter;
+						}
+				if (counter < ((range + 2) * (range + 2) / 2)) return static_cast<float>(majorityFilter.nodataValue);
+				else return source.hasData() ? source.data() : sum / counter;
 
-		};
-		majorityFilter.nodataValue = 0;
-		majorityFilter.progress = [&reporter](float complete, std::string message)
-		{
-			reporter->report(complete, message);
-			return true;
-		};
+			};
+			majorityFilter.nodataValue = 0;
+			majorityFilter.progress = [&reporter](float complete, std::string message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
 
-		reporter->reset();
-		majorityFilter.execute();
-		out << std::endl;
+			reporter->reset();
+			majorityFilter.execute();
+			out << std::endl;
+		}
+		if (hasFlag(mode, IOMode::Files) && !vm.count("debug")) fs::remove(interMajority[range - 1]);
+		else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interMajority[range - 1].string().c_str());
 	}
-	if (!isValid(mode & IOMode::Memory) && !vm.count("debug")) fs::remove(interCluster);
-	else if(isValid(mode & IOMode::Memory)) VSIUnlink(interCluster.string().c_str());
 
-	if (isValid(mode & IOMode::Streaming))
+	if (hasFlag(mode, IOMode::Stream))
 	{
+		if (hasFlag(mode, IOMode::Hadoop))
+			std::cout << tileName << '\t';
+
 		#ifdef _MSC_VER
 		_setmode(_fileno(stdout), _O_BINARY);
 		#endif
 
 		vsi_l_offset length;
-		GByte* buffer = VSIGetMemFileBuffer(interMajority.string().c_str(), &length, true);
+		GByte* buffer = VSIGetMemFileBuffer(interFinal.string().c_str(), &length, true);
 		std::copy(buffer, buffer + length, std::ostream_iterator<GByte>(std::cout));
 		delete[] buffer;
 	}

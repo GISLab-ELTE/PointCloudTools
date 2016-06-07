@@ -15,8 +15,8 @@ std::istream& operator >> (std::istream& input, IOMode &mode)
 		mode = IOMode::Files;
 	else if (str == "MEMORY")
 		mode = IOMode::Memory;
-	else if (str == "STREAMING")
-		mode = IOMode::Streaming;
+	else if (str == "STREAM")
+		mode = IOMode::Stream;
 	else if (str == "HADOOP")
 		mode = IOMode::Hadoop;
 	else
@@ -34,8 +34,8 @@ std::ostream& operator<< (std::ostream& output, const IOMode &mode)
 	case IOMode::Memory:
 		output << "MEMORY";
 		break;
-	case IOMode::Streaming:
-		output << "STREAMING";
+	case IOMode::Stream:
+		output << "STREAM";
 		break;
 	case IOMode::Hadoop:
 		output << "HADOOP";
