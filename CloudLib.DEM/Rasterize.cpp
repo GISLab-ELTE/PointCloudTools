@@ -10,10 +10,6 @@
 
 #include "Rasterize.h"
 
-#ifdef _MSC_VER
-#define strdup _strdup
-#endif
-
 namespace fs = boost::filesystem;
 
 namespace CloudLib
@@ -142,41 +138,40 @@ void Rasterize::onExecute()
 		throw std::runtime_error("Cannot overwrite previously created output file.");
 
 	// Define the GDALRasterize parameters
-	std::vector<char*> params(_layers.size() * 2);
+	char **params = nullptr;
 	for (unsigned int i = 0; i < _layers.size(); ++i)
 	{
-		params[2 * i] = strdup("-l");
-		params[2 * i + 1] = strdup(_layers[i]->GetName());
+		params = CSLAddString(params, "-l");
+		params = CSLAddString(params, _layers[i]->GetName());
 	}
-	params.push_back(strdup("-burn"));
-	params.push_back(strdup(std::to_string(targetValue).c_str()));
-	params.push_back(strdup("-a_nodata"));
-	params.push_back(strdup("0"));
-	params.push_back(strdup("-ts"));
-	params.push_back(strdup(std::to_string(_targetMetadata.rasterSizeX()).c_str()));
-	params.push_back(strdup(std::to_string(_targetMetadata.rasterSizeY()).c_str()));
-	params.push_back(strdup("-tr"));
-	params.push_back(strdup(std::to_string(std::abs(_targetMetadata.pixelSizeX())).c_str()));
-	params.push_back(strdup(std::to_string(std::abs(_targetMetadata.pixelSizeY())).c_str()));
+	params = CSLAddString(params, "-burn");
+	params = CSLAddString(params, std::to_string(targetValue).c_str());
+	params = CSLAddString(params, "-a_nodata");
+	params = CSLAddString(params, "0");
+	params = CSLAddString(params, "-ts");
+	params = CSLAddString(params, std::to_string(_targetMetadata.rasterSizeX()).c_str());
+	params = CSLAddString(params, std::to_string(_targetMetadata.rasterSizeY()).c_str());
+	params = CSLAddString(params, "-tr");
+	params = CSLAddString(params, std::to_string(std::abs(_targetMetadata.pixelSizeX())).c_str());
+	params = CSLAddString(params, std::to_string(std::abs(_targetMetadata.pixelSizeY())).c_str());
 	if (_isClipped)
 	{
-		params.push_back(strdup("-te"));
-		params.push_back(strdup(std::to_string(_targetMetadata.originX()).c_str()));
-		params.push_back(strdup(std::to_string(_targetMetadata.originY() - _targetMetadata.extentY()).c_str()));
-		params.push_back(strdup(std::to_string(_targetMetadata.originX() + _targetMetadata.extentX()).c_str()));
-		params.push_back(strdup(std::to_string(_targetMetadata.originY()).c_str()));
+		params = CSLAddString(params, "-te");
+		params = CSLAddString(params, std::to_string(_targetMetadata.originX()).c_str());
+		params = CSLAddString(params, std::to_string(_targetMetadata.originY() - _targetMetadata.extentY()).c_str());
+		params = CSLAddString(params, std::to_string(_targetMetadata.originX() + _targetMetadata.extentX()).c_str());
+		params = CSLAddString(params, std::to_string(_targetMetadata.originY()).c_str());
 	}
-	params.push_back(strdup("-ot"));
-	params.push_back(strdup("Byte"));
-	for (std::string& co : createOptions)
+	params = CSLAddString(params, "-ot");
+	params = CSLAddString(params, "Byte");
+	for (auto& co : createOptions)
 	{
-		params.push_back(strdup("-co"));
-		params.push_back(strdup(co.c_str()));
+		params = CSLAddString(params, "-co");
+		params = CSLSetNameValue(params, co.first.c_str(), co.second.c_str());
 	}
-	params.push_back(nullptr);
 	
 	// Execute GDALRasterize
-	GDALRasterizeOptions *options = GDALRasterizeOptionsNew(&params[0], nullptr);
+	GDALRasterizeOptions *options = GDALRasterizeOptionsNew(params, nullptr);
 	GDALRasterizeOptionsSetProgress(options, gdalProgress, static_cast<void*>(this));
 	_targetDataset = static_cast<GDALDataset*>(GDALRasterize(_targetPath.c_str(), nullptr, _sourceDataset, options, nullptr));
 	GDALRasterizeOptionsFree(options);

@@ -15,10 +15,6 @@
 #include "Metadata.h"
 #include "Helper.h"
 
-#ifdef _MSC_VER
-#define strdup _strdup
-#endif
-
 namespace fs = boost::filesystem;
 
 namespace CloudLib
@@ -132,14 +128,14 @@ void SweepLine<TargetType, SourceType>::onExecute()
 	GDALDataType sourceType = gdalType<SourceType>();
 	GDALDataType targetType = gdalType<TargetType>();
 
-	std::vector<char*> targetParams(createOptions.size() + 1);
-	for (std::string& co : createOptions)
-		targetParams.push_back(strdup(co.c_str()));
-	targetParams.push_back(nullptr);
+	char **targetParams = nullptr;
+	for (auto& co : createOptions)
+		targetParams = CSLSetNameValue(targetParams, co.first.c_str(), co.second.c_str());
 
 	_targetDataset = driver->Create(_targetPath.c_str(),
 		_targetMetadata.rasterSizeX(), _targetMetadata.rasterSizeY(), 1,
-		targetType, &targetParams[0]);
+		targetType, targetParams);
+	CSLDestroy(targetParams);
 	if (_targetDataset == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 

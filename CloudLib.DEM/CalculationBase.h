@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <gdal_priv.h>
 
@@ -32,7 +33,7 @@ public:
 	/// <remarks>
 	/// For supported options, <see cref="http://www.gdal.org/formats_list.html" />.
 	/// </remarks>
-	std::vector<std::string> createOptions;
+	std::map<std::string, std::string> createOptions;
 
 	/// <summary>
 	/// The spatial reference system for the source and target files.
