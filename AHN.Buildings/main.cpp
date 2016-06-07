@@ -423,6 +423,8 @@ int main(int argc, char* argv[]) try
 				reporter->report(complete, message);
 				return true;
 			};
+			if (range == 2)
+				majorityFilter.createOptions.emplace("COMPRESS", "DEFLATE");
 
 			reporter->reset();
 			majorityFilter.execute();
