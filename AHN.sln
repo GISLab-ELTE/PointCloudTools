@@ -13,6 +13,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AHN.Buildings", "AHN.Buildi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloudTools.Common", "CloudTools.Common\CloudTools.Common.vcxproj", "{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AHN.Buildings.Parallel", "AHN.Buildings.Parallel\AHN.Buildings.Parallel.vcxproj", "{30C45780-0DC6-4B62-AD4A-5C91BE353F21}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290} = {E1F64708-EB63-4118-A6B1-7E2F9834D290}
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F} = {CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}
+		{F4336AE4-3FEF-4613-99FD-F7AE15B66AD8} = {F4336AE4-3FEF-4613-99FD-F7AE15B66AD8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|Win32 = Release|Win32
@@ -31,6 +38,10 @@ Global
 		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|Win32.Build.0 = Release|Win32
 		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|x64.ActiveCfg = Release|x64
 		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}.Release|x64.Build.0 = Release|x64
+		{30C45780-0DC6-4B62-AD4A-5C91BE353F21}.Release|Win32.ActiveCfg = Release|Win32
+		{30C45780-0DC6-4B62-AD4A-5C91BE353F21}.Release|Win32.Build.0 = Release|Win32
+		{30C45780-0DC6-4B62-AD4A-5C91BE353F21}.Release|x64.ActiveCfg = Release|x64
+		{30C45780-0DC6-4B62-AD4A-5C91BE353F21}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
