@@ -71,6 +71,9 @@ protected:
 	std::vector<RasterMetadata> _sourceMetadata;
 	RasterMetadata _targetMetadata;
 
+	bool _sourceOwnership;
+	mutable bool _targetOwnerShip = true;
+
 public:
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
@@ -81,14 +84,32 @@ public:
 	CalculationBase(const std::vector<std::string>& sourcePaths,
 	                const std::string& targetPath,
 	                ProgressType progress = nullptr);
+	/// <summary>
+	/// Initializes a new instance of the class and loads source metadata.
+	/// </summary>
+	/// <param name="sourceDataset">The source datasets of the calculation.</param>
+	/// <param name="targetPath">The target file of the calculation.</param>
+	/// <param name="progress">The callback method to report progress.</param>
+	CalculationBase(const std::vector<GDALDataset*>& sourceDatasets,
+	                const std::string& targetPath,
+	                ProgressType progress = nullptr);
 	CalculationBase(const CalculationBase&) = delete;
 	CalculationBase& operator=(const CalculationBase&) = delete;
 	~CalculationBase();
 
-	unsigned int sourceCount() const { return _sourcePaths.size(); }
+	unsigned int sourceCount() const { return _sourceDatasets.size(); }
 	const RasterMetadata& sourceMetadata(unsigned int index) const;
 	const RasterMetadata& sourceMetadata(const std::string& file) const;
 	const RasterMetadata& targetMetadata() const;
+	
+	/// <summary>
+	/// Retrieves the target dataset.
+	/// </summary>
+	/// <remarks>
+	/// By calling this method, the target datatset will be released by the calculation and won't be automatically freed.
+	/// </remarks>
+	/// <returns>The target dataset.</returns>
+	const GDALDataset* target() const;
 
 protected:
 	/// <summary>

@@ -18,15 +18,15 @@ CalculationBase::CalculationBase(const std::vector<std::string>& sourcePaths,
                                  const std::string& targetPath,
                                  ProgressType progress)
 	: _sourcePaths(sourcePaths), _targetPath(targetPath), progress(progress),
-	_targetDataset(nullptr)
+	  _sourceOwnership(true), _targetDataset(nullptr)
 {
 	// Open source files and retrieve metadata
-	if (sourceCount() == 0)
-		throw std::invalid_argument("At least 1 source file must be given.");
-
 	_sourceDatasets.reserve(sourceCount());
 	for (std::string& path : _sourcePaths)
 		_sourceDatasets.push_back(static_cast<GDALDataset*>(GDALOpen(path.c_str(), GA_ReadOnly)));
+
+	if (sourceCount() == 0)
+		throw std::invalid_argument("At least 1 source file must be given.");
 
 	if (std::any_of(_sourceDatasets.begin(), _sourceDatasets.end(),
 		[](GDALDataset* dataset)
@@ -40,11 +40,34 @@ CalculationBase::CalculationBase(const std::vector<std::string>& sourcePaths,
 		_sourceMetadata.emplace_back(dataset);
 }
 
+CalculationBase::CalculationBase(const std::vector<GDALDataset*>& sourceDatasets,
+                                 const std::string& targetPath,
+                                 ProgressType progress)
+	: _sourceDatasets(sourceDatasets), _targetPath(targetPath), progress(progress),
+	  _sourceOwnership(false), _targetDataset(nullptr)
+{
+	// Check source datasets and retrieve metadata
+	if (sourceCount() == 0)
+		throw std::invalid_argument("At least 1 source file must be given.");
+
+	if (std::any_of(_sourceDatasets.begin(), _sourceDatasets.end(),
+		[](GDALDataset* dataset)
+	{
+		return dataset == nullptr;
+	}))
+		throw std::invalid_argument("Invalid source file.");
+
+	_sourceMetadata.reserve(sourceCount());
+	for (GDALDataset* dataset : _sourceDatasets)
+		_sourceMetadata.emplace_back(dataset);
+}
+
 CalculationBase::~CalculationBase()
 {
-	for (GDALDataset* dataset : _sourceDatasets)
-		GDALClose(dataset);
-	if (_targetDataset != nullptr)
+	if (_sourceOwnership)
+		for (GDALDataset* dataset : _sourceDatasets)
+			GDALClose(dataset);
+	if (_targetOwnerShip && _targetDataset != nullptr)
 		GDALClose(_targetDataset);
 }
 
@@ -67,6 +90,14 @@ const RasterMetadata& CalculationBase::targetMetadata() const
 	if (!isPrepared())
 		throw std::logic_error("The computation is not prepared.");
 	return _targetMetadata;
+}
+
+const GDALDataset* CalculationBase::target() const
+{
+	if (!isExecuted())
+		throw std::logic_error("The computation is not executed.");
+	_targetOwnerShip = false;
+	return _targetDataset;
 }
 
 void CalculationBase::onPrepare()

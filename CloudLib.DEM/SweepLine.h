@@ -57,11 +57,25 @@ public:
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	SweepLine(const std::vector<std::string>& sourcePaths,
-	                 const std::string& targetPath,
-	                 ComputationType computation,
-	                 ProgressType progress = nullptr)
-					 : SweepLine(sourcePaths, targetPath, 0, computation, progress)
+	          const std::string& targetPath,
+	          ComputationType computation,
+	          ProgressType progress = nullptr)
+		: SweepLine(sourcePaths, targetPath, 0, computation, progress)
 	{ }
+
+	/// <summary>
+	/// Initializes a new instance of the class and loads source metadata.
+	/// </summary>
+	/// <param name="sourceDatasets">The source datasets of the calculation.</param>
+	/// <param name="targetPath">The target file of the calculation.</param>
+	/// <param name="range">The range of surrounding data to involve in the computations.</param>
+	/// <param name="computation">The callback function for computation.</param>
+	/// <param name="progress">The callback method to report progress.</param>
+	SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
+	          const std::string& targetPath,
+	          int range,
+	          ComputationType computation = nullptr,
+	          ProgressType progress = nullptr);
 
 	SweepLine(const SweepLine&) = delete;
 	SweepLine& operator=(const SweepLine&) = delete;
@@ -96,6 +110,18 @@ SweepLine<TargetType, SourceType>::SweepLine(const std::vector<std::string>& sou
                                              ComputationType computation,
                                              ProgressType progress)
 	: CalculationBase(sourcePaths, targetPath, progress),
+	  computation(computation)
+{
+	setRange(range);
+}
+
+template <typename TargetType, typename SourceType>
+SweepLine<TargetType, SourceType>::SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
+                                             const std::string& targetPath,
+                                             int range,
+                                             ComputationType computation,
+                                             ProgressType progress)
+	: CalculationBase(sourceDatasets, targetPath, progress),
 	  computation(computation)
 {
 	setRange(range);

@@ -20,12 +20,42 @@ Rasterize::Rasterize(std::string sourcePath, std::string targetPath,
                      const std::vector<std::string>& layers,
                      ProgressType progress)
 	: _sourcePath(sourcePath), _targetPath(targetPath), progress(progress),
-	  _targetDataset(nullptr)
+	  _sourceOwnership(true), _targetDataset(nullptr)
 {
 	// Open source file and retrieve layers
 	_sourceDataset = static_cast<GDALDataset*>(GDALOpenEx(_sourcePath.c_str(), GDAL_OF_VECTOR, nullptr, nullptr, nullptr));
 	if (_sourceDataset == nullptr)
-		throw std::runtime_error("Error at opening an input file.");
+		throw std::runtime_error("Error at opening the source file.");
+
+	if (layers.size() > 0)
+	{
+		_layers.reserve(layers.size());
+		for (const std::string &layerName : layers)
+		{
+			OGRLayer *layer = _sourceDataset->GetLayerByName(layerName.c_str());
+			if (layer == nullptr)
+				throw std::invalid_argument("The selected layer does not exist.");
+			_layers.push_back(layer);
+		}
+	}
+	else if (_sourceDataset->GetLayerCount() == 1)
+		_layers.push_back(_sourceDataset->GetLayer(0));
+	else
+		throw std::invalid_argument("No layer selected and there are more than 1 layers.");
+
+	// Retrieve source metadata
+	_sourceMetadata = VectorMetadata(_layers);
+}
+
+Rasterize::Rasterize(GDALDataset* sourceDataset, std::string targetPath,
+	const std::vector<std::string>& layers,
+	ProgressType progress)
+	: _sourceDataset(sourceDataset), _targetPath(targetPath), progress(progress),
+	_sourceOwnership(false), _targetDataset(nullptr)
+{
+	// Check source dataset and retrieve layers
+	if (_sourceDataset == nullptr)
+		throw std::invalid_argument("Invalid source file.");
 
 	if (layers.size() > 0)
 	{
@@ -49,8 +79,9 @@ Rasterize::Rasterize(std::string sourcePath, std::string targetPath,
 
 Rasterize::~Rasterize()
 {
-	GDALClose(_sourceDataset);
-	if (_targetDataset != nullptr)
+	if (_sourceOwnership)
+		GDALClose(_sourceDataset);
+	if (_targetOwnerShip && _targetDataset != nullptr)
 		GDALClose(_targetDataset);
 }
 
@@ -64,6 +95,14 @@ const RasterMetadata& Rasterize::targetMetadata() const
 	if (!isPrepared())
 		throw std::logic_error("The computation is not prepared.");
 	return _targetMetadata;
+}
+
+const GDALDataset* Rasterize::target() const
+{
+	if (!isExecuted())
+		throw std::logic_error("The computation is not executed.");
+	_targetOwnerShip = false;
+	return _targetDataset;
 }
 
 void Rasterize::clip(double originX, double originY,
