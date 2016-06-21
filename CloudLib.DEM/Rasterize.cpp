@@ -97,7 +97,7 @@ const RasterMetadata& Rasterize::targetMetadata() const
 	return _targetMetadata;
 }
 
-const GDALDataset* Rasterize::target() const
+GDALDataset* Rasterize::target()
 {
 	if (!isExecuted())
 		throw std::logic_error("The computation is not executed.");

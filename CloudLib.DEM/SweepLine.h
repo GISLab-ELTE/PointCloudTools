@@ -46,7 +46,7 @@ public:
 	SweepLine(const std::vector<std::string>& sourcePaths,
 	          const std::string& targetPath,
 	          int range,
-	          ComputationType computation = nullptr,
+	          ComputationType computation,
 	          ProgressType progress = nullptr);
 
 	/// <summary>
@@ -74,8 +74,27 @@ public:
 	SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
 	          const std::string& targetPath,
 	          int range,
-	          ComputationType computation = nullptr,
+	          ComputationType computation,
 	          ProgressType progress = nullptr);
+
+	/// <summary>
+	/// Initializes a new instance of the class and loads source metadata.
+	/// </summary>
+	/// <remarks>
+	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
+	/// </remarks>
+	/// <param name="sourceDatasets">The source datasets of the calculation.</param>
+	/// <param name="range">The range of surrounding data to involve in the computations.</param>
+	/// <param name="computation">The callback function for computation.</param>
+	/// <param name="progress">The callback method to report progress.</param>
+	SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
+	          int range,
+	          ComputationType computation,
+	          ProgressType progress = nullptr)
+		: SweepLine(sourceDatasets, std::string(), 0, computation, progress)
+	{
+		targetFormat = "MEM";
+	}
 
 	SweepLine(const SweepLine&) = delete;
 	SweepLine& operator=(const SweepLine&) = delete;
@@ -184,7 +203,9 @@ void SweepLine<TargetType, SourceType>::onExecute()
 	for (unsigned int i = 0; i < sourceCount(); ++i)
 	{
 		// Default band index: multiplicity of same source
-		int bandIndex = std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1;
+		int bandIndex = _sourceOwnership
+			? std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1
+			: std::count(_sourceDatasets.begin(), _sourceDatasets.begin() + i, _sourceDatasets[i]) + 1;
 		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(bandIndex);
 	}
 	GDALRasterBand* targetBand = _targetDataset->GetRasterBand(1);

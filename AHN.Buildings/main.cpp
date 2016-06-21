@@ -1,9 +1,12 @@
 #include <iostream>
+#include <iomanip>
+#include <ctime>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 #include <CloudTools.Common/IO.h>
+#include <CloudTools.Common/Reporter.h>
 #include "IOMode.h"
 #include "BuildingFilter.h"
 
@@ -19,6 +22,7 @@ int main(int argc, char* argv[]) try
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
 	fs::path outputDir = fs::current_path();
+	fs::path colorFile;
 	IOMode mode = IOMode::Files;
 
 	// Read console arguments
@@ -33,6 +37,9 @@ int main(int argc, char* argv[]) try
 			"expected: GTiff file")
 		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir),
 			"result directory path")
+		("color-file", po::value<fs::path>(&colorFile),
+			"map file for color relief\n"
+			"ignored when streaming")
 		("mode,m", po::value<IOMode>(&mode)->default_value(mode),
 			"I/O mode, supported\n"
 			"files, memory, stream, hadoop")
@@ -56,11 +63,6 @@ int main(int argc, char* argv[]) try
 	bool argumentError = false;
 	if (!hasFlag(mode, IOMode::Stream))
 	{
-		if (!vm.count("tile-name"))
-		{
-			std::cerr << "Tile name is mandatory when not using streaming mode." << std::endl;
-			argumentError = true;
-		}
 		if (!vm.count("ahn2-dir") || !vm.count("ahn3-dir"))
 		{
 			std::cerr << "Input directories are mandatory when not using streaming mode." << std::endl;
@@ -85,6 +87,21 @@ int main(int argc, char* argv[]) try
 		}
 	}
 
+	if (!hasFlag(mode, IOMode::Hadoop))
+	{
+		if (!vm.count("tile-name"))
+		{
+			std::cerr << "Tile name is mandatory when not using Hadoop Steaming API." << std::endl;
+			argumentError = true;
+		}
+	}
+
+	if (vm.count("color-file") && !fs::is_regular_file(colorFile))
+	{
+		std::cerr << "The given color file does not exists." << std::endl;
+		argumentError = true;
+	}
+
 	if (hasFlag(mode, IOMode::Memory) && vm.count("debug"))
 	{
 		std::cerr << "WARNING: debug mode has no effect with in-memory intermediate results." << std::endl;
@@ -96,7 +113,65 @@ int main(int argc, char* argv[]) try
 		return InvalidInput;
 	}
 
-	buildingFilter(tileName, ahn2Dir, ahn3Dir, outputDir, mode, vm.count("debug"), vm.count("quiet"));
+	// Program
+	if (!vm.count("quiet"))
+		std::cout << "=== AHN Building ===" << std::endl;
+	std::clock_t clockStart = std::clock();
+
+	BarReporter reporter;
+	std::string lastStatus;
+
+	// Configure the operation
+	GDALAllRegister();
+	BuildingFilter* filter;
+	switch (mode)
+	{
+	case IOMode::Files:
+	case IOMode::Memory:
+			filter = new BuildingFilter(tileName, ahn2Dir, ahn3Dir, outputDir, hasFlag(mode, IOMode::Memory));
+			break;
+	case IOMode::Stream:
+			filter = new BuildingFilter(tileName);
+			break;
+	case IOMode::Hadoop:
+			filter = new BuildingFilter();
+			break;
+	default:
+		// Unsigned and complex types are not supported.
+		std::cerr << "Unsupported I/O mode given." << std::endl;
+		return Unsupported;
+	}
+	filter->colorFile = colorFile;
+	filter->debug = vm.count("debug");
+	if (!vm.count("quiet"))
+	{
+		filter->progress = [&reporter, &lastStatus](float complete, std::string message)
+		{
+			if(message != lastStatus)
+			{
+				std::cout << std::endl
+					<< "Task: " << message << std::endl;
+				reporter.reset();
+				lastStatus = message;
+			}
+			reporter.report(complete, message);
+			return true;
+		};
+	}
+
+	// Execute operation
+	filter->execute();
+
+	// Final printout
+	std::clock_t clockEnd = std::clock();
+	if (!vm.count("quiet"))
+	{
+		std::cout << std::endl 
+			<< "All completed!" << std::endl
+			<< std::fixed << std::setprecision(2) << "CPU time used: "
+			<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl;
+	}
+	delete filter;
 	return Success;
 }
 catch (std::exception &ex)

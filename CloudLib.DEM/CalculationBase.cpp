@@ -92,7 +92,7 @@ const RasterMetadata& CalculationBase::targetMetadata() const
 	return _targetMetadata;
 }
 
-const GDALDataset* CalculationBase::target() const
+GDALDataset* CalculationBase::target()
 {
 	if (!isExecuted())
 		throw std::logic_error("The computation is not executed.");

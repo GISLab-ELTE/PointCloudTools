@@ -76,7 +76,7 @@ protected:
 
 	bool _isClipped = false;
 	bool _sourceOwnership;
-	mutable bool _targetOwnerShip = true;
+	bool _targetOwnerShip = true;
 
 public:
 	/// <summary>
@@ -92,6 +92,7 @@ public:
 	Rasterize(std::string sourcePath, std::string targetPath,
 	          const std::vector<std::string>& layers = std::vector<std::string>(),
 	          ProgressType progress = nullptr);
+
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
@@ -105,6 +106,7 @@ public:
 	Rasterize(GDALDataset* sourceDataset, std::string targetPath,
 	          const std::vector<std::string>& layers = std::vector<std::string>(),
 	          ProgressType progress = nullptr);
+
 	Rasterize(const Rasterize&) = delete;
 	Rasterize& operator=(const Rasterize&) = delete;
 	~Rasterize();
@@ -119,7 +121,7 @@ public:
 	/// By calling this method, the target datatset will be released by the operation and won't be automatically freed.
 	/// </remarks>
 	/// <returns>The target dataset.</returns>
-	const GDALDataset* target() const;
+	GDALDataset* target();
 
 	/// <summary>
 	/// Clips the target raster with a specified window.

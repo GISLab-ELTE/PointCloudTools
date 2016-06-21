@@ -1,12 +1,10 @@
 #include <iosfwd>
-#include <fstream>
-#include <iomanip>
+
 #include <vector>
 #include <algorithm>
 #include <functional>
 #include <iterator>
 #include <cmath>
-#include <ctime>
 
 #ifdef _MSC_VER
 #include <stdio.h>
@@ -14,13 +12,9 @@
 #include <io.h>
 #endif
 
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <gdal_priv.h>
 #include <gdal_alg.h>
 #include <gdal_utils.h>
 
-#include <CloudTools.Common/IO.h>
 #include <CloudTools.Common/Reporter.h>
 #include <CloudLib.DEM/SweepLine.h>
 #include "BuildingFilter.h"
@@ -30,388 +24,360 @@ using namespace CloudTools::IO;
 
 namespace AHN
 {
-	int CPL_STDCALL gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg);
+const std::string BuildingFilter::StreamFile = "/vsimem/stream.tif";
+const float BuildingFilter::Threshold = 1.0f;
 
-	void buildingFilter(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::path outputDir, IOMode mode, bool debug, bool quiet)
+void BuildingFilter::onPrepare()
+{
+	if (hasFlag(_mode, IOMode::Stream))
 	{
-		// Post-processing arguments
-		std::string tileGroup = tileName.substr(0, 3);
-		fs::path consolePath = "/vsimem/input_" + tileName + ".tif"; // streaming input path
-
-		// Define output paths
-		fs::path interChangeset, interNoise, interSieve, interCluster, interColor;
-		fs::path interMajority[3];
-		if (hasFlag(mode, IOMode::Files))
+		if (hasFlag(_mode, IOMode::Hadoop))
 		{
-			interChangeset = outputDir / (tileName + "_1-diff.tif");
-			interNoise = outputDir / (tileName + "_2-noise.tif");
-			interSieve = outputDir / (tileName + "_3-sieve.tif");
-			interCluster = outputDir / (tileName + "_4-cluster.tif");
-			interMajority[0] = interCluster;
-			interMajority[1] = outputDir / (tileName + "_5-majority1.tif");
-			interMajority[2] = outputDir / (tileName + "_6-majority2.tif");
-			interColor = outputDir / (tileName + "_7-color.tif");
+			std::string key;
+			std::cin >> key;
+			std::cin.get(); // tabulator
+			std::cout << key << '\t';
+
+			tileName = fs::path(key).stem().string();
 		}
-		else
+
+		#ifdef _MSC_VER
+		_setmode(_fileno(stdin), _O_BINARY);
+		_setmode(_fileno(stdout), _O_BINARY);
+		#endif
+	}
+
+	_tileGroup = tileName.substr(0, 3);
+	_resultFormat = hasFlag(_mode, IOMode::Files) ? "GTiff" : "MEM";
+
+	if (!colorFile.empty() && !fs::is_regular_file(colorFile))
+		throw std::runtime_error("Color file does not exists.");
+
+	_progress = [this](float complete, std::string message)
+	{
+		return this->progress(complete, this->_progressMessage);
+	};
+}
+
+void BuildingFilter::onExecute()
+{
+	// Create basic changeset
+	_progressMessage = "Creating changeset";
+	createResult();
+	if (!hasFlag(_mode, IOMode::Stream))
+	{
+		// Collect input files
+		std::vector<fs::path> ahn2Files;
+		for (fs::directory_iterator itGroup(_ahn2Dir); itGroup != fs::directory_iterator(); ++itGroup)
 		{
-			interChangeset = "/vsimem/diff_" + tileName + ".tif";
-			interNoise = "/vsimem/noise_" + tileName + ".tif";
-			interSieve = "/vsimem/sieve_" + tileName + ".tif";
-			interCluster = "/vsimem/cluster_" + tileName + ".tif";
-			interMajority[0] = interCluster;
-			interMajority[1] = "/vsimem/majority1_" + tileName + ".tif";
-			interMajority[2] = "/vsimem/majority2_" + tileName + ".tif";
-			interColor = "/vsimem/color_" + tileName + ".tif";
-		}
-		fs::path &interFinal = interColor;
-		if (!hasFlag(mode, IOMode::Stream))
-			interFinal = outputDir / (tileName + ".tif");
-
-		// Program
-		std::ofstream nullStream;
-		std::ostream &out = !hasFlag(mode, IOMode::Stream) && !quiet ? std::cout : nullStream;
-		Reporter *reporter = !hasFlag(mode, IOMode::Stream) && !quiet
-			? static_cast<Reporter*>(new BarReporter())
-			: static_cast<Reporter*>(new NullReporter());
-
-		out << "=== AHN Building ===" << std::endl;
-		std::clock_t clockStart = std::clock();
-		GDALAllRegister();
-
-		// Create basic changeset
-		if (!hasFlag(mode, IOMode::Stream))
-		{
-			// Collect input files
-			std::vector<fs::path> ahn2Files;
-			for (fs::directory_iterator itGroup(ahn2Dir); itGroup != fs::directory_iterator(); ++itGroup)
+			if (fs::is_directory(itGroup->path()) &&
+				itGroup->path().filename().string().find(_tileGroup) != std::string::npos)
 			{
-				if (fs::is_directory(itGroup->path()) &&
-					itGroup->path().filename().string().find(tileGroup) != std::string::npos)
+				for (fs::directory_iterator itTile(itGroup->path()); itTile != fs::directory_iterator(); ++itTile)
 				{
-					for (fs::directory_iterator itTile(itGroup->path()); itTile != fs::directory_iterator(); ++itTile)
-					{
-						if (fs::is_directory(itTile->path()) &&
-							itTile->path().filename().string().find(tileName) != std::string::npos)
-							ahn2Files.push_back(itTile->path());
-					}
+					if (fs::is_directory(itTile->path()) &&
+						itTile->path().filename().string().find(tileName) != std::string::npos)
+						ahn2Files.push_back(itTile->path());
 				}
 			}
+		}
 
-			fs::path ahn3File;
-			for (fs::directory_iterator itTile(ahn3Dir); itTile != fs::directory_iterator(); ++itTile)
+		fs::path ahn3File;
+		for (fs::directory_iterator itTile(_ahn3Dir); itTile != fs::directory_iterator(); ++itTile)
+		{
+			if (fs::is_regular_file(itTile->path()) &&
+				itTile->path().filename().string().find(tileName) != std::string::npos)
 			{
-				if (fs::is_regular_file(itTile->path()) &&
-					itTile->path().filename().string().find(tileName) != std::string::npos)
-				{
-					ahn3File = itTile->path();
-					break;
-				}
+				ahn3File = itTile->path();
+				break;
 			}
+		}
 
-			std::vector<std::string> ahnFiles(ahn2Files.size() + 1);
-			ahnFiles[0] = ahn3File.string();
-			std::transform(ahn2Files.begin(), ahn2Files.end(), ahnFiles.begin() + 1,
-				[](fs::path ahn2File)
+		std::vector<std::string> ahnFiles(ahn2Files.size() + 1);
+		ahnFiles[0] = ahn3File.string();
+		std::transform(ahn2Files.begin(), ahn2Files.end(), ahnFiles.begin() + 1,
+			[](fs::path ahn2File)
+		{
+			return ahn2File.string();
+		});
+
+		// Creating changeset
+		SweepLine<float> comparison(ahnFiles, _resultPaths[0].string(), nullptr, _progress);
+		comparison.targetFormat = _resultFormat;
+		comparison.computation = [&comparison]
+		(int x, int y, const std::vector<Window<float>>& sources)
+		{
+			auto ahn3 = sources.begin();
+			auto ahn2 = std::find_if(ahn3 + 1, sources.end(),
+				[](const Window<float>& source)
 			{
-				return ahn2File.string();
+				return source.hasData();
 			});
 
-			// Creating changeset
-			out << "Task: Creating changeset" << std::endl
-				<< "Path: " << interChangeset << std::endl;
-			SweepLine<float> comparison(ahnFiles, interChangeset.string(), nullptr);
-			comparison.computation = [&comparison]
-			(int x, int y, const std::vector<Window<float>>& sources)
-			{
-				auto ahn3 = sources.begin();
-				auto ahn2 = std::find_if(ahn3 + 1, sources.end(),
-					[](const Window<float>& source)
-				{
-					return source.hasData();
-				});
+			if (ahn2 == sources.end() || !ahn3->hasData())
+				return static_cast<float>(comparison.nodataValue);
 
-				if (ahn2 == sources.end() || !ahn3->hasData())
-					return static_cast<float>(comparison.nodataValue);
+			float difference = ahn3->data() - ahn2->data();
+			if (std::abs(difference) >= 1000 || std::abs(difference) <= Threshold)
+				difference = static_cast<float>(comparison.nodataValue);
+			return difference;
+		};
+		comparison.nodataValue = 0;
 
-				float difference = ahn3->data() - ahn2->data();
-				if (std::abs(difference) >= 1000 || std::abs(difference) <= 0.2)
-					difference = static_cast<float>(comparison.nodataValue);
-				return difference;
-			};
-			comparison.nodataValue = 0;
-			comparison.progress = [&reporter](float complete, std::string message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
+		comparison.execute();
+		_resultDatasets[0] = comparison.target();
+	}
+	else
+	{
+		std::vector<GByte> buffer((
+			std::istreambuf_iterator<char>(std::cin)),
+			(std::istreambuf_iterator<char>()));
+		VSILFILE* vsiFile = VSIFileFromMemBuffer(StreamFile.c_str(), &buffer[0], buffer.size(), false);
 
-			reporter->reset();
-			comparison.execute();
-			out << std::endl;
-		}
-		else
+		// Creating changeset
+		SweepLine<float> comparison({ StreamFile, StreamFile }, _resultPaths[0].string(), nullptr, _progress);
+		comparison.targetFormat = _resultFormat;
+		comparison.computation = [&comparison]
+		(int x, int y, const std::vector<Window<float>>& sources)
 		{
-			if (hasFlag(mode, IOMode::Hadoop))
-			{
-				std::cin >> tileName;
-				std::cin.get(); // tabulator
-			}
+			const Window<float>& ahn2 = sources[0];
+			const Window<float>& ahn3 = sources[1];
 
-#ifdef _MSC_VER
-			_setmode(_fileno(stdin), _O_BINARY);
-#endif
+			float difference = ahn3.data() - ahn2.data();
+			if (std::abs(difference) >= 1000 || std::abs(difference) <= Threshold)
+				difference = static_cast<float>(comparison.nodataValue);
+			return difference;
+		};
+		comparison.nodataValue = 0;
 
-			std::vector<GByte> buffer((
-				std::istreambuf_iterator<char>(std::cin)),
-				(std::istreambuf_iterator<char>()));
-			VSILFILE* vsiFile = VSIFileFromMemBuffer(consolePath.string().c_str(), &buffer[0], buffer.size(), false);
+		comparison.execute();
+		_resultDatasets[0] = comparison.target();
+		VSIFCloseL(vsiFile);
+		VSIUnlink(StreamFile.c_str());
+	}
 
-			// Creating changeset
-			out << "Task: Creating changeset" << std::endl
-				<< "Path: " << interChangeset << std::endl;
-			SweepLine<float> comparison({ consolePath.string(), consolePath.string() }, interChangeset.string(), nullptr);
-			comparison.computation = [&comparison]
-			(int x, int y, const std::vector<Window<float>>& sources)
-			{
-				const Window<float>& ahn2 = sources[0];
-				const Window<float>& ahn3 = sources[1];
-
-				float difference = ahn3.data() - ahn2.data();
-				if (std::abs(difference) >= 1000 || std::abs(difference) <= 0.2)
-					difference = static_cast<float>(comparison.nodataValue);
-				return difference;
-			};
-			comparison.nodataValue = 0;
-			comparison.progress = [&reporter](float complete, std::string message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-
-			reporter->reset();
-			comparison.execute();
-			out << std::endl;
-			VSIFCloseL(vsiFile);
-		}
-
-		// Noise filtering
-		out << "Task: Noise filtering" << std::endl
-			<< "Path: " << interNoise << std::endl;
+	// Noise filtering
+	_progressMessage = "Noise filtering";
+	createResult();
+	{
+		int range = 2;
+		SweepLine<float> noiseFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
+		noiseFilter.targetFormat = _resultFormat;
+		noiseFilter.computation = [&noiseFilter, range]
+		(int x, int y, const std::vector<Window<float>>& sources)
 		{
-			int range = 2;
-			SweepLine<float> noiseFilter({ interChangeset.string() }, interNoise.string(), range, nullptr);
-			noiseFilter.computation = [&noiseFilter, range]
+			const Window<float>& source = sources[0];
+			if (!source.hasData()) return static_cast<float>(noiseFilter.nodataValue);
+
+			float noise = 0;
+			int counter = -1;
+			for (int i = -range; i <= range; ++i)
+				for (int j = -range; j <= range; ++j)
+					if (source.hasData(i, j))
+					{
+						noise += std::abs(source.data() - source.data(i, j));
+						++counter;
+					}
+
+			if (counter == 0) return static_cast<float>(noiseFilter.nodataValue);
+			if (noise / counter > 1) return static_cast<float>(noiseFilter.nodataValue);
+			else return source.data();
+
+		};
+		noiseFilter.nodataValue = 0;
+
+		noiseFilter.execute();
+		_resultDatasets[1] = noiseFilter.target();
+	}
+	deleteResult(); // basic changeset
+
+	// Binarization
+	_progressMessage = "Sieve filtering / prepare";
+	createResult();
+	{
+		SweepLine<GByte, float> binarization({ _resultDatasets[0] }, _resultPaths[1].string(), 0, nullptr, _progress);
+		binarization.targetFormat = _resultFormat;
+		binarization.computation = [&binarization]
+		(int x, int y, const std::vector<Window<float>>& sources)
+		{
+			const Window<float>& source = sources[0];
+			if (!source.hasData()) return 1;
+			else return 255;
+
+		};
+		binarization.nodataValue = 0;
+
+		binarization.execute();
+		_resultDatasets[1] = binarization.target();
+	}
+
+	// Sieve filtering
+	_progressMessage = "Sieve filtering / execute";
+	{
+		GDALRasterBand* band = _resultDatasets[1]->GetRasterBand(1);
+
+		GDALSieveFilter(
+			band, nullptr, band,
+			400, 4,
+			nullptr, gdalProgress, static_cast<void*>(this));
+	}
+
+	// Cluster filtering
+	_progressMessage = "Cluster filtering";
+	createResult();
+	{
+		std::vector<GDALDataset*> sources = { _resultDatasets[0], _resultDatasets[1] };
+		SweepLine<float> clusterFilter(sources, _resultPaths[2].string(), 0, nullptr, _progress);
+		clusterFilter.targetFormat = _resultFormat;
+		clusterFilter.computation = [&clusterFilter]
+		(int x, int y, const std::vector<Window<float>>& sources)
+		{
+			const Window<float>& noise = sources[0];
+			const Window<float>& sieve = sources[1];
+
+			if (sieve.hasData() && sieve.data() == 255) return noise.data();
+			else return static_cast<float>(clusterFilter.nodataValue);
+
+		};
+		clusterFilter.nodataValue = 0;
+
+		clusterFilter.execute();
+		_resultDatasets[2] = clusterFilter.target();
+	}
+	deleteResult(); // noise filter
+	deleteResult(); // sieve filter
+
+	// Majority filtering
+	for (int range = 1; range <= 2; ++range)
+	{
+		_progressMessage = "Majority filtering / r=" + std::to_string(range);
+		createResult();
+		{
+			SweepLine<float> majorityFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
+			majorityFilter.computation = [&majorityFilter, range]
 			(int x, int y, const std::vector<Window<float>>& sources)
 			{
 				const Window<float>& source = sources[0];
-				if (!source.hasData()) return static_cast<float>(noiseFilter.nodataValue);
 
-				float noise = 0;
-				int counter = -1;
+				float sum = 0;
+				int counter = 0;
 				for (int i = -range; i <= range; ++i)
 					for (int j = -range; j <= range; ++j)
 						if (source.hasData(i, j))
 						{
-							noise += std::abs(source.data() - source.data(i, j));
+							sum += source.data(i, j);
 							++counter;
 						}
-
-				if (counter == 0) return static_cast<float>(noiseFilter.nodataValue);
-				if (noise / counter > 1) return static_cast<float>(noiseFilter.nodataValue);
-				else return source.data();
+				if (counter < ((range + 2) * (range + 2) / 2)) return static_cast<float>(majorityFilter.nodataValue);
+				else return source.hasData() ? source.data() : sum / counter;
 
 			};
-			noiseFilter.nodataValue = 0;
-			noiseFilter.progress = [&reporter](float complete, std::string message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
+			majorityFilter.targetFormat = _resultFormat;
+			majorityFilter.nodataValue = 0;
 
-			reporter->reset();
-			noiseFilter.execute();
-			out << std::endl;
+			majorityFilter.execute();
+			_resultDatasets[1] = majorityFilter.target();
 		}
-		if (hasFlag(mode, IOMode::Files) && !debug) fs::remove(interChangeset);
-		else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interChangeset.string().c_str());
+		deleteResult(); // cluster filter or
+						// previous majority filter
+	}
 
-		// Binarization
-		out << "Task: Sieve filtering / prepare" << std::endl
-			<< "Path: " << interSieve << std::endl;
+	// Write out the results
+	_progressMessage = "Writing results";
+	createResult(hasFlag(_mode, IOMode::Stream) ? StreamFile : std::string());
+	{
+		// GTiff creation options
+		char **params = nullptr;
+		params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+
+		// Copy results to disk or VSI
+		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+		_resultDatasets[1] = driver->CreateCopy(_resultPaths[1].string().c_str(), _resultDatasets[0], false,
+			params, gdalProgress, static_cast<void*>(this));
+
+		// Stream the output
+		if (hasFlag(_mode, IOMode::Stream))
 		{
-			SweepLine<GByte, float> binarization({ interNoise.string() }, interSieve.string(), nullptr);
-			binarization.computation = [&binarization]
-			(int x, int y, const std::vector<Window<float>>& sources)
-			{
-				const Window<float>& source = sources[0];
-				if (!source.hasData()) return 1;
-				else return 255;
-
-			};
-			binarization.nodataValue = 0;
-			binarization.progress = [&reporter](float complete, std::string message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-
-			reporter->reset();
-			binarization.execute();
-			out << std::endl;
-		}
-
-		// Sieve filtering
-		out << "Task: Sieve filtering / execute" << std::endl
-			<< "Path: " << interSieve << std::endl;
-		{
-			GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(interSieve.string().c_str(), GA_Update));
-			GDALRasterBand* band = dataset->GetRasterBand(1);
-
-			reporter->reset();
-			GDALSieveFilter(
-				band, nullptr, band,
-				400, 4,
-				nullptr, gdalProgress, reporter);
-
-			GDALClose(dataset);
-			out << std::endl;
-		}
-
-		// Cluster filtering
-		out << "Task: Cluster filtering" << std::endl
-			<< "Path: " << interCluster << std::endl;
-		{
-			SweepLine<float> clusterFilter({ interNoise.string(), interSieve.string() }, interCluster.string(), nullptr);
-			clusterFilter.computation = [&clusterFilter]
-			(int x, int y, const std::vector<Window<float>>& sources)
-			{
-				const Window<float>& noise = sources[0];
-				const Window<float>& sieve = sources[1];
-
-				if (sieve.hasData() && sieve.data() == 255) return noise.data();
-				else return static_cast<float>(clusterFilter.nodataValue);
-
-			};
-			clusterFilter.nodataValue = 0;
-			clusterFilter.progress = [&reporter](float complete, std::string message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-
-			reporter->reset();
-			clusterFilter.execute();
-			out << std::endl;
-		}
-		if (hasFlag(mode, IOMode::Files) && !debug)
-		{
-			fs::remove(interNoise);
-			fs::remove(interSieve);
-		}
-		else if (hasFlag(mode, IOMode::Memory))
-		{
-			VSIUnlink(interNoise.string().c_str());
-			VSIUnlink(interSieve.string().c_str());
-		}
-
-		// Majority filtering
-		for (int range = 1; range <= 2; ++range)
-		{
-			out << "Task: Majority filtering / r=" << range << std::endl
-				<< "Path: " << interMajority[range] << std::endl;
-			{
-				SweepLine<float> majorityFilter({ interMajority[range - 1].string() }, interMajority[range].string(), range, nullptr);
-				majorityFilter.computation = [&majorityFilter, range]
-				(int x, int y, const std::vector<Window<float>>& sources)
-				{
-					const Window<float>& source = sources[0];
-
-					float sum = 0;
-					int counter = 0;
-					for (int i = -range; i <= range; ++i)
-						for (int j = -range; j <= range; ++j)
-							if (source.hasData(i, j))
-							{
-								sum += source.data(i, j);
-								++counter;
-							}
-					if (counter < ((range + 2) * (range + 2) / 2)) return static_cast<float>(majorityFilter.nodataValue);
-					else return source.hasData() ? source.data() : sum / counter;
-
-				};
-				majorityFilter.nodataValue = 0;
-				majorityFilter.progress = [&reporter](float complete, std::string message)
-				{
-					reporter->report(complete, message);
-					return true;
-				};
-
-				reporter->reset();
-				majorityFilter.execute();
-				out << std::endl;
-			}
-			if (hasFlag(mode, IOMode::Files) && !debug) fs::remove(interMajority[range - 1]);
-			else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interMajority[range - 1].string().c_str());
-		}
-
-		// Color relief
-		out << "Task: Color relief" << std::endl
-			<< "Path: " << interColor << std::endl;
-		{
-			char **params = nullptr;
-			params = CSLAddString(params, "-alpha");
-			params = CSLAddString(params, "-co");
-			params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
-
-			GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(params, nullptr);
-			GDALDEMProcessingOptionsSetProgress(options, gdalProgress, static_cast<void*>(reporter));
-
-			reporter->reset();
-			GDALDataset *demDataset = static_cast<GDALDataset*>(GDALOpen(interMajority[2].string().c_str(), GA_ReadOnly));
-			GDALDataset *colorDataset = static_cast<GDALDataset*>(
-				GDALDEMProcessing(
-					interColor.string().c_str(), demDataset,
-					"color-relief", (outputDir / "colors.txt").string().c_str(),
-					options, nullptr)
-				);
-
-			GDALDEMProcessingOptionsFree(options);
-			GDALClose(demDataset);
-			GDALClose(colorDataset);
-			out << std::endl;
-		}
-		if (hasFlag(mode, IOMode::Files) && !debug) fs::remove(interMajority[2]);
-		else if (hasFlag(mode, IOMode::Memory)) VSIUnlink(interMajority[2].string().c_str());
-
-		if (hasFlag(mode, IOMode::Stream))
-		{
-			if (hasFlag(mode, IOMode::Hadoop))
-				std::cout << tileName << '\t';
-
-#ifdef _MSC_VER
-			_setmode(_fileno(stdout), _O_BINARY);
-#endif
-
 			vsi_l_offset length;
-			GByte* buffer = VSIGetMemFileBuffer(interFinal.string().c_str(), &length, true);
+			GByte* buffer = VSIGetMemFileBuffer(StreamFile.c_str(), &length, true);
 			std::copy(buffer, buffer + length, std::ostream_iterator<GByte>(std::cout));
 			delete[] buffer;
+			VSIUnlink(StreamFile.c_str());
 		}
-
-		// Finalization
-		std::clock_t clockEnd = std::clock();
-		out << "All completed!" << std::endl
-			<< std::fixed << std::setprecision(2) << "CPU time used: "
-			<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl;
 	}
 
-	/// <summary>
-	/// Routes the C-style GDAL progress reports to the defined reporter.
-	/// </summary>
-	int CPL_STDCALL gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg)
+	// No color relief
+	if (colorFile.empty() || !fs::is_regular_file(colorFile) || hasFlag(_mode, IOMode::Stream))
 	{
-		Reporter *reporter = static_cast<Reporter*>(pProgressArg);
-		reporter->report(static_cast<float>(dfComplete), std::string());
-		return true;
+		deleteResult();     // last majority filter
+		deleteResult(true); // building filer result
+		return;
 	}
+
+	// Color relief
+	_progressMessage = "Color relief";
+	createResult("color");
+	{
+		char **params = nullptr;
+		params = CSLAddString(params, "-alpha");
+		params = CSLAddString(params, "-co");
+		params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+
+		GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(params, nullptr);
+		GDALDEMProcessingOptionsSetProgress(options, gdalProgress, static_cast<void*>(this));
+
+		_resultDatasets[2] = static_cast<GDALDataset*>(
+			GDALDEMProcessing(
+				_resultPaths[2].string().c_str(), _resultDatasets[0],
+				"color-relief", colorFile.string().c_str(),
+				options, nullptr)
+			);
+		GDALDEMProcessingOptionsFree(options);
+	}
+
+	deleteResult();     // last majority filter
+	deleteResult(true); // building filer result
+	deleteResult(true); // color relief
+}
+
+unsigned int BuildingFilter::createResult()
+{
+	_resultDatasets.push_back(nullptr);
+	_resultPaths.push_back(hasFlag(_mode, IOMode::Files)
+		? _outputDir / (tileName + "_" + std::to_string(_nextResult++) + ".tif")
+		: "");
+	return _resultDatasets.size() - 1;
+}
+
+unsigned int BuildingFilter::createResult(std::string suffix)
+{
+	std::string filename = suffix;
+	if (suffix.length() > 0)
+		filename = "_" + filename;
+	filename = tileName + filename + ".tif";
+
+	_resultDatasets.push_back(nullptr);
+	_resultPaths.push_back(_outputDir / filename);
+	return _resultDatasets.size() - 1;
+}
+
+void BuildingFilter::deleteResult(bool keepFile)
+{
+	if (_resultDatasets.size() == 0)
+		throw std::underflow_error("No intermediate result to pop.");
+
+	if (_resultDatasets.front() != nullptr)
+		GDALClose(_resultDatasets.front());
+	if (hasFlag(_mode, IOMode::Files) && !keepFile && !debug)
+		fs::remove(_resultPaths.front());
+
+	_resultDatasets.pop_front();
+	_resultPaths.pop_front();
+}
+
+int BuildingFilter::gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg)
+{
+	BuildingFilter *filter = static_cast<BuildingFilter*>(pProgressArg);
+	return filter->progress(static_cast<float>(dfComplete), filter->_progressMessage);
+}
 }
