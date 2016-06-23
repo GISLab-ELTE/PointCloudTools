@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
+#include <chrono>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -117,6 +118,7 @@ int main(int argc, char* argv[]) try
 	if (!vm.count("quiet"))
 		std::cout << "=== AHN Building ===" << std::endl;
 	std::clock_t clockStart = std::clock();
+	auto timeStart = std::chrono::high_resolution_clock::now();
 
 	BarReporter reporter;
 	std::string lastStatus;
@@ -161,17 +163,21 @@ int main(int argc, char* argv[]) try
 
 	// Execute operation
 	filter->execute();
+	delete filter;
 
-	// Final printout
+	// Execution time measurement
 	std::clock_t clockEnd = std::clock();
+	auto timeEnd = std::chrono::high_resolution_clock::now();
+
 	if (!vm.count("quiet"))
 	{
 		std::cout << std::endl 
 			<< "All completed!" << std::endl
 			<< std::fixed << std::setprecision(2) << "CPU time used: "
-			<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl;
+			<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl
+			<< "Wall clock time passed: "
+			<< std::chrono::duration<float>(timeEnd - timeStart).count() << "s" << std::endl;
 	}
-	delete filter;
 	return Success;
 }
 catch (std::exception &ex)
