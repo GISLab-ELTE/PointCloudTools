@@ -165,6 +165,17 @@ void Rasterize::onPrepare()
 
 	if (reference)
 		_targetMetadata.setReference(std::move(reference));
+
+	// Check the existence of the target field
+	if(!targetField.empty())
+	{
+		bool validField = std::any_of(_layers.begin(), _layers.end(), [this](OGRLayer *layer)
+		{
+			return layer->FindFieldIndex(targetField.c_str(), false) >= 0;
+		});
+		if(!validField)
+			throw std::runtime_error("None of the given layers contain the target field.");
+	}
 }
 
 void Rasterize::onExecute()
@@ -183,10 +194,18 @@ void Rasterize::onExecute()
 		params = CSLAddString(params, "-l");
 		params = CSLAddString(params, _layers[i]->GetName());
 	}
-	params = CSLAddString(params, "-burn");
-	params = CSLAddString(params, std::to_string(targetValue).c_str());
+	if (targetField.empty())
+	{
+		params = CSLAddString(params, "-burn");
+		params = CSLAddString(params, std::to_string(targetValue).c_str());
+	}
+	else
+	{
+		params = CSLAddString(params, "-a");
+		params = CSLAddString(params, targetField.c_str());
+	}
 	params = CSLAddString(params, "-a_nodata");
-	params = CSLAddString(params, "0");
+	params = CSLAddString(params, std::to_string(nodataValue).c_str());
 	params = CSLAddString(params, "-ts");
 	params = CSLAddString(params, std::to_string(_targetMetadata.rasterSizeX()).c_str());
 	params = CSLAddString(params, std::to_string(_targetMetadata.rasterSizeY()).c_str());

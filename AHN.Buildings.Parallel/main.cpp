@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Program
-	std::cout << "=== AHN Building Parallel ===" << std::endl;
+	std::cout << "=== AHN Building Filter Parallel ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
 	GDALAllRegister();

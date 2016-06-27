@@ -41,6 +41,14 @@ public:
 	/// The target value that will be burned.
 	/// </summary>
 	uint8_t targetValue = 255;
+	
+	/// <summary>
+	/// The target attribute field on the features to be used for a burn-in value.
+	/// </summary>
+	/// <remarks>
+	/// Overrides <see cref="targetValue"/> when definied.
+	/// </remarks>
+	std::string targetField;
 
 	/// <summary>
 	/// Format specific output creation options.
@@ -57,6 +65,11 @@ public:
 	/// Setting this property will override SRS detection.
 	/// </remarks>
 	std::string spatialReference;
+
+	/// <summary>
+	/// The nodata value.
+	/// </summary>
+	short nodataValue = 0;
 
 	/// <summary>
 	/// Callback function for reporting progress.

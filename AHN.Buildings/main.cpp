@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) try
 
 		if (!fs::is_directory(ahn2Dir) || !fs::is_directory(ahn3Dir))
 		{
-			std::cerr << "An input directory does not exists." << std::endl;
+			std::cerr << "An input directory does not exist." << std::endl;
 			argumentError = true;
 		}
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) try
 
 	// Program
 	if (!vm.count("quiet"))
-		std::cout << "=== AHN Building ===" << std::endl;
+		std::cout << "=== AHN Building Filter ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
 
