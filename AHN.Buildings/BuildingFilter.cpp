@@ -15,7 +15,7 @@
 #include <gdal_utils.h>
 
 #include <CloudTools.Common/Reporter.h>
-#include <CloudLib.DEM/SweepLine.h>
+#include <CloudLib.DEM/SweepLineTransformation.h>
 #include "BuildingFilter.h"
 
 using namespace CloudLib::DEM;
@@ -101,7 +101,7 @@ void BuildingFilter::onExecute()
 		});
 
 		// Creating changeset
-		SweepLine<float> comparison(ahnFiles, _resultPaths[0].string(), nullptr, _progress);
+		SweepLineTransformation<float> comparison(ahnFiles, _resultPaths[0].string(), nullptr, _progress);
 		comparison.targetFormat = _resultFormat;
 		comparison.computation = [&comparison]
 		(int x, int y, const std::vector<Window<float>>& sources)
@@ -134,7 +134,7 @@ void BuildingFilter::onExecute()
 		VSILFILE* vsiFile = VSIFileFromMemBuffer(StreamFile.c_str(), &buffer[0], buffer.size(), false);
 
 		// Creating changeset
-		SweepLine<float> comparison({ StreamFile, StreamFile }, _resultPaths[0].string(), nullptr, _progress);
+		SweepLineTransformation<float> comparison({ StreamFile, StreamFile }, _resultPaths[0].string(), nullptr, _progress);
 		comparison.targetFormat = _resultFormat;
 		comparison.computation = [&comparison]
 		(int x, int y, const std::vector<Window<float>>& sources)
@@ -160,7 +160,7 @@ void BuildingFilter::onExecute()
 	createResult();
 	{
 		int range = 2;
-		SweepLine<float> noiseFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
+		SweepLineTransformation<float> noiseFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
 		noiseFilter.targetFormat = _resultFormat;
 		noiseFilter.computation = [&noiseFilter, range]
 		(int x, int y, const std::vector<Window<float>>& sources)
@@ -194,7 +194,7 @@ void BuildingFilter::onExecute()
 	_progressMessage = "Sieve filtering / prepare";
 	createResult();
 	{
-		SweepLine<GByte, float> binarization({ _resultDatasets[0] }, _resultPaths[1].string(), 0, nullptr, _progress);
+		SweepLineTransformation<GByte, float> binarization({ _resultDatasets[0] }, _resultPaths[1].string(), 0, nullptr, _progress);
 		binarization.targetFormat = _resultFormat;
 		binarization.computation = [&binarization]
 		(int x, int y, const std::vector<Window<float>>& sources)
@@ -226,7 +226,7 @@ void BuildingFilter::onExecute()
 	createResult();
 	{
 		std::vector<GDALDataset*> sources = { _resultDatasets[0], _resultDatasets[1] };
-		SweepLine<float> clusterFilter(sources, _resultPaths[2].string(), 0, nullptr, _progress);
+		SweepLineTransformation<float> clusterFilter(sources, _resultPaths[2].string(), 0, nullptr, _progress);
 		clusterFilter.targetFormat = _resultFormat;
 		clusterFilter.computation = [&clusterFilter]
 		(int x, int y, const std::vector<Window<float>>& sources)
@@ -252,7 +252,7 @@ void BuildingFilter::onExecute()
 		_progressMessage = "Majority filtering / r=" + std::to_string(range);
 		createResult();
 		{
-			SweepLine<float> majorityFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
+			SweepLineTransformation<float> majorityFilter({ _resultDatasets[0] }, _resultPaths[1].string(), range, nullptr, _progress);
 			majorityFilter.computation = [&majorityFilter, range]
 			(int x, int y, const std::vector<Window<float>>& sources)
 			{

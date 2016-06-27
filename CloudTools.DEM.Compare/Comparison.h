@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <CloudLib.DEM/SweepLine.h>
+#include <CloudLib.DEM/SweepLineTransformation.h>
 #include <CloudLib.DEM/Window.h>
 
 namespace CloudTools
@@ -14,7 +14,7 @@ namespace DEM
 /// Represents a difference comparison for DEM datasets.
 /// </summary>
 template <typename DataType = float>
-class Comparison : public CloudLib::DEM::SweepLine<DataType>
+class Comparison : public CloudLib::DEM::SweepLineTransformation<DataType>
 {
 public:	
 	double maximumThreshold = 1000;
@@ -37,7 +37,7 @@ template <typename DataType>
 Comparison<DataType>::Comparison(const std::vector<std::string>& sourcePaths,
                                  const std::string& targetPath,
 	                             CloudLib::DEM::Operation::ProgressType progress)
-	: CloudLib::DEM::SweepLine<DataType>(sourcePaths, targetPath, nullptr, progress)
+	: CloudLib::DEM::SweepLineTransformation<DataType>(sourcePaths, targetPath, nullptr, progress)
 {
 	this->computation = [this](int x, int y, const std::vector<CloudLib::DEM::Window<DataType>>& sources)
 	{

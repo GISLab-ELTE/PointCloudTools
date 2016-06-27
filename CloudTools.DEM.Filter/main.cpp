@@ -12,7 +12,7 @@
 #include <CloudTools.Common/Reporter.h>
 #include <CloudLib.DEM/Metadata.h>
 #include <CloudLib.DEM/Rasterize.h>
-#include <CloudLib.DEM/SweepLine.h>
+#include <CloudLib.DEM/SweepLineTransformation.h>
 #include <CloudLib.DEM/Window.h>
 
 namespace po = boost::program_options;
@@ -184,12 +184,12 @@ int main(int argc, char* argv[]) try
 	GDALClose(inputDataset);
 
 	// Define filter with corresponding data type
-	CalculationBase *filter;
+	Transformation *filter;
 	switch (dataType)
 	{
 	case GDALDataType::GDT_Int16:
 	{
-		filter = new SweepLine<GInt16>({ inputPath, filterRasterPath }, outputPath,
+		filter = new SweepLineTransformation<GInt16>({ inputPath, filterRasterPath }, outputPath,
 			[&vm, filter](int x, int y, const std::vector<Window<GInt16>>& sources)
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) try
 	}
 	case GDALDataType::GDT_Int32:
 	{
-		filter = new SweepLine<GInt32>({ inputPath, filterRasterPath }, outputPath,
+		filter = new SweepLineTransformation<GInt32>({ inputPath, filterRasterPath }, outputPath,
 			[&vm, filter](int x, int y, const std::vector<Window<GInt32>>& sources)
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) try
 	}
 	case GDALDataType::GDT_Float32:
 	{
-		filter = new SweepLine<float>({ inputPath, filterRasterPath }, outputPath,
+		filter = new SweepLineTransformation<float>({ inputPath, filterRasterPath }, outputPath,
 			[&vm, filter](int x, int y, const std::vector<Window<float>>& sources)
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) try
 	}
 	case GDALDataType::GDT_Float64:
 	{
-		filter = new SweepLine<double>({ inputPath, filterRasterPath }, outputPath,
+		filter = new SweepLineTransformation<double>({ inputPath, filterRasterPath }, outputPath,
 			[&vm, filter](int x, int y, const std::vector<Window<double>>& sources)
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())

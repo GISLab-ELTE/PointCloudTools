@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) try
 
 	// Define comparer with corresponding data type
 	GDALAllRegister();
-	CalculationBase *comparison;	
+	Transformation *comparison;	
 	switch (dataType)
 	{
 	case GDALDataType::GDT_Int16:

@@ -10,7 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
-#include "CalculationBase.h"
+#include "Transformation.h"
 #include "Window.h"
 #include "Metadata.h"
 #include "Helper.h"
@@ -22,10 +22,10 @@ namespace CloudLib
 namespace DEM
 {
 /// <summary>
-/// Represents a sweepline calculation on DEM datasets.
+/// Represents a sweepline transformation on DEM datasets.
 /// </summary>
 template <typename TargetType, typename SourceType = TargetType>
-class SweepLine : public CalculationBase
+class SweepLineTransformation : public Transformation
 {
 public:
 	typedef std::function<TargetType(int, int, const std::vector<Window<SourceType>>&)> ComputationType;
@@ -38,44 +38,44 @@ public:
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
-	/// <param name="sourcePaths">The source files of the calculation.</param>
-	/// <param name="targetPath">The target file of the calculation.</param>
+	/// <param name="sourcePaths">The source files of the transformation.</param>
+	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="range">The range of surrounding data to involve in the computations.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	SweepLine(const std::vector<std::string>& sourcePaths,
-	          const std::string& targetPath,
-	          int range,
-	          ComputationType computation,
-	          ProgressType progress = nullptr);
+	SweepLineTransformation(const std::vector<std::string>& sourcePaths,
+	                        const std::string& targetPath,
+	                        int range,
+	                        ComputationType computation,
+	                        ProgressType progress = nullptr);
 
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
-	/// <param name="sourcePaths">The source files of the calculation.</param>
-	/// <param name="targetPath">The target file of the calculation.</param>
+	/// <param name="sourcePaths">The source files of the transformation.</param>
+	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	SweepLine(const std::vector<std::string>& sourcePaths,
-	          const std::string& targetPath,
-	          ComputationType computation,
-	          ProgressType progress = nullptr)
-		: SweepLine(sourcePaths, targetPath, 0, computation, progress)
+	SweepLineTransformation(const std::vector<std::string>& sourcePaths,
+	                        const std::string& targetPath,
+	                        ComputationType computation,
+	                        ProgressType progress = nullptr)
+		: SweepLineTransformation(sourcePaths, targetPath, 0, computation, progress)
 	{ }
 
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
-	/// <param name="sourceDatasets">The source datasets of the calculation.</param>
-	/// <param name="targetPath">The target file of the calculation.</param>
+	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
+	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="range">The range of surrounding data to involve in the computations.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
-	          const std::string& targetPath,
-	          int range,
-	          ComputationType computation,
-	          ProgressType progress = nullptr);
+	SweepLineTransformation(const std::vector<GDALDataset*>& sourceDatasets,
+	                        const std::string& targetPath,
+	                        int range,
+	                        ComputationType computation,
+	                        ProgressType progress = nullptr);
 
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
@@ -83,21 +83,21 @@ public:
 	/// <remarks>
 	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
 	/// </remarks>
-	/// <param name="sourceDatasets">The source datasets of the calculation.</param>
+	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
 	/// <param name="range">The range of surrounding data to involve in the computations.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
-	          int range,
-	          ComputationType computation,
-	          ProgressType progress = nullptr)
-		: SweepLine(sourceDatasets, std::string(), 0, computation, progress)
+	SweepLineTransformation(const std::vector<GDALDataset*>& sourceDatasets,
+	                        int range,
+	                        ComputationType computation,
+	                        ProgressType progress = nullptr)
+		: SweepLineTransformation(sourceDatasets, std::string(), 0, computation, progress)
 	{
 		targetFormat = "MEM";
 	}
 
-	SweepLine(const SweepLine&) = delete;
-	SweepLine& operator=(const SweepLine&) = delete;
+	SweepLineTransformation(const SweepLineTransformation&) = delete;
+	SweepLineTransformation& operator=(const SweepLineTransformation&) = delete;
 
 	/// <summary>
 	/// Gets the range of surrounding data to involve in the computations.
@@ -123,31 +123,33 @@ protected:
 };
 
 template <typename TargetType, typename SourceType>
-SweepLine<TargetType, SourceType>::SweepLine(const std::vector<std::string>& sourcePaths,
-                                             const std::string& targetPath,
-                                             int range,
-                                             ComputationType computation,
-                                             ProgressType progress)
-	: CalculationBase(sourcePaths, targetPath, progress),
+SweepLineTransformation<TargetType, SourceType>::SweepLineTransformation(
+	const std::vector<std::string>& sourcePaths,
+	const std::string& targetPath,
+	int range,
+	ComputationType computation,
+	ProgressType progress)
+	: Transformation(sourcePaths, targetPath, progress),
 	  computation(computation)
 {
 	setRange(range);
 }
 
 template <typename TargetType, typename SourceType>
-SweepLine<TargetType, SourceType>::SweepLine(const std::vector<GDALDataset*>& sourceDatasets,
-                                             const std::string& targetPath,
-                                             int range,
-                                             ComputationType computation,
-                                             ProgressType progress)
-	: CalculationBase(sourceDatasets, targetPath, progress),
+SweepLineTransformation<TargetType, SourceType>::SweepLineTransformation(
+	const std::vector<GDALDataset*>& sourceDatasets,
+	const std::string& targetPath,
+	int range,
+	ComputationType computation,
+	ProgressType progress)
+	: Transformation(sourceDatasets, targetPath, progress),
 	  computation(computation)
 {
 	setRange(range);
 }
 
 template <typename TargetType, typename SourceType>
-void SweepLine<TargetType, SourceType>::setRange(int value)
+void SweepLineTransformation<TargetType, SourceType>::setRange(int value)
 {
 	if (value < 0)
 		throw std::out_of_range("Range must be non-negative.");
@@ -155,7 +157,7 @@ void SweepLine<TargetType, SourceType>::setRange(int value)
 }
 
 template <typename TargetType, typename SourceType>
-void SweepLine<TargetType, SourceType>::onExecute()
+void SweepLineTransformation<TargetType, SourceType>::onExecute()
 {
 	if (!computation)
 		throw std::logic_error("No computation method defined.");
@@ -193,10 +195,10 @@ void SweepLine<TargetType, SourceType>::onExecute()
 		OGRFree(wkt);
 	}
 
-	// Determine calculation progress steps
-	int calculationSize = _targetMetadata.rasterSizeY();
-	int calculationStep = calculationSize / 199;
-	int calculationProgress = 0;
+	// Determine computation progress steps
+	int computationSize = _targetMetadata.rasterSizeY();
+	int computationStep = computationSize / 199;
+	int computationProgress = 0;
 
 	// Open and check bands
 	std::vector<GDALRasterBand*> sourceBands(sourceCount());
@@ -276,8 +278,8 @@ void SweepLine<TargetType, SourceType>::onExecute()
 			targetScanline, _targetMetadata.rasterSizeX(), 1,
 			targetType, 0, 0);
 
-		if (progress && (calculationProgress++ % calculationStep == 0 || calculationProgress == calculationSize))
-			progress(1.f * calculationProgress / calculationSize, std::string());
+		if (progress && (computationProgress++ % computationStep == 0 || computationProgress == computationSize))
+			progress(1.f * computationProgress / computationSize, std::string());
 	}
 
 	for (unsigned int i = 0; i < sourceCount(); ++i)

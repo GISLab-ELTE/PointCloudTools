@@ -13,7 +13,6 @@
 #include <CloudTools.Common/Reporter.h>
 #include <CloudLib.DEM/Metadata.h>
 #include <CloudLib.DEM/Rasterize.h>
-#include <CloudLib.DEM/SweepLine.h>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;

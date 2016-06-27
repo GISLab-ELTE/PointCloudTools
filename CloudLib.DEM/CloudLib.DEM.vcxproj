@@ -77,8 +77,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="SweepLine.h" />
-    <ClInclude Include="CalculationBase.h" />
+    <ClInclude Include="Calculation.h" />
+    <ClInclude Include="SweepLineCalculation.h" />
+    <ClInclude Include="SweepLineTransformation.h" />
+    <ClInclude Include="Transformation.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Rasterize.h" />
     <ClInclude Include="Helper.h" />
@@ -87,7 +89,8 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CalculationBase.cpp" />
+    <ClCompile Include="Calculation.cpp" />
+    <ClCompile Include="Transformation.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Rasterize.cpp" />
     <ClCompile Include="Helper.cpp" />

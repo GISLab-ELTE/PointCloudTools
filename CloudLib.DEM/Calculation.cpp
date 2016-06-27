@@ -6,7 +6,7 @@
 #include <ogr_spatialref.h>
 #include <boost/filesystem.hpp>
 
-#include "CalculationBase.h"
+#include "Calculation.h"
 
 namespace fs = boost::filesystem;
 
@@ -14,11 +14,10 @@ namespace CloudLib
 {
 namespace DEM
 {
-CalculationBase::CalculationBase(const std::vector<std::string>& sourcePaths,
-                                 const std::string& targetPath,
-                                 ProgressType progress)
-	: _sourcePaths(sourcePaths), _targetPath(targetPath), progress(progress),
-	  _sourceOwnership(true), _targetDataset(nullptr)
+Calculation::Calculation(const std::vector<std::string>& sourcePaths,
+                         ProgressType progress)
+	: _sourcePaths(sourcePaths), progress(progress),
+	  _sourceOwnership(true)
 {
 	// Open source files and retrieve metadata
 	_sourceDatasets.reserve(sourceCount());
@@ -29,10 +28,10 @@ CalculationBase::CalculationBase(const std::vector<std::string>& sourcePaths,
 		throw std::invalid_argument("At least 1 source file must be given.");
 
 	if (std::any_of(_sourceDatasets.begin(), _sourceDatasets.end(),
-		[](GDALDataset* dataset)
-	{
-		return dataset == nullptr;
-	}))
+	                [](GDALDataset* dataset)
+	                {
+		                return dataset == nullptr;
+	                }))
 		throw std::runtime_error("Error at opening a source file.");
 
 	_sourceMetadata.reserve(sourceCount());
@@ -40,21 +39,20 @@ CalculationBase::CalculationBase(const std::vector<std::string>& sourcePaths,
 		_sourceMetadata.emplace_back(dataset);
 }
 
-CalculationBase::CalculationBase(const std::vector<GDALDataset*>& sourceDatasets,
-                                 const std::string& targetPath,
-                                 ProgressType progress)
-	: _sourceDatasets(sourceDatasets), _targetPath(targetPath), progress(progress),
-	  _sourceOwnership(false), _targetDataset(nullptr)
+Calculation::Calculation(const std::vector<GDALDataset*>& sourceDatasets,
+                         ProgressType progress)
+	: _sourceDatasets(sourceDatasets), progress(progress),
+	  _sourceOwnership(false)
 {
 	// Check source datasets and retrieve metadata
 	if (sourceCount() == 0)
 		throw std::invalid_argument("At least 1 source file must be given.");
 
 	if (std::any_of(_sourceDatasets.begin(), _sourceDatasets.end(),
-		[](GDALDataset* dataset)
-	{
-		return dataset == nullptr;
-	}))
+	                [](GDALDataset* dataset)
+	                {
+		                return dataset == nullptr;
+	                }))
 		throw std::invalid_argument("Invalid source file.");
 
 	_sourceMetadata.reserve(sourceCount());
@@ -62,21 +60,19 @@ CalculationBase::CalculationBase(const std::vector<GDALDataset*>& sourceDatasets
 		_sourceMetadata.emplace_back(dataset);
 }
 
-CalculationBase::~CalculationBase()
+Calculation::~Calculation()
 {
 	if (_sourceOwnership)
 		for (GDALDataset* dataset : _sourceDatasets)
 			GDALClose(dataset);
-	if (_targetOwnerShip && _targetDataset != nullptr)
-		GDALClose(_targetDataset);
 }
 
-const RasterMetadata& CalculationBase::sourceMetadata(unsigned int index) const
+const RasterMetadata& Calculation::sourceMetadata(unsigned int index) const
 {
 	return _sourceMetadata.at(index);
 }
 
-const RasterMetadata& CalculationBase::sourceMetadata(const std::string& file) const
+const RasterMetadata& Calculation::sourceMetadata(const std::string& file) const
 {
 	auto iterator = std::find(_sourcePaths.begin(), _sourcePaths.end(), file);
 	if (iterator != _sourcePaths.end())
@@ -85,39 +81,31 @@ const RasterMetadata& CalculationBase::sourceMetadata(const std::string& file) c
 		throw std::out_of_range("File not found in the sources.");
 }
 
-const RasterMetadata& CalculationBase::targetMetadata() const
+const RasterMetadata& Calculation::targetMetadata() const
 {
 	if (!isPrepared())
 		throw std::logic_error("The computation is not prepared.");
 	return _targetMetadata;
 }
 
-GDALDataset* CalculationBase::target()
-{
-	if (!isExecuted())
-		throw std::logic_error("The computation is not executed.");
-	_targetOwnerShip = false;
-	return _targetDataset;
-}
-
-void CalculationBase::onPrepare()
+void Calculation::onPrepare()
 {
 	// Verify matching pixel sizes
 	std::vector<double> pixelSizes(_sourceMetadata.size());
 	std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), pixelSizes.begin(),
-		[](RasterMetadata& metadata)
-	{
-		return metadata.pixelSizeX();
-	});
+	               [](RasterMetadata& metadata)
+	               {
+		               return metadata.pixelSizeX();
+	               });
 	if (std::min_element(pixelSizes.begin(), pixelSizes.end()) !=
 		std::max_element(pixelSizes.begin(), pixelSizes.end()))
 		throw std::logic_error("Horizontal pixel sizes differ.");
 
 	std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), pixelSizes.begin(),
-		[](RasterMetadata& metadata)
-	{
-		return metadata.pixelSizeY();
-	});
+	               [](RasterMetadata& metadata)
+	               {
+		               return metadata.pixelSizeY();
+	               });
 	if (std::min_element(pixelSizes.begin(), pixelSizes.end()) !=
 		std::max_element(pixelSizes.begin(), pixelSizes.end()))
 		throw std::logic_error("Vertical pixel sizes differ.");
@@ -135,17 +123,17 @@ void CalculationBase::onPrepare()
 		// Verify matching spatial reference systems
 		std::vector<OGRSpatialReference*> references(_sourceMetadata.size());
 		std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), references.begin(),
-			[](RasterMetadata& metadata)
-		{
-			return metadata.reference();
-		});
+		               [](RasterMetadata& metadata)
+		               {
+			               return metadata.reference();
+		               });
 		references.erase(std::remove_if(
-			references.begin(), references.end(),
-			[](OGRSpatialReference* reference)
-		{
-			return reference == nullptr ||
-				reference->Validate() != OGRERR_NONE;
-		}), references.end());
+			                 references.begin(), references.end(),
+			                 [](OGRSpatialReference* reference)
+			                 {
+				                 return reference == nullptr ||
+					                 reference->Validate() != OGRERR_NONE;
+			                 }), references.end());
 
 		for (unsigned int i = 1; i < references.size(); ++i)
 			if (!references[i - 1]->IsSame(references[i]))
@@ -161,32 +149,32 @@ void CalculationBase::onPrepare()
 	// Calculate target metadata
 	_targetMetadata.setOriginX(
 		std::min_element(_sourceMetadata.begin(), _sourceMetadata.end(),
-		[](RasterMetadata& a, RasterMetadata& b)
-	{
-		return a.originX() < b.originX();
-	})->originX());
+		                 [](RasterMetadata& a, RasterMetadata& b)
+		                 {
+			                 return a.originX() < b.originX();
+		                 })->originX());
 
 	_targetMetadata.setOriginY(
 		std::max_element(_sourceMetadata.begin(), _sourceMetadata.end(),
-		[](RasterMetadata& a, RasterMetadata& b)
-	{
-		return a.originY() < b.originY();
-	})->originY());
+		                 [](RasterMetadata& a, RasterMetadata& b)
+		                 {
+			                 return a.originY() < b.originY();
+		                 })->originY());
 
 	std::vector<double> endPositions(_sourceMetadata.size());
 	std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), endPositions.begin(),
-		[](RasterMetadata& metadata)
-	{
-		return metadata.originX() + metadata.extentX();
-	});
+	               [](RasterMetadata& metadata)
+	               {
+		               return metadata.originX() + metadata.extentX();
+	               });
 	double extentX = -_targetMetadata.originX() +
 		*std::max_element(endPositions.begin(), endPositions.end());
 
 	std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), endPositions.begin(),
-		[](RasterMetadata& metadata)
-	{
-		return metadata.originY() - metadata.extentY();
-	});
+	               [](RasterMetadata& metadata)
+	               {
+		               return metadata.originY() - metadata.extentY();
+	               });
 	double extentY = _targetMetadata.originY() -
 		*std::min_element(endPositions.begin(), endPositions.end());
 
