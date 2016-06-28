@@ -247,3 +247,4 @@ ModelManifest.xml
 # Customization
 /Test
 /Makefile.config
+/Shell.config.cmd
