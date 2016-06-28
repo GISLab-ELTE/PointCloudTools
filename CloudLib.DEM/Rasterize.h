@@ -75,6 +75,14 @@ public:
 	/// Callback function for reporting progress.
 	/// </summary>
 	ProgressType progress;
+	
+	/// <summary>
+	/// The data type of the target raster.
+	/// </summary>
+	/// <remarks>
+	/// Will be automatically guessed if left default.
+	/// </remarks>
+	GDALDataType targetType = GDALDataType::GDT_Unknown;
 
 protected:
 	std::string _sourcePath;

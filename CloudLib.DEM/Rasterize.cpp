@@ -159,23 +159,53 @@ void Rasterize::onPrepare()
 	}
 	else if (_sourceMetadata.reference())
 	{
-		// Input defines spatial reference sytsem
+		// Input defines spatial reference system
 		reference = new OGRSpatialReference(*_sourceMetadata.reference());
 	}
 
 	if (reference)
 		_targetMetadata.setReference(std::move(reference));
 
-	// Check the existence of the target field
-	if(!targetField.empty())
+	// Check the existence of the target field and determine data type
+	if (!targetField.empty())
 	{
-		bool validField = std::any_of(_layers.begin(), _layers.end(), [this](OGRLayer *layer)
+		OGRFieldType sourceType;
+		bool validField = std::any_of(_layers.begin(), _layers.end(),
+			[this, &sourceType](OGRLayer* layer)
 		{
-			return layer->FindFieldIndex(targetField.c_str(), false) >= 0;
+			int index = layer->FindFieldIndex(targetField.c_str(), false);
+			if (index < 0) return false;
+
+			OGRFeatureDefn* feature = layer->GetLayerDefn();
+			OGRFieldDefn* field = feature->GetFieldDefn(index);
+			sourceType = field->GetType();
+			return true;
 		});
-		if(!validField)
+		if (!validField)
 			throw std::runtime_error("None of the given layers contain the target field.");
+
+		// Check support for field data type
+		if (targetType == GDALDataType::GDT_Unknown)
+		{
+			switch (sourceType)
+			{
+			case OGRFieldType::OFTBinary:
+				targetType = GDALDataType::GDT_Byte;
+				break;
+			case OGRFieldType::OFTInteger:
+				targetType = GDALDataType::GDT_Int32;
+				break;
+			case OGRFieldType::OFTReal:
+				targetType = GDALDataType::GDT_Float64;
+				break;
+			default:
+				throw std::runtime_error("Field data type not supported.");
+			}
+		}
 	}
+	else if (targetType == GDALDataType::GDT_Unknown)
+		targetType = GDALDataType::GDT_Byte;
+
 }
 
 void Rasterize::onExecute()
@@ -221,7 +251,32 @@ void Rasterize::onExecute()
 		params = CSLAddString(params, std::to_string(_targetMetadata.originY()).c_str());
 	}
 	params = CSLAddString(params, "-ot");
-	params = CSLAddString(params, "Byte");
+	switch(targetType)
+	{
+	case GDALDataType::GDT_Byte:
+		params = CSLAddString(params, "Byte");
+		break;
+	case GDALDataType::GDT_Int16:
+		params = CSLAddString(params, "Int16");
+		break;
+	case GDALDataType::GDT_Int32:
+		params = CSLAddString(params, "Int32");
+		break;
+	case GDALDataType::GDT_UInt16:
+		params = CSLAddString(params, "UInt16");
+		break;
+	case GDALDataType::GDT_UInt32:
+		params = CSLAddString(params, "UInt32");
+		break;
+	case GDALDataType::GDT_Float32:
+		params = CSLAddString(params, "Float32");
+		break;
+	case GDALDataType::GDT_Float64:
+		params = CSLAddString(params, "Float64");
+		break;
+	default:
+		throw std::runtime_error("Complex number types are not supported.");
+	}
 	for (auto& co : createOptions)
 	{
 		params = CSLAddString(params, "-co");
