@@ -4,6 +4,8 @@
 
 #include "IOMode.h"
 
+namespace AHN
+{
 std::istream& operator >> (std::istream& input, IOMode &mode)
 {
 	std::string str;
@@ -45,3 +47,4 @@ std::ostream& operator<< (std::ostream& output, const IOMode &mode)
 	}
 	return output;
 }
+} // AHN

@@ -291,8 +291,8 @@ void BuildingFilter::onExecute()
 
 		// Copy results to disk or VSI
 		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
-		_resultDatasets[1] = driver->CreateCopy(_resultPaths[1].string().c_str(), _resultDatasets[0], false,
-			params, gdalProgress, static_cast<void*>(this));
+		_resultDatasets[1] = driver->CreateCopy(_resultPaths[1].string().c_str(), _resultDatasets[0],
+		                                        false, params, gdalProgress, static_cast<void*>(this));
 
 		// Stream the output
 		if (hasFlag(_mode, IOMode::Stream))
@@ -379,4 +379,4 @@ int BuildingFilter::gdalProgress(double dfComplete, const char *pszMessage, void
 	BuildingFilter *filter = static_cast<BuildingFilter*>(pProgressArg);
 	return filter->progress(static_cast<float>(dfComplete), filter->_progressMessage);
 }
-}
+} // AHN

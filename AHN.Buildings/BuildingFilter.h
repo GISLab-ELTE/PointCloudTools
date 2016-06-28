@@ -128,4 +128,4 @@ private:
 	/// </summary>
 	static int CPL_STDCALL gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg);
 };
-}
+} // AHN
