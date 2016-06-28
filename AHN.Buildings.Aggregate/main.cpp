@@ -211,7 +211,6 @@ int main(int argc, char* argv[]) try
 			// Execute operation
 			calculation.execute();
 		}
-		break;
 	}
 
 	// Creating output Shapefile 
@@ -320,6 +319,7 @@ int main(int argc, char* argv[]) try
 		                                                                         1, sources,
 		                                                                         options, nullptr));
 		GDALVectorTranslateOptionsFree(options);
+		CSLDestroy(params);
 		
 		if (jsonDataset == nullptr)
 		{

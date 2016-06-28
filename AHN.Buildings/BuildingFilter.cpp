@@ -293,6 +293,7 @@ void BuildingFilter::onExecute()
 		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 		_resultDatasets[1] = driver->CreateCopy(_resultPaths[1].string().c_str(), _resultDatasets[0],
 		                                        false, params, gdalProgress, static_cast<void*>(this));
+		CSLDestroy(params);
 
 		// Stream the output
 		if (hasFlag(_mode, IOMode::Stream))
@@ -332,6 +333,7 @@ void BuildingFilter::onExecute()
 				options, nullptr)
 			);
 		GDALDEMProcessingOptionsFree(options);
+		CSLDestroy(params);
 	}
 
 	deleteResult();     // last majority filter

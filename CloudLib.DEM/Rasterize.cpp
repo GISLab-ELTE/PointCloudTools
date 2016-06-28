@@ -287,6 +287,7 @@ void Rasterize::onExecute()
 	GDALRasterizeOptionsSetProgress(options, gdalProgress, static_cast<void*>(this));
 	_targetDataset = static_cast<GDALDataset*>(GDALRasterize(_targetPath.c_str(), nullptr, _sourceDataset, options, nullptr));
 	GDALRasterizeOptionsFree(options);
+	CSLDestroy(params);
 
 	// Set the spatial reference system
 	if (_targetMetadata.reference())
