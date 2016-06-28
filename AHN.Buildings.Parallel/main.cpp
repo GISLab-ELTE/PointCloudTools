@@ -44,13 +44,14 @@ bool isInitializing = false;
 /// <param name="ahn2Dir">AHN-2 directory path.</param>
 /// <param name="ahn3Dir">AHN-3 directory path.</param>
 /// <param name="outputDir">Result directory path.</param>
-void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::path outputDir);
+void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::path outputDir, fs::path colorFile);
 
 int main(int argc, char* argv[]) try
 {
 	fs::path ahn2Dir;
 	fs::path ahn3Dir;
 	fs::path outputDir = fs::current_path();
+	fs::path colorFile;
 	std::string pattern = "[[:digit:]]{2}[[:alpha:]]{2}[[:digit:]]";
 	short maxJobs = std::thread::hardware_concurrency();
 
@@ -67,6 +68,9 @@ int main(int argc, char* argv[]) try
 			"result directory path")
 		("pattern", po::value<std::string>(&pattern)->default_value(pattern),
 			"tile name pattern")
+		("color-file", po::value<fs::path>(&colorFile),
+			"map file for color relief; see:\n"
+			"http://www.gdal.org/gdaldem.html")
 		("jobs,j", po::value<short>(&maxJobs)->default_value(maxJobs),
 			"number of maximum jobs to execute simultaneously")
 		("help,h", "produce help message")
@@ -105,6 +109,12 @@ int main(int argc, char* argv[]) try
 	else if (!fs::exists(outputDir) && !fs::create_directory(outputDir))
 	{
 		std::cerr << "Failed to create output directory." << std::endl;
+		argumentError = true;
+	}
+
+	if (vm.count("color-file") && !fs::is_regular_file(colorFile))
+	{
+		std::cerr << "The given color file does not exists." << std::endl;
 		argumentError = true;
 	}
 
@@ -168,7 +178,7 @@ int main(int argc, char* argv[]) try
 					<< "Tile '" << tileName << "' is being initialized ..." << std::endl;
 				futures.insert(
 					std::make_pair(tileName,
-					               std::async(std::launch::async, processTile, tileName, ahn2Dir, ahn3Dir, outputDir)));
+					               std::async(std::launch::async, processTile, tileName, ahn2Dir, ahn3Dir, outputDir, colorFile)));
 			}
 		}
 	}
@@ -211,7 +221,7 @@ catch (std::exception &ex)
 	return UnexcpectedError;
 }
 
-void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::path outputDir)
+void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::path outputDir, fs::path colorFile)
 {
 	BarReporter reporter;
 	std::string firstStatus;
@@ -219,22 +229,23 @@ void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::p
 
 	BuildingFilter filter(tileName, ahn2Dir, ahn3Dir, outputDir, true);
 	filter.progress = [&reporter, &firstStatus, &isInitialized]
-	(float complete, std::string message)
-	{
-		if (firstStatus.length() == 0)
-			firstStatus = message;
-
-		if (message == firstStatus)
-			reporter.report(complete, message);
-		else if (!isInitialized)
+		(float complete, std::string message)
 		{
-			isInitialized = true;
-			std::lock_guard<std::mutex> lock(initMutex);
-			isInitializing = false;
-			initCondition.notify_all();
-		}
-		return true;
-	};
+			if (firstStatus.length() == 0)
+				firstStatus = message;
+
+			if (message == firstStatus)
+				reporter.report(complete, message);
+			else if (!isInitialized)
+			{
+				isInitialized = true;
+				std::lock_guard<std::mutex> lock(initMutex);
+				isInitializing = false;
+				initCondition.notify_all();
+			}
+			return true;
+		};
+	filter.colorFile = colorFile;
 
 	filter.execute();
 	initCondition.notify_all();

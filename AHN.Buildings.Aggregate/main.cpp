@@ -31,7 +31,7 @@ const char* LabelGained = "ALT_GAINED";
 const char* LabelLost = "ALT_LOST";
 const char* LabelMoved = "ALT_MOVED";
 const char* LabelChange = "ALT_CHANGE";
-const char* VSIResultFile = "/vsimem/out.shp";
+const char* ResultFile = "/vsimem/out.shp";
 
 int main(int argc, char* argv[]) try
 {
@@ -39,10 +39,13 @@ int main(int argc, char* argv[]) try
 	fs::path adminVectorFile;
 	fs::path adminRasterDir = fs::current_path();
 	fs::path outputFile = fs::current_path() / "out.shp";
-	fs::path jsonFile = fs::current_path() / "out.json";
+	fs::path webFile = fs::current_path() / "out.json";
 	std::string adminLayer;
 	std::string adminField;
-	float simplifyTolerance = 5.f;
+
+	bool webEnable = false;
+	float webTolerance = 5.f;
+	std::string webSRS = "EPSG:900913";
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
@@ -52,13 +55,14 @@ int main(int argc, char* argv[]) try
 		("admin-layer", po::value<std::string>(&adminLayer), "layer name for administrative units")
 		("admin-field", po::value<std::string>(&adminField), "attribute field name for unit identifier")
 		("admin-raster", po::value<fs::path>(&adminRasterDir), "directory path for raster administrative unit tiles")
-		("output-file", po::value<fs::path>(&outputFile)->default_value(outputFile),
-			"output vector file path;\n"
-			"Shapefile and GeoJSON output will be generated")
+		("output-file", po::value<fs::path>(&outputFile)->default_value(outputFile), "output vector file path (Shapefile)")
 		("nodata-value", po::value<double>(), "specifies the output nodata value for filtered out values")
-		("simplify", po::value<float>(&simplifyTolerance)->default_value(simplifyTolerance),
-			"tolerance for GeoJSON polygon generalization")
-		("force", "regenerates the raster tiles even when they exist")
+		("force,f", "regenerates the raster tiles even when they exist")
+		("web-output,w", "generates GeoJSON output for web support")
+		("web-tolerance", po::value<float>(&webTolerance)->default_value(webTolerance),
+			"tolerance for web output polygon generalization")
+		("web-srs", po::value<std::string>(&webSRS)->default_value(webSRS),
+			"spatial reference system for web output (reprojection)")		
 		("help,h", "produce help message")
 		;
 
@@ -70,8 +74,10 @@ int main(int argc, char* argv[]) try
 	if (vm.count("output-file"))
 	{
 		outputFile.replace_extension(".shp");
-		jsonFile = fs::path(outputFile).replace_extension(".json");
+		webFile = fs::path(outputFile).replace_extension(".json");
 	}
+	if (vm.count("web-output") || vm.count("web-tolerance") || vm.count("web-srs"))
+		webEnable = true;
 
 	// Argument validation
 	if (vm.count("help"))
@@ -221,7 +227,7 @@ int main(int argc, char* argv[]) try
 		throw std::runtime_error("Error at opening the admin vector file.");
 
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("ESRI Shapefile");
-	GDALDataset *resultDataset = driver->CreateCopy(VSIResultFile, adminDataset,
+	GDALDataset *resultDataset = driver->CreateCopy(ResultFile, adminDataset,
 	                                                false, nullptr, nullptr, nullptr);
 	GDALClose(adminDataset);
 	if (resultDataset == nullptr)
@@ -271,10 +277,10 @@ int main(int argc, char* argv[]) try
 	while ((feature = layer->GetNextFeature()) != nullptr)
 	{
 		int id = feature->GetFieldAsInteger(adminField.c_str());
-		feature->SetField(LabelGained, std::round(results[id].altimetryGained / 100));
-		feature->SetField(LabelLost, std::round(results[id].altimetryLost / 100));
-		feature->SetField(LabelMoved, std::round(results[id].altimetryMoved / 100));
-		feature->SetField(LabelChange, std::round(results[id].altimetryChange / 100));
+		feature->SetField(LabelGained, std::round(results[id].altimetryGained));
+		feature->SetField(LabelLost, std::round(results[id].altimetryLost));
+		feature->SetField(LabelMoved, std::round(results[id].altimetryMoved));
+		feature->SetField(LabelChange, std::round(results[id].altimetryChange));
 		layer->SetFeature(feature);
 		OGRFeature::DestroyFeature(feature);
 	}
@@ -298,40 +304,45 @@ int main(int argc, char* argv[]) try
 	std::cout << "done." << std::endl;
 
 	// Writing GeoJSON output
-	std::cout << "Writing output (GeoJSON format) ... ";
-	if (fs::exists(jsonFile) &&
-		!fs::remove(jsonFile))
-		throw std::runtime_error("Cannot overwrite previously created JSON output file.");
-
-	// Polygon generalization
+	if (webEnable)
 	{
+		std::cout << "Writing output (GeoJSON format) ... ";
+		if (fs::exists(webFile) &&
+			!fs::remove(webFile))
+			throw std::runtime_error("Cannot overwrite previously created JSON output file.");
+
 		// Define the GDALVectorTranslate parameters
 		char **params = nullptr;
 		params = CSLAddString(params, "-f");
 		params = CSLAddString(params, "GeoJSON");
-		params = CSLAddString(params, "-simplify");
-		params = CSLAddString(params, std::to_string(simplifyTolerance).c_str());
+		params = CSLAddString(params, "-t_srs");
+		params = CSLAddString(params, webSRS.c_str());
+		if (webTolerance > 0)
+		{
+			params = CSLAddString(params, "-simplify");
+			params = CSLAddString(params, std::to_string(webTolerance).c_str());
+		}
 
 		// Execute GDALVectorTranslate
 		GDALVectorTranslateOptions *options = GDALVectorTranslateOptionsNew(params, nullptr);
-		GDALDatasetH sources[1] = { resultDataset };
-		GDALDataset *jsonDataset = static_cast<GDALDataset*>(GDALVectorTranslate(jsonFile.string().c_str(), nullptr,
-		                                                                         1, sources,
-		                                                                         options, nullptr));
+		GDALDatasetH sources[1] = {resultDataset};
+		GDALDataset* webDataset = static_cast<GDALDataset*>(GDALVectorTranslate(webFile.string().c_str(), nullptr,
+		                                                                        1, sources,
+		                                                                        options, nullptr));
 		GDALVectorTranslateOptionsFree(options);
 		CSLDestroy(params);
-		
-		if (jsonDataset == nullptr)
+
+		if (webDataset == nullptr)
 		{
 			GDALClose(resultDataset);
 			throw std::runtime_error("Error at creating the JSON output file.");
 		}
-		GDALClose(jsonDataset);
-	}	
-	std::cout << "done." << std::endl;
+		GDALClose(webDataset);
+		std::cout << "done." << std::endl;
+	}
 
 	GDALClose(resultDataset);
-	VSIUnlink(VSIResultFile);
+	VSIUnlink(ResultFile);
 	return Success;
 }
 catch (std::exception &ex)
