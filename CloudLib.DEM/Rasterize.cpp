@@ -205,7 +205,6 @@ void Rasterize::onPrepare()
 	}
 	else if (targetType == GDALDataType::GDT_Unknown)
 		targetType = GDALDataType::GDT_Byte;
-
 }
 
 void Rasterize::onExecute()
