@@ -27,14 +27,6 @@ public:
 	std::string spatialReference;
 
 	/// <summary>
-	/// The nodata value.
-	/// </summary>
-	/// <remarks>
-	/// Default value as defined by GDAL (gdalrasterband.cpp).
-	/// </remarks>
-	double nodataValue = -1e10;
-
-	/// <summary>
 	/// Callback function for reporting progress.
 	/// </summary>
 	ProgressType progress;

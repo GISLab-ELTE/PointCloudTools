@@ -34,6 +34,14 @@ public:
 	/// </remarks>
 	std::map<std::string, std::string> createOptions;
 
+	/// <summary>
+	/// The nodata value.
+	/// </summary>
+	/// <remarks>
+	/// Default value as defined by GDAL (gdalrasterband.cpp).
+	/// </remarks>
+	double nodataValue = -1e10;
+
 protected:
 	std::string _targetPath;
 	GDALDataset* _targetDataset;
