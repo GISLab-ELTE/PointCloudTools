@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <map>
@@ -30,7 +31,7 @@ using namespace AHN;
 const char* LabelGained = "ALT_GAINED";
 const char* LabelLost = "ALT_LOST";
 const char* LabelMoved = "ALT_MOVED";
-const char* LabelChange = "ALT_CHANGE";
+const char* LabelDifference = "ALT_DIFF";
 const char* ResultFile = "/vsimem/out.shp";
 
 int main(int argc, char* argv[]) try
@@ -204,7 +205,7 @@ int main(int argc, char* argv[]) try
 					if (change < 0)
 						results[id].altimetryLost -= change;
 					results[id].altimetryMoved += std::abs(change);
-					results[id].altimetryChange += change;
+					results[id].altimetryDifference += change;
 				}
 			}, 
 				[&reporter](float complete, std::string message)
@@ -257,7 +258,7 @@ int main(int argc, char* argv[]) try
 			layer->DeleteField(index);
 		if ((index = layer->FindFieldIndex(LabelMoved, true)) >= 0)
 			layer->DeleteField(index);
-		if ((index = layer->FindFieldIndex(LabelChange, true)) >= 0)
+		if ((index = layer->FindFieldIndex(LabelDifference, true)) >= 0)
 			layer->DeleteField(index);
 	}
 
@@ -265,11 +266,11 @@ int main(int argc, char* argv[]) try
 	OGRFieldDefn fieldGained(LabelGained, OGRFieldType::OFTInteger);
 	OGRFieldDefn fieldLost(LabelLost, OGRFieldType::OFTInteger);
 	OGRFieldDefn fieldMoved(LabelMoved, OGRFieldType::OFTInteger);
-	OGRFieldDefn fieldChange(LabelChange, OGRFieldType::OFTInteger);
+	OGRFieldDefn fieldDifference(LabelDifference, OGRFieldType::OFTInteger);
 	layer->CreateField(&fieldGained);
 	layer->CreateField(&fieldLost);
 	layer->CreateField(&fieldMoved);
-	layer->CreateField(&fieldChange);
+	layer->CreateField(&fieldDifference);
 
 	// Writing attribute data
 	OGRFeature *feature;
@@ -283,7 +284,7 @@ int main(int argc, char* argv[]) try
 			feature->SetField(LabelGained, std::round(results[id].altimetryGained));
 			feature->SetField(LabelLost, std::round(results[id].altimetryLost));
 			feature->SetField(LabelMoved, std::round(results[id].altimetryMoved));
-			feature->SetField(LabelChange, std::round(results[id].altimetryChange));
+			feature->SetField(LabelDifference, std::round(results[id].altimetryDifference));
 			layer->SetFeature(feature);
 		}
 		else
@@ -354,6 +355,18 @@ int main(int argc, char* argv[]) try
 
 	GDALClose(resultDataset);
 	VSIUnlink(ResultFile);
+
+	// Execution time measurement
+	std::clock_t clockEnd = std::clock();
+	auto timeEnd = std::chrono::high_resolution_clock::now();
+
+	std::cout << std::endl
+		<< "All completed!" << std::endl << std::fixed << std::setprecision(2)
+		<< "CPU time used: "
+		<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC / 60 << " min" << std::endl
+		<< "Wall clock time passed: "
+		<< std::chrono::duration<float>(timeEnd - timeStart).count() / 60 << " min" << std::endl;
+
 	return Success;
 }
 catch (std::exception &ex)

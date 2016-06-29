@@ -24,8 +24,8 @@ struct Region
 	/// </summary>
 	float altimetryMoved;
 	/// <summary>
-	/// The cumulative altimetry change (gained - lost).
+	/// The cumulative altimetry difference (gained - lost).
 	/// </summary>
-	float altimetryChange;
+	float altimetryDifference;
 };
 } // AHN
