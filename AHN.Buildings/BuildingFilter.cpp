@@ -316,7 +316,7 @@ void BuildingFilter::onExecute()
 
 	// Color relief
 	_progressMessage = "Color relief";
-	createResult("color");
+	createResult("rgb");
 	{
 		char **params = nullptr;
 		params = CSLAddString(params, "-alpha");

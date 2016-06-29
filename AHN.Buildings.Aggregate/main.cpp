@@ -271,19 +271,30 @@ int main(int argc, char* argv[]) try
 	layer->CreateField(&fieldMoved);
 	layer->CreateField(&fieldChange);
 
-	// Writing attrbiute data
+	// Writing attribute data
 	OGRFeature *feature;
+	std::set<GIntBig> emptyFeatures;
 	layer->ResetReading();
 	while ((feature = layer->GetNextFeature()) != nullptr)
 	{
 		int id = feature->GetFieldAsInteger(adminField.c_str());
-		feature->SetField(LabelGained, std::round(results[id].altimetryGained));
-		feature->SetField(LabelLost, std::round(results[id].altimetryLost));
-		feature->SetField(LabelMoved, std::round(results[id].altimetryMoved));
-		feature->SetField(LabelChange, std::round(results[id].altimetryChange));
-		layer->SetFeature(feature);
+		if (results[id].altimetryMoved > 0)
+		{
+			feature->SetField(LabelGained, std::round(results[id].altimetryGained));
+			feature->SetField(LabelLost, std::round(results[id].altimetryLost));
+			feature->SetField(LabelMoved, std::round(results[id].altimetryMoved));
+			feature->SetField(LabelChange, std::round(results[id].altimetryChange));
+			layer->SetFeature(feature);
+		}
+		else
+			emptyFeatures.insert(feature->GetFID());
 		OGRFeature::DestroyFeature(feature);
 	}
+
+	// Removing features without changes
+	for (auto id : emptyFeatures)
+		layer->DeleteFeature(id);
+	emptyFeatures.clear();
 	std::cout << "done." << std::endl;
 
 	// Writing Shapefile output
