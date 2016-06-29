@@ -35,11 +35,11 @@ const char* ResultFile = "/vsimem/out.shp";
 
 int main(int argc, char* argv[]) try
 {
-	fs::path ahnDir;
-	fs::path adminVectorFile;
-	fs::path adminRasterDir = fs::current_path();
-	fs::path outputFile = fs::current_path() / "out.shp";
-	fs::path webFile = fs::current_path() / "out.json";
+	std::string ahnDir;
+	std::string adminVectorFile;
+	std::string adminRasterDir = fs::current_path().string();
+	std::string outputFile = fs::current_path().append("out.shp").string();
+	std::string webFile = fs::current_path().append("out.json").string();
 	std::string adminLayer;
 	std::string adminField;
 
@@ -50,12 +50,12 @@ int main(int argc, char* argv[]) try
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
-		("ahn-dir", po::value<fs::path>(&ahnDir), "directory path for AHN changeset tiles")
-		("admin-vector", po::value<fs::path>(&adminVectorFile), "file path for vector administrative unit file")
+		("ahn-dir", po::value<std::string>(&ahnDir), "directory path for AHN changeset tiles")
+		("admin-vector", po::value<std::string>(&adminVectorFile), "file path for vector administrative unit file")
 		("admin-layer", po::value<std::string>(&adminLayer), "layer name for administrative units")
 		("admin-field", po::value<std::string>(&adminField), "attribute field name for unit identifier")
-		("admin-raster", po::value<fs::path>(&adminRasterDir), "directory path for raster administrative unit tiles")
-		("output-file", po::value<fs::path>(&outputFile)->default_value(outputFile), "output vector file path (Shapefile)")
+		("admin-raster", po::value<std::string>(&adminRasterDir), "directory path for raster administrative unit tiles")
+		("output-file", po::value<std::string>(&outputFile)->default_value(outputFile), "output vector file path (Shapefile)")
 		("nodata-value", po::value<double>(), "specifies the output nodata value for filtered out values")
 		("force,f", "regenerates the raster tiles even when they exist")
 		("web-output,w", "generates GeoJSON output for web support")
@@ -73,8 +73,8 @@ int main(int argc, char* argv[]) try
 	// Post-processing arguments
 	if (vm.count("output-file"))
 	{
-		outputFile.replace_extension(".shp");
-		webFile = fs::path(outputFile).replace_extension(".json");
+		outputFile = fs::path(outputFile).replace_extension(".shp").string();
+		webFile = fs::path(outputFile).replace_extension(".json").string();
 	}
 	if (vm.count("web-output") || vm.count("web-tolerance") || vm.count("web-srs"))
 		webEnable = true;
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) try
 			if (!fs::exists(adminRasterPath) || vm.count("force"))
 			{
 				// Create the admin raster tile for the AHN tile
-				Rasterize rasterizer(adminVectorFile.string(), adminRasterPath.string(), 
+				Rasterize rasterizer(adminVectorFile, adminRasterPath.string(), 
 					!adminLayer.empty() ? std::vector<std::string> { adminLayer } : std::vector<std::string>());
 				rasterizer.targetField = adminField;
 				rasterizer.targetType = GDALDataType::GDT_Int16;
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) try
 
 	// Creating output Shapefile 
 	std::cout << std::endl << "Generating output ... ";
-	GDALDataset *adminDataset = static_cast<GDALDataset*>(GDALOpenEx(adminVectorFile.string().c_str(),
+	GDALDataset *adminDataset = static_cast<GDALDataset*>(GDALOpenEx(adminVectorFile.c_str(),
 	                                                            GDAL_OF_VECTOR, nullptr, nullptr, nullptr));
 	if (adminDataset == nullptr)
 		throw std::runtime_error("Error at opening the admin vector file.");
@@ -289,11 +289,11 @@ int main(int argc, char* argv[]) try
 	// Writing Shapefile output
 	std::cout << "Writing output (Shapefile format) ... ";
 	if (fs::exists(outputFile) &&
-		driver->Delete(outputFile.string().c_str()) == CE_Failure &&
+		driver->Delete(outputFile.c_str()) == CE_Failure &&
 		!fs::remove(outputFile))
 		throw std::runtime_error("Cannot overwrite previously created output file.");
 
-	GDALDataset *outputDataset = driver->CreateCopy(outputFile.string().c_str(), resultDataset,
+	GDALDataset *outputDataset = driver->CreateCopy(outputFile.c_str(), resultDataset,
 	                                                false, nullptr, nullptr, nullptr);
 	if (outputDataset == nullptr)
 	{
@@ -326,7 +326,7 @@ int main(int argc, char* argv[]) try
 		// Execute GDALVectorTranslate
 		GDALVectorTranslateOptions *options = GDALVectorTranslateOptionsNew(params, nullptr);
 		GDALDatasetH sources[1] = {resultDataset};
-		GDALDataset* webDataset = static_cast<GDALDataset*>(GDALVectorTranslate(webFile.string().c_str(), nullptr,
+		GDALDataset* webDataset = static_cast<GDALDataset*>(GDALVectorTranslate(webFile.c_str(), nullptr,
 		                                                                        1, sources,
 		                                                                        options, nullptr));
 		GDALVectorTranslateOptionsFree(options);

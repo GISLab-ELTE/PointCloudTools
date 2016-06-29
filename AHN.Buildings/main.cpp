@@ -20,25 +20,25 @@ using namespace AHN;
 int main(int argc, char* argv[]) try
 {
 	std::string tileName;
-	fs::path ahn2Dir;
-	fs::path ahn3Dir;
-	fs::path outputDir = fs::current_path();
-	fs::path colorFile;
+	std::string ahn2Dir;
+	std::string ahn3Dir;
+	std::string outputDir = fs::current_path().string();
+	std::string colorFile;
 	IOMode mode = IOMode::Files;
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("tile-name", po::value<std::string>(&tileName), "tile name (e.g. 37en1)")
-		("ahn2-dir", po::value<fs::path>(&ahn2Dir),
+		("ahn2-dir", po::value<std::string>(&ahn2Dir),
 			"AHN-2 directory path\n"
 			"expected: Arc/Info Binary Grid directory structure")
-		("ahn3-dir", po::value<fs::path>(&ahn3Dir),
+		("ahn3-dir", po::value<std::string>(&ahn3Dir),
 			"AHN-3 directory path\n"
 			"expected: GTiff file")
-		("output-dir", po::value<fs::path>(&outputDir)->default_value(outputDir),
+		("output-dir", po::value<std::string>(&outputDir)->default_value(outputDir),
 			"result directory path")
-		("color-file", po::value<fs::path>(&colorFile),
+		("color-file", po::value<std::string>(&colorFile),
 			"map file for color relief\n"
 			"ignored when streaming")
 		("mode,m", po::value<IOMode>(&mode)->default_value(mode),
