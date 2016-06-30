@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) try
 				Rasterize rasterizer(adminVectorFile, adminRasterPath.string(), 
 					!adminLayer.empty() ? std::vector<std::string> { adminLayer } : std::vector<std::string>());
 				rasterizer.targetField = adminField;
-				rasterizer.targetType = GDALDataType::GDT_Int16;
+				rasterizer.targetType = GDALDataType::GDT_Int32;
 				rasterizer.createOptions.insert(std::make_pair("COMPRESS", "DEFLATE"));
 				rasterizer.progress = [&reporter](float complete, std::string message)
 				{
