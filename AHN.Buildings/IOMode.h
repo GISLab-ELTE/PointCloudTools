@@ -7,9 +7,9 @@ namespace AHN
 enum class IOMode
 {
 	Unknown = 0, // 0000
-	Files = 1, // 0001
-	Memory = 2, // 0010
-	Stream = 6, // 0110
+	Files = 1,   // 0001
+	Memory = 2,  // 0010
+	Stream = 6,  // 0110
 	Hadoop = 14, // 1110
 };
 

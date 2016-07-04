@@ -129,15 +129,17 @@ int main(int argc, char* argv[]) try
 	switch (mode)
 	{
 	case IOMode::Files:
+		filter = BuildingFilter::createPhysical(tileName, ahn2Dir, ahn3Dir, outputDir);
+		break;
 	case IOMode::Memory:
-			filter = new BuildingFilter(tileName, ahn2Dir, ahn3Dir, outputDir, hasFlag(mode, IOMode::Memory));
-			break;
+		filter = BuildingFilter::createInMemory(tileName, ahn2Dir, ahn3Dir, outputDir);
+		break;
 	case IOMode::Stream:
-			filter = new BuildingFilter(tileName);
-			break;
+		filter = BuildingFilter::createStreamed(tileName);
+		break;
 	case IOMode::Hadoop:
-			filter = new BuildingFilter();
-			break;
+		filter = BuildingFilter::createHadoop();
+		break;
 	default:
 		// Unsigned and complex types are not supported.
 		std::cerr << "Unsupported I/O mode given." << std::endl;

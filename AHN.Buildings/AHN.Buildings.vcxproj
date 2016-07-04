@@ -85,6 +85,7 @@
   <ItemGroup>
     <ClInclude Include="BuildingFilter.h" />
     <ClInclude Include="IOMode.h" />
+    <ClInclude Include="ResultFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -227,8 +227,8 @@ void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::p
 	std::string firstStatus;
 	bool isInitialized = false;
 
-	BuildingFilter filter(tileName, ahn2Dir, ahn3Dir, outputDir, true);
-	filter.progress = [&reporter, &firstStatus, &isInitialized]
+	BuildingFilter *filter = BuildingFilter::createInMemory(tileName, ahn2Dir, ahn3Dir, outputDir);
+	filter->progress = [&reporter, &firstStatus, &isInitialized]
 		(float complete, std::string message)
 		{
 			if (firstStatus.length() == 0)
@@ -245,8 +245,10 @@ void processTile(std::string tileName, fs::path ahn2Dir, fs::path ahn3Dir, fs::p
 			}
 			return true;
 		};
-	filter.colorFile = colorFile;
+	filter->colorFile = colorFile;
 
-	filter.execute();
+	filter->execute();
 	initCondition.notify_all();
+
+	delete filter;
 }
