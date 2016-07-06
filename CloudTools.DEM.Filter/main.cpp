@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <utility>
 #include <stdexcept>
 #include <cstdint>
 
@@ -26,6 +28,7 @@ int main(int argc, char* argv[]) try
 	std::string inputPath;
 	std::string outputPath = fs::current_path().append("out.tif").string();
 	std::string outputFormat;
+	std::vector<std::string> outputOptions;
 
 	std::string filterVectorPath;
 	std::vector<std::string> filterLayers;
@@ -41,12 +44,15 @@ int main(int argc, char* argv[]) try
 		("filter-raster,r", po::value<std::string>(&filterRasterPath),
 			"raster filter path (only GTiff supported);\n"
 			"when does not exist, will be generated from filter-vector")
+		("filter-value", po::value<short>(&filterValue)->default_value(255),
+			"specifies the value for the raster filter generation")
 		("output-path,o", po::value<std::string>(&outputPath), "output path")
 		("output-format", po::value<std::string>(&outputFormat)->default_value("GTiff"),
 			"output format, supported formats:\n"
 			"http://www.gdal.org/formats_list.html")
-		("filter-value", po::value<short>(&filterValue)->default_value(255),
-			"specifies the value for the raster filter generation")
+		("output-option", po::value<std::vector<std::string>>(&outputOptions),
+			"output options, supported options:\n"
+			"http://www.gdal.org/formats_list.html")
 		("nodata-value", po::value<double>(), "specifies the output nodata value for filtered out values")
 		("srs", po::value<std::string>(), "override spatial reference system")
 		("invert", "invert the filter input")
@@ -111,6 +117,7 @@ int main(int argc, char* argv[]) try
 		// Create the raster filter
 		Rasterize rasterizer(filterVectorPath, filterRasterPath, filterLayers);
 		rasterizer.targetValue = static_cast<uint8_t>(filterValue);
+		rasterizer.createOptions.insert(std::make_pair("COMPRESS", "DEFLATE"));
 		if (vm.count("srs"))
 			rasterizer.spatialReference = vm["srs"].as<std::string>();
 		if (!vm.count("quiet"))
@@ -248,6 +255,17 @@ int main(int argc, char* argv[]) try
 			reporter->report(complete, message);
 			return true;
 		};
+	}
+	if (vm.count("output-option"))
+	{
+		for (const std::string &option : outputOptions)
+		{
+			auto pos = std::find(option.begin(), option.end(), '=');
+			if (pos == option.end()) continue;
+			std::string key = option.substr(0, pos - option.begin());
+			std::string value = option.substr(pos - option.begin() + 1, option.end() - pos - 1);
+			filter->createOptions.insert(std::make_pair(key, value));
+		}
 	}
 
 	// Prepare operation

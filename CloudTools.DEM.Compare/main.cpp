@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <utility>
 #include <stdexcept>
 
 #include <boost/program_options.hpp>
@@ -23,6 +25,7 @@ int main(int argc, char* argv[]) try
 	std::vector<std::string> inputPaths;
 	std::string outputPath = fs::current_path().append("out.tif").string();
 	std::string outputFormat;
+	std::vector<std::string> outputOptions;
 
 	GDALDataType dataType;
 	std::string dataTypeString;
@@ -34,6 +37,9 @@ int main(int argc, char* argv[]) try
 		("output-path,o", po::value<std::string>(&outputPath)->default_value(outputPath), "output path")
 		("output-format,f", po::value<std::string>(&outputFormat)->default_value("GTiff"),
 			"output format, supported formats:\n"
+			"http://www.gdal.org/formats_list.html")
+		("output-option", po::value<std::vector<std::string>>(&outputOptions),
+			"output options, supported options:\n"
 			"http://www.gdal.org/formats_list.html")
 		("max-threshold", po::value<double>()->default_value(1000), "maximum difference threshold")
 		("min-threshold", po::value<double>()->default_value(0), "minimum difference threshold")
@@ -138,6 +144,17 @@ int main(int argc, char* argv[]) try
 			reporter->report(complete, message);
 			return true;
 		};
+	}
+	if (vm.count("output-option"))
+	{
+		for (const std::string &option : outputOptions)
+		{
+			auto pos = std::find(option.begin(), option.end(), '=');
+			if (pos == option.end()) continue;
+			std::string key = option.substr(0, pos - option.begin());
+			std::string value = option.substr(pos - option.begin() + 1, option.end() - pos - 1);
+			comparison->createOptions.insert(std::make_pair(key, value));
+		}
 	}
 
 	// Display input metadata
