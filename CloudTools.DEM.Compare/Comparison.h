@@ -31,6 +31,7 @@ public:
 	           const std::string& targetPath,
 		       CloudLib::DEM::Operation::ProgressType progress = nullptr);
 	Comparison(const Comparison&) = delete;
+	Comparison& operator=(const Comparison&) = delete;
 };
 
 template <typename DataType>
