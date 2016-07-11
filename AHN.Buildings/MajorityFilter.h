@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <gdal.h>
-
 #include <CloudLib.DEM/SweepLineTransformation.h>
 
 namespace AHN
@@ -11,9 +9,9 @@ namespace AHN
 namespace Buildings
 {
 /// <summary>
-/// Represents a building (artifical object) filter for DEM datasets.
+/// Represents a majority filter for DEM datasets.
 /// </summary>
-class BuildingFilter : public CloudLib::DEM::SweepLineTransformation<GByte, float>
+class MajorityFilter : public CloudLib::DEM::SweepLineTransformation<float>
 {
 public:
 	/// <summary>
@@ -21,12 +19,14 @@ public:
 	/// </summary>
 	/// <param name="sourceDataset">The source dataset of the filter.</param>
 	/// <param name="targetPath">The target file of the filter.</param>
+	/// <param name="range">The range of surrounding data to involve.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	BuildingFilter(GDALDataset* sourceDataset,
+	MajorityFilter(GDALDataset* sourceDataset,
 	               const std::string& targetPath,
+	               int range,
 	               ProgressType progress = nullptr);
-	BuildingFilter(const BuildingFilter&) = delete;
-	BuildingFilter& operator=(const BuildingFilter&) = delete;
+	MajorityFilter(const MajorityFilter&) = delete;
+	MajorityFilter& operator=(const MajorityFilter&) = delete;
 };
 } // Buildings
 } // AHN

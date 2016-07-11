@@ -6,6 +6,8 @@
 
 namespace AHN
 {
+namespace Buildings
+{
 std::istream& operator >> (std::istream& input, IOMode &mode)
 {
 	std::string str;
@@ -47,4 +49,5 @@ std::ostream& operator<< (std::ostream& output, const IOMode &mode)
 	}
 	return output;
 }
+} // Buildings
 } // AHN

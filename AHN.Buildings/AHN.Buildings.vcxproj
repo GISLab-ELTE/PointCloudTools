@@ -79,15 +79,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BuildingFilter.cpp" />
+    <ClCompile Include="Comparison.cpp" />
+    <ClCompile Include="BuildingExtraction.cpp" />
     <ClCompile Include="IOMode.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ResultFile.cpp" />
+    <ClCompile Include="MajorityFilter.cpp" />
+    <ClCompile Include="NoiseFilter.cpp" />
+    <ClCompile Include="BuildingFilter.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="Result.cpp" />
+    <ClCompile Include="ClusterFilter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BuildingFilter.h" />
+    <ClInclude Include="Comparison.h" />
+    <ClInclude Include="BuildingExtraction.h" />
     <ClInclude Include="IOMode.h" />
-    <ClInclude Include="ResultFile.h" />
+    <ClInclude Include="MajorityFilter.h" />
+    <ClInclude Include="NoiseFilter.h" />
+    <ClInclude Include="BuildingFilter.h" />
+    <ClInclude Include="Process.h" />
+    <ClInclude Include="Result.h" />
+    <ClInclude Include="ClusterFilter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
