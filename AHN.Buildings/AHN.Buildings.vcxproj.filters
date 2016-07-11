@@ -15,21 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="BuildingFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IOMode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BuildingFilter.cpp">
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IOMode.h">
+    <ClInclude Include="BuildingFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BuildingFilter.h">
+    <ClInclude Include="IOMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ResultFile.h">

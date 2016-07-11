@@ -197,9 +197,9 @@ int main(int argc, char* argv[]) try
 	case GDALDataType::GDT_Int16:
 	{
 		filter = new SweepLineTransformation<GInt16>({ inputPath, filterRasterPath }, outputPath,
-			[&vm, filter](int x, int y, const std::vector<Window<GInt16>>& sources)
+			[&vm, &filter](int x, int y, const std::vector<Window<GInt16>>& sources)
 		{
-			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
+			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
 				: filter->nodataValue;
 		});
@@ -208,9 +208,9 @@ int main(int argc, char* argv[]) try
 	case GDALDataType::GDT_Int32:
 	{
 		filter = new SweepLineTransformation<GInt32>({ inputPath, filterRasterPath }, outputPath,
-			[&vm, filter](int x, int y, const std::vector<Window<GInt32>>& sources)
+			[&vm, &filter](int x, int y, const std::vector<Window<GInt32>>& sources)
 		{
-			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
+			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
 				: filter->nodataValue;
 		});
@@ -219,9 +219,9 @@ int main(int argc, char* argv[]) try
 	case GDALDataType::GDT_Float32:
 	{
 		filter = new SweepLineTransformation<float>({ inputPath, filterRasterPath }, outputPath,
-			[&vm, filter](int x, int y, const std::vector<Window<float>>& sources)
+			[&vm, &filter](int x, int y, const std::vector<Window<float>>& sources)
 		{
-			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
+			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
 				: filter->nodataValue;
 		});
@@ -230,9 +230,9 @@ int main(int argc, char* argv[]) try
 	case GDALDataType::GDT_Float64:
 	{
 		filter = new SweepLineTransformation<double>({ inputPath, filterRasterPath }, outputPath,
-			[&vm, filter](int x, int y, const std::vector<Window<double>>& sources)
+			[&vm, &filter](int x, int y, const std::vector<Window<double>>& sources)
 		{
-			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData())
+			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
 				: filter->nodataValue;
 		});
