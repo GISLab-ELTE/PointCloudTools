@@ -22,6 +22,7 @@
 #include "NoiseFilter.h"
 #include "MajorityFilter.h"
 #include "ClusterFilter.h"
+#include "MorphologyFilter.h"
 
 using namespace CloudLib::DEM;
 using namespace CloudTools::IO;
@@ -107,6 +108,7 @@ void Process::onExecute()
 		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset, 
 							  result("buildings-2").dataset, result("buildings-3").dataset,
 		                      result("changeset").path(), _progress);
+		comparison.minimumThreshold = 1.f;
 		configure(comparison);
 
 		comparison.execute();
@@ -133,6 +135,7 @@ void Process::onExecute()
 	newResult("cluster");
 	{
 		ClusterFilter filter(result("noise").dataset, result("sieve").path(), result("cluster").path(), _progress);
+		filter.nodataValue = 0;
 		configure(filter);
 
 		filter.execute();
@@ -142,6 +145,18 @@ void Process::onExecute()
 	deleteResult("noise");
 	deleteResult("sieve");
 
+	// Morpohology dilation
+	_progressMessage = "Morpohology dilation";
+	newResult("dilation");
+	{
+		MorphologyFilter filter(result("cluster").dataset, result("dilation").path(), MorphologyFilter::Dilation, _progress);
+		configure(filter);
+
+		filter.execute();
+		result("dilation").dataset = filter.target();
+	}
+	deleteResult("cluster");
+
 	// Majority filtering
 	for (int range = 1; range <= 2; ++range)
 	{
@@ -149,7 +164,7 @@ void Process::onExecute()
 		unsigned int index = newResult("majority");
 		{
 			MajorityFilter filter(
-				index == 0 ? result("cluster").dataset : result("majority", 0).dataset,
+				index == 0 ? result("dilation").dataset : result("majority", 0).dataset,
 				result("majority", index).path(),
 				range, _progress);
 			configure(filter);
@@ -158,7 +173,7 @@ void Process::onExecute()
 			result("majority", index).dataset = filter.target();
 		}
 		if (index == 0)
-			deleteResult("cluster");
+			deleteResult("dilation");
 		else
 			deleteResult("majority", 0);
 	}

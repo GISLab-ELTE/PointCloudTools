@@ -11,16 +11,19 @@ namespace Buildings
 /// <summary>
 /// Represents a noise filter for DEM datasets.
 /// </summary>
-class NoiseFilter : public CloudLib::DEM::SweepLineTransformation<float>
+class MorphologyFilter : public CloudLib::DEM::SweepLineTransformation<float>
 {
-public:	
+public:
+	enum Method
+	{
+		Dilation,
+		Erosion
+	};
+	
 	/// <summary>
-	/// The threshold of noise in percentage (between values 0 and 1).
+	/// The applied morphology method.
 	/// </summary>
-	/// <remarks>
-	/// Noise is the average percentage of difference compared to the surrounding area.
-	/// </remarks>
-	double threshold = 0.5;
+	Method method;
 
 public:
 	/// <summary>
@@ -28,14 +31,14 @@ public:
 	/// </summary>
 	/// <param name="sourceDataset">The source dataset of the filter.</param>
 	/// <param name="targetPath">The target file of the filter.</param>
-	/// <param name="range">The range of surrounding data to involve.</param>
+	/// <param name="mode">The applied morphology method.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	NoiseFilter(GDALDataset* sourceDataset,
-	            const std::string& targetPath,
-				int range,
-	            ProgressType progress = nullptr);
-	NoiseFilter(const NoiseFilter&) = delete;
-	NoiseFilter& operator=(const NoiseFilter&) = delete;
+	MorphologyFilter(GDALDataset* sourceDataset,
+	                 const std::string& targetPath,
+	                 Method method = Method::Dilation,
+	                 ProgressType progress = nullptr);
+	MorphologyFilter(const MorphologyFilter&) = delete;
+	MorphologyFilter& operator=(const MorphologyFilter&) = delete;
 };
 } // Buildings
 } // AHN

@@ -84,6 +84,7 @@
     <ClCompile Include="IOMode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MajorityFilter.cpp" />
+    <ClCompile Include="MorphologyFilter.cpp" />
     <ClCompile Include="NoiseFilter.cpp" />
     <ClCompile Include="BuildingFilter.cpp" />
     <ClCompile Include="Process.cpp" />
@@ -95,6 +96,7 @@
     <ClInclude Include="BuildingExtraction.h" />
     <ClInclude Include="IOMode.h" />
     <ClInclude Include="MajorityFilter.h" />
+    <ClInclude Include="MorphologyFilter.h" />
     <ClInclude Include="NoiseFilter.h" />
     <ClInclude Include="BuildingFilter.h" />
     <ClInclude Include="Process.h" />

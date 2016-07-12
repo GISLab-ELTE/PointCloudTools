@@ -14,8 +14,17 @@ namespace Buildings
 /// </summary>
 class ClusterFilter : public CloudLib::DEM::Transformation
 {
-public:
-	double sizeThreshold = 400;
+public:	
+	/// <summary>
+	/// Cluster size threshold in pixels.
+	/// </summary>
+	/// <remarks>
+	/// 400 pixels is 100m2 with 0.5m AHN raster grid.
+	/// </remarks>
+	double sizeThreshold = 400;	
+	/// <summary>
+	/// <c>true</c> to test connectedness diagonally, <c>false</c> otherwise.
+	/// </summary>
 	bool diagonalConnectedness = false;
 
 protected:

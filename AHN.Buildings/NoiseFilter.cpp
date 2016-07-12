@@ -1,4 +1,5 @@
 #include <cmath>
+#include <algorithm>
 
 #include <CloudLib.DEM/Window.h>
 #include "NoiseFilter.h"
@@ -15,6 +16,7 @@ NoiseFilter::NoiseFilter(GDALDataset* sourceDataset,
                          ProgressType progress)
 	: SweepLineTransformation<float>({sourceDataset}, targetPath, range, nullptr, progress)
 {
+	// Noise is the average percentage of difference compared to the surrounding area.
 	this->computation = [this](int x, int y, const std::vector<Window<float>>& sources)
 		{
 			const Window<float>& source = sources[0];
@@ -26,7 +28,8 @@ NoiseFilter::NoiseFilter(GDALDataset* sourceDataset,
 				for (int j = -this->range(); j <= this->range(); ++j)
 					if (source.hasData(i, j))
 					{
-						noise += std::abs(source.data() - source.data(i, j));
+						noise += std::abs(source.data() - source.data(i, j))
+							   / std::min(std::abs(source.data()), std::abs(source.data(i, j)));
 						++counter;
 					}
 

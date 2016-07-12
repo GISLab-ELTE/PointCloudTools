@@ -22,6 +22,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AHN.Buildings.Aggregate", "
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AHN.Buildings", "AHN.Buildings\AHN.Buildings.vcxproj", "{06DC9AE8-2914-464A-9EA7-05E95E5CADE4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E1F64708-EB63-4118-A6B1-7E2F9834D290} = {E1F64708-EB63-4118-A6B1-7E2F9834D290}
+		{CE5E7DD4-780F-4B6F-B808-B41D4D00E67F} = {CE5E7DD4-780F-4B6F-B808-B41D4D00E67F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -14,7 +14,20 @@ namespace Buildings
 class Comparison : public CloudLib::DEM::SweepLineTransformation<float>
 {
 public:
+	/// <summary>
+	/// Maximum threshold of change.
+	/// </summary>
+	/// <remarks>
+	/// AHN elevation data is defined in meters.
+	/// </remarks>
 	double maximumThreshold = 1000;
+	/// <summary>
+	/// Minimum threshold of change.
+	/// </summary>
+	/// <remarks>
+	/// AHN elevation data is defined in meters.
+	/// The theoratical error-threshold of measurements between AHN-2 and AHN-3 is 0.4m.
+	/// </remarks>
 	double minimumThreshold = 0.4;
 
 public:
