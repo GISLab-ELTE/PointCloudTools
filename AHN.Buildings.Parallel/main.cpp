@@ -7,6 +7,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <utility>
+#include <algorithm>
 #include <ctime>
 
 #include <boost/program_options.hpp>
@@ -38,6 +39,14 @@ std::condition_variable initCondition;
 bool isInitializing = false;
 
 /// <summary>
+/// Looks for the given tile input file in the specified directory.
+/// </summary>
+/// <param name="directory">Directory path.</param>
+/// <param name="tileName">Name of the tile.</param>
+/// <returns>Path for the found entry or exception is thrown when non found.</returns>
+fs::path lookupFile(const std::string& directory, const std::string& tileName);
+
+/// <summary>
 /// Processes a tile.
 /// </summary>
 /// <param name="tileName">Name of the tile.</param>
@@ -53,10 +62,10 @@ void processTile(const std::string& tileName,
 
 int main(int argc, char* argv[]) try
 {
-	std::string ahn2Surface,
-	            ahn3Surface,
-	            ahn2Terrain,
-	            ahn3Terrain;
+	std::string ahn2SurfaceDir,
+	            ahn3SurfaceDir,
+	            ahn2TerrainDir,
+	            ahn3TerrainDir;
 	std::string outputDir = fs::current_path().string();
 	std::string colorFile;
 	std::string pattern = "[[:digit:]]{2}[[:alpha:]]{2}[[:digit:]]";
@@ -65,13 +74,13 @@ int main(int argc, char* argv[]) try
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
-		("ahn2-surface", po::value<std::string>(&ahn2Surface),
+		("ahn2-surface", po::value<std::string>(&ahn2SurfaceDir),
 		 "AHN-2 surface DEM directory path")
-		("ahn3-surface", po::value<std::string>(&ahn3Surface),
+		("ahn3-surface", po::value<std::string>(&ahn3SurfaceDir),
 		 "AHN-3 surface DEM directory path")
-		("ahn2-terrain", po::value<std::string>(&ahn2Terrain),
+		("ahn2-terrain", po::value<std::string>(&ahn2TerrainDir),
 		 "AHN-2 terrain DEM directory path")
-		("ahn3-terrain", po::value<std::string>(&ahn3Terrain),
+		("ahn3-terrain", po::value<std::string>(&ahn3TerrainDir),
 		 "AHN-3 terrain DEM directory path")
 		("output-dir", po::value<std::string>(&outputDir)->default_value(outputDir),
 		 "result directory path")
@@ -103,7 +112,7 @@ int main(int argc, char* argv[]) try
 		argumentError = true;
 	}
 
-	if (!fs::is_directory(ahn2Surface) || !fs::is_directory(ahn3Surface))
+	if (!fs::is_directory(ahn2SurfaceDir) || !fs::is_directory(ahn3SurfaceDir))
 	{
 		std::cerr << "A surface input directory does not exist." << std::endl;
 		argumentError = true;
@@ -116,7 +125,7 @@ int main(int argc, char* argv[]) try
 	}
 
 	if (vm.count("ahn2-terrain") && vm.count("ahn3-terrain") &&
-		(!fs::is_directory(ahn2Terrain) || !fs::is_directory(ahn3Terrain)))
+		(!fs::is_directory(ahn2TerrainDir) || !fs::is_directory(ahn3TerrainDir)))
 	{
 		std::cerr << "A terrain input directory does not exist." << std::endl;
 		argumentError = true;
@@ -155,16 +164,44 @@ int main(int argc, char* argv[]) try
 	std::unordered_map<std::string, std::future<void>> futures;
 	futures.reserve(maxJobs);
 
-	for (fs::directory_iterator file(ahn3Surface); file != fs::directory_iterator(); ++file)
+	for (fs::directory_iterator item(ahn3SurfaceDir); item != fs::directory_iterator(); ++item)
 	{
-		if (fs::is_regular_file(file->status()) && file->path().extension() == ".tif")
+		if (fs::is_regular_file(item->status()) && item->path().extension() == ".tif")
 		{
 			boost::regex tilePattern(pattern);
 			boost::smatch tileMatch;
 
-			if (boost::regex_search(file->path().string(), tileMatch, tilePattern))
+			if (boost::regex_search(item->path().string(), tileMatch, tilePattern))
 			{
 				std::string tileName = tileMatch.str();
+				std::string ahn3SurfaceFile,
+				            ahn2SurfaceFile,
+				            ahn3TerrainFile,
+				            ahn2TerrainFile;
+
+				try
+				{
+					ahn3SurfaceFile = item->path().string();
+					ahn2SurfaceFile = lookupFile(ahn2SurfaceDir, tileName).string();
+				}
+				catch (std::exception& ex)
+				{
+					std::cerr << "WARNING: skipped tile '" << tileName << "' because not all surface DEM files were present." << std::endl;
+					continue;
+				}
+				if (vm.count("ahn2-terrain") && vm.count("ahn3-terrain"))
+				{
+					try
+					{
+						ahn3TerrainFile = lookupFile(ahn3TerrainDir, tileName).string();
+						ahn2TerrainFile = lookupFile(ahn2TerrainDir, tileName).string();
+					}
+					catch (std::exception& ex)
+					{
+						std::cerr << "WARNING: skipped tile '" << tileName << "' because not all terrain DEM files were present." << std::endl;
+						continue;
+					}
+				}
 
 				// New tile process can be started if none is under initialization and there is a free job slot.
 				std::unique_lock<std::mutex> lock(initMutex);
@@ -201,8 +238,8 @@ int main(int argc, char* argv[]) try
 					std::make_pair(tileName,
 					               std::async(std::launch::async,
 					                          processTile, tileName,
-					                          ahn2Surface, ahn3Surface,
-					                          ahn2Terrain, ahn3Terrain,
+					                          ahn2SurfaceFile, ahn3SurfaceFile,
+					                          ahn2TerrainFile, ahn3TerrainFile,
 					                          outputDir, colorFile)));
 			}
 		}
@@ -217,7 +254,7 @@ int main(int argc, char* argv[]) try
 	lock.unlock();
 
 	std::cout << std::endl
-		<< "All jobs started."
+		<< "All jobs started." << std::endl
 		<< "Waiting for remaing tasks to finish: " << std::endl;
 	for (const auto& item : futures)
 	{
@@ -244,6 +281,23 @@ catch (std::exception& ex)
 {
 	std::cerr << "ERROR: " << ex.what() << std::endl;
 	return UnexcpectedError;
+}
+
+fs::path lookupFile(const std::string& directory, const std::string& tileName)
+{
+	fs::directory_iterator result = std::find_if(fs::directory_iterator(directory), fs::directory_iterator(),
+		[&tileName](fs::directory_entry entry)
+	{
+		if (!fs::is_regular_file(entry.status()) || entry.path().extension() != ".tif")
+			return false;
+
+		boost::regex pattern(".*" + tileName + ".*");
+		return boost::regex_match(entry.path().stem().string(), pattern);
+	});
+
+	if (result == fs::directory_iterator())
+		throw std::runtime_error("No input found in directory '" + directory + "' for tile '" + tileName + "'.");
+	return result->path();
 }
 
 void processTile(const std::string& tileName,
@@ -287,8 +341,17 @@ void processTile(const std::string& tileName,
 	process->colorFile = colorFile;
 
 	// Execute process
-	process->execute();
-	initCondition.notify_all();
+	try
+	{
+		process->execute();
+	}
+	catch(std::exception& ex)
+	{
+		std::cerr << "ERROR processing tile '" << tileName << "': " << ex.what() << std::endl;
+		std::lock_guard<std::mutex> lock(initMutex);
+		isInitializing = false;
+	}
 
+	initCondition.notify_all();
 	delete process;
 }

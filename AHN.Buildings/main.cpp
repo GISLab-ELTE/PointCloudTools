@@ -18,7 +18,7 @@ namespace fs = boost::filesystem;
 using namespace CloudTools::IO;
 using namespace AHN::Buildings;
 
-int main(int argc, char* argv[]) //try
+int main(int argc, char* argv[]) try
 {
 	std::string tileName;
 	std::string ahn2Surface,
@@ -218,8 +218,8 @@ int main(int argc, char* argv[]) //try
 	}
 	return Success;
 }
-/*catch (std::exception &ex)
+catch (std::exception &ex)
 {
 	std::cerr << "ERROR: " << ex.what() << std::endl;
 	return UnexcpectedError;
-}*/
+}

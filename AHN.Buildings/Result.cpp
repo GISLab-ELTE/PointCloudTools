@@ -42,7 +42,16 @@ Result& Result::operator=(Result&& other)
 
 TemporaryFileResult::~TemporaryFileResult()
 {
-	fs::remove(_path);
+	if (!_path.empty())
+	{
+		if (dataset)
+		{
+			// necessary, because parent dtor will be called after this
+			GDALClose(dataset);
+			dataset = nullptr;
+		}
+		fs::remove(_path);
+	}
 }
 
 #pragma endregion

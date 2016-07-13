@@ -35,6 +35,13 @@ namespace Buildings
 
 Process::~Process()
 {
+	if (_ahn2SurfaceDataset) GDALClose(_ahn2SurfaceDataset);
+	if (_ahn3SurfaceDataset) GDALClose(_ahn3SurfaceDataset);
+	if (_ahn2TerrainDataset) GDALClose(_ahn2TerrainDataset);
+	if (_ahn3TerrainDataset) GDALClose(_ahn3TerrainDataset);
+
+	for (auto& item : _results)
+		delete item.second;
 	_results.clear();
 }
 
@@ -77,6 +84,9 @@ void Process::onExecute()
 			extraction.execute();
 			result("buildings-3").dataset = extraction.target();
 		}
+
+		GDALClose(_ahn2TerrainDataset); _ahn2TerrainDataset = nullptr;
+		GDALClose(_ahn3TerrainDataset); _ahn3TerrainDataset = nullptr;
 	}
 	else
 	{
@@ -114,6 +124,8 @@ void Process::onExecute()
 		comparison.execute();
 		result("changeset").dataset = comparison.target();
 	}
+	GDALClose(_ahn2SurfaceDataset); _ahn2SurfaceDataset = nullptr;
+	GDALClose(_ahn3SurfaceDataset); _ahn3SurfaceDataset = nullptr;
 	deleteResult("buildings-2");
 	deleteResult("buildings-3");
 
@@ -203,12 +215,12 @@ Result& Process::result(const std::string& name, unsigned int index)
 	auto range = _results.equal_range(name);
 	auto it = range.first;
 	std::advance(it, index);
-	return it->second;
+	return *it->second;
 }
 
 unsigned int Process::newResult(const std::string& name, bool isFinal)
 {
-	std::pair<std::string, Result> item(name, createResult(name, isFinal));
+	std::pair<std::string, Result*> item(name, createResult(name, isFinal));
 	_results.emplace(std::move(item));
 	return _results.count(name) - 1;
 }
@@ -221,6 +233,7 @@ void Process::deleteResult(const std::string& name, unsigned int index)
 	auto range = _results.equal_range(name);
 	auto it = range.first;
 	std::advance(it, index);
+	delete it->second;
 	_results.erase(it);
 }
 
@@ -272,6 +285,7 @@ InMemoryProcess::InMemoryProcess(const std::string id,
 void InMemoryProcess::onExecute()
 {
 	Process::onExecute();
+	if (this->colorFile.empty()) return;
 
 	// Color relief
 	_progressMessage = "Color relief";
@@ -297,7 +311,7 @@ void InMemoryProcess::onExecute()
 	deleteResult("rgb");
 }
 
-Result InMemoryProcess::createResult(const std::string& name, bool isFinal)
+Result* InMemoryProcess::createResult(const std::string& name, bool isFinal)
 {
 	if (isFinal)
 	{
@@ -305,10 +319,10 @@ Result InMemoryProcess::createResult(const std::string& name, bool isFinal)
 		if (name.length() > 0)
 			filename += "_" + name;
 		filename += ".tif";
-		return PermanentFileResult(fs::path(_outputPath) / filename);
+		return new PermanentFileResult(fs::path(_outputPath) / filename);
 	}
 	else
-		return MemoryResult();
+		return new MemoryResult();
 }
 
 void InMemoryProcess::configure(CloudLib::DEM::Transformation& transformation) const
@@ -320,7 +334,7 @@ void InMemoryProcess::configure(CloudLib::DEM::Transformation& transformation) c
 
 #pragma region FileBasedProcess
 
-Result FileBasedProcess::createResult(const std::string& name, bool isFinal)
+Result* FileBasedProcess::createResult(const std::string& name, bool isFinal)
 {
 	std::string filename = _id;
 	if (!isFinal)
@@ -330,9 +344,9 @@ Result FileBasedProcess::createResult(const std::string& name, bool isFinal)
 	filename += ".tif";
 
 	if (isFinal || debug)
-		return PermanentFileResult(fs::path(_outputPath) / filename);
+		return new PermanentFileResult(fs::path(_outputPath) / filename);
 	else
-		return TemporaryFileResult(fs::path(_outputPath) / filename);
+		return new TemporaryFileResult(fs::path(_outputPath) / filename);
 }
 
 void FileBasedProcess::configure(CloudLib::DEM::Transformation& transformation) const
@@ -345,9 +359,6 @@ void FileBasedProcess::configure(CloudLib::DEM::Transformation& transformation) 
 
 #pragma region StreamedProcess
 
-/// <summary>
-/// The stream input path{CC2D43FA-BBC4-448A-9D0B-7B57ADF2655C}
-/// </summary>
 const char* StreamedProcess::StreamInputPath = "/vsimem/stream.tif";
 
 StreamedProcess::StreamedProcess(const std::string id)
@@ -405,7 +416,7 @@ void StreamedProcess::onExecute()
 	delete[] buffer;
 }
 
-Result StreamedProcess::createResult(const std::string& name, bool isFinal)
+Result* StreamedProcess::createResult(const std::string& name, bool isFinal)
 {
 	if (isFinal)
 	{
@@ -413,10 +424,10 @@ Result StreamedProcess::createResult(const std::string& name, bool isFinal)
 		if (name.length() > 0)
 			filename += "_" + name;
 		filename += ".tif";
-		return VirtualResult(filename);
+		return new VirtualResult(filename);
 	}
 	else
-		return MemoryResult();
+		return new MemoryResult();
 }
 
 void StreamedProcess::configure(CloudLib::DEM::Transformation& transformation) const

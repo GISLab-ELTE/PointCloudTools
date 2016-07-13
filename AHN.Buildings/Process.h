@@ -49,7 +49,7 @@ protected:
 	std::string _progressMessage;
 
 private:
-	std::unordered_multimap<std::string, Result> _results;
+	std::unordered_multimap<std::string, Result*> _results;
 
 public:
 	~Process();
@@ -98,7 +98,8 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	virtual Result createResult(const std::string& name, bool isFinal = false) = 0;
+	/// <returns>New result on the heap.</returns>
+	virtual Result* createResult(const std::string& name, bool isFinal = false) = 0;
 	
 	/// <summary>
 	/// Deletes the specified result object.
@@ -179,7 +180,8 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	Result createResult(const std::string& name, bool isFinal = false) override;
+	/// <returns>New result on the heap.</returns>
+	Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -246,7 +248,8 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	Result createResult(const std::string& name, bool isFinal = false) override;
+	/// <returns>New result on the heap.</returns>
+	Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -263,6 +266,9 @@ protected:
 class StreamedProcess : public Process
 {
 protected:
+	/// <summary>
+	/// The stream input path.
+	/// </summary>
 	static const char* StreamInputPath;
 	VSILFILE* _streamInputFile = nullptr;
 
@@ -292,7 +298,8 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	Result createResult(const std::string& name, bool isFinal = false) override;
+	/// <returns>New result on the heap.</returns>
+	Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
