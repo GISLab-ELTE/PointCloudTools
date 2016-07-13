@@ -16,7 +16,7 @@ namespace CloudLib
 {
 namespace DEM
 {
-Rasterize::Rasterize(std::string sourcePath, std::string targetPath,
+Rasterize::Rasterize(const std::string& sourcePath, const std::string& targetPath,
                      const std::vector<std::string>& layers,
                      ProgressType progress)
 	: _sourcePath(sourcePath), _targetPath(targetPath), progress(progress),
@@ -47,11 +47,11 @@ Rasterize::Rasterize(std::string sourcePath, std::string targetPath,
 	_sourceMetadata = VectorMetadata(_layers);
 }
 
-Rasterize::Rasterize(GDALDataset* sourceDataset, std::string targetPath,
-	const std::vector<std::string>& layers,
-	ProgressType progress)
+Rasterize::Rasterize(GDALDataset* sourceDataset, const std::string& targetPath,
+                     const std::vector<std::string>& layers,
+                     ProgressType progress)
 	: _sourceDataset(sourceDataset), _targetPath(targetPath), progress(progress),
-	_sourceOwnership(false), _targetDataset(nullptr)
+	  _sourceOwnership(false), _targetDataset(nullptr)
 {
 	// Check source dataset and retrieve layers
 	if (_sourceDataset == nullptr)

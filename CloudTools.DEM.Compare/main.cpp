@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) try
 		comparison->spatialReference = vm["srs"].as<std::string>();
 	if (!vm.count("quiet"))
 	{
-		comparison->progress = [&reporter](float complete, std::string message)
+		comparison->progress = [&reporter](float complete, const std::string &message)
 		{
 			reporter->report(complete, message);
 			return true;

@@ -32,15 +32,15 @@ void ClusterFilter::onPrepare()
 
 	if (this->progress)
 	{
-		_progressBinarization = [this](float complete, std::string message)
+		_progressBinarization = [this](float complete, const std::string &message)
 			{
 				return this->progress(complete / 4, message);
 			};
-		_progressSieve = [this](float complete, std::string message)
+		_progressSieve = [this](float complete, const std::string &message)
 			{
 				return this->progress(.25f + complete / 2, message);
 			};
-		_progressFilter = [this](float complete, std::string message)
+		_progressFilter = [this](float complete, const std::string &message)
 			{
 				return this->progress(.75f + complete / 4, message);
 			};

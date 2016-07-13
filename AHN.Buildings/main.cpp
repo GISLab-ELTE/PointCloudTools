@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) try
 	
 	if (!vm.count("quiet"))
 	{
-		process->progress = [&reporter, &lastStatus](float complete, std::string message)
+		process->progress = [&reporter, &lastStatus](float complete, const std::string &message)
 		{
 			if(message != lastStatus)
 			{

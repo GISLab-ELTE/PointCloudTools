@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) try
 				rasterizer.targetField = adminField;
 				rasterizer.targetType = GDALDataType::GDT_Int32;
 				rasterizer.createOptions.insert(std::make_pair("COMPRESS", "DEFLATE"));
-				rasterizer.progress = [&reporter](float complete, std::string message)
+				rasterizer.progress = [&reporter](float complete, const std::string &message)
 				{
 					reporter.report(complete / 2, message);
 					return true;
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) try
 					results[id].altimetryDifference += change;
 				}
 			}, 
-				[&reporter](float complete, std::string message)
+				[&reporter](float complete, const std::string &message)
 			{
 				reporter.report(.5f + complete / 2, message);
 				return true;

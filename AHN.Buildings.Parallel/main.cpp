@@ -319,7 +319,7 @@ void processTile(const std::string& tileName,
 	else
 		process = new InMemoryProcess(tileName, ahn2Surface, ahn3Surface, ahn2Terrain, ahn3Terrain, outputDir);
 	process->progress = [&reporter, &lastStatus, &statusNumber, &isInitialized]
-		(float complete, std::string message)
+		(float complete, const std::string &message)
 		{
 			if (message != lastStatus)
 			{

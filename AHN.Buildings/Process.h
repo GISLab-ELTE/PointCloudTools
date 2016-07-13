@@ -59,7 +59,7 @@ protected:
 	/// Initializes a new instance of the class.
 	/// </summary>
 	/// <param name="id">Unique identifier, in most cases the name of the tile to process.</param>
-	explicit Process(const std::string id)
+	explicit Process(const std::string& id)
 		: _id(id),
 		  _ahn2SurfaceDataset(nullptr), _ahn2TerrainDataset(nullptr),
 		  _ahn3SurfaceDataset(nullptr), _ahn3TerrainDataset(nullptr)
@@ -151,7 +151,7 @@ public:
 	/// <param name="ahn2SurfacePath">The AHN-2 surface dataset path.</param>
 	/// <param name="ahn3SurfacePath">The AHN-3 surface dataset path.</param>
 	/// <param name="outputPath">The output directory path.</param>
-	InMemoryProcess(const std::string id,
+	InMemoryProcess(const std::string& id,
 	                const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	                const std::string& outputPath);
 	
@@ -164,7 +164,7 @@ public:
 	/// <param name="ahn2TerrainPath">The AHN-2 terrain dataset path.</param>
 	/// <param name="ahn3TerrainPath">The AHN-3 terrain dataset path.</param>
 	/// <param name="outputPath">The output directory path.</param>
-	InMemoryProcess(const std::string id,
+	InMemoryProcess(const std::string& id,
 	                const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	                const std::string& ahn2TerrainPath, const std::string& ahn3TerrainPath,
 	                const std::string& outputPath);
@@ -217,7 +217,7 @@ public:
 	/// <param name="ahn2SurfacePath">The AHN-2 surface dataset path.</param>
 	/// <param name="ahn3SurfacePath">The AHN-3 surface dataset path.</param>
 	/// <param name="outputPath">The output directory path.</param>
-	FileBasedProcess(const std::string id,
+	FileBasedProcess(const std::string& id,
 	                 const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	                 const std::string& outputPath)
 		: InMemoryProcess(id, ahn2SurfacePath, ahn3SurfacePath, outputPath)
@@ -232,7 +232,7 @@ public:
 	/// <param name="ahn2TerrainPath">The AHN-2 terrain dataset path.</param>
 	/// <param name="ahn3TerrainPath">The AHN-3 terrain dataset path.</param>
 	/// <param name="outputPath">The output directory path.</param>
-	FileBasedProcess(const std::string id,
+	FileBasedProcess(const std::string& id,
 	                 const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	                 const std::string& ahn2TerrainPath, const std::string& ahn3TerrainPath,
 	                 const std::string& outputPath)
@@ -283,7 +283,7 @@ public:
 	/// Initializes a new instance of the class. Read streamed input.
 	/// </summary>
 	/// <param name="id">Unique identifier, in most cases the name of the tile to process.</param>
-	StreamedProcess(const std::string id);
+	StreamedProcess(const std::string& id);
 	~StreamedProcess();
 
 protected:

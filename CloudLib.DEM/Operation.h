@@ -13,7 +13,7 @@ namespace DEM
 class Operation
 {
 public:
-	typedef std::function<bool(float, std::string)> ProgressType;
+	typedef std::function<bool(float, const std::string&)> ProgressType;
 
 private:
 	bool _isPrepared = false;

@@ -247,7 +247,7 @@ int Process::gdalProgress(double dfComplete, const char* pszMessage, void* pProg
 
 #pragma region InMemoryProcess
 
-InMemoryProcess::InMemoryProcess(const std::string id,
+InMemoryProcess::InMemoryProcess(const std::string& id,
 	const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	const std::string& outputPath)
 	: Process(id),
@@ -263,7 +263,7 @@ InMemoryProcess::InMemoryProcess(const std::string id,
 		throw std::runtime_error("Error at opening a source file.");
 }
 
-InMemoryProcess::InMemoryProcess(const std::string id,
+InMemoryProcess::InMemoryProcess(const std::string& id,
 	const std::string& ahn2SurfacePath, const std::string& ahn3SurfacePath,
 	const std::string& ahn2TerrainPath, const std::string& ahn3TerrainPath,
 	const std::string& outputPath)
@@ -361,7 +361,7 @@ void FileBasedProcess::configure(CloudLib::DEM::Transformation& transformation) 
 
 const char* StreamedProcess::StreamInputPath = "/vsimem/stream.tif";
 
-StreamedProcess::StreamedProcess(const std::string id)
+StreamedProcess::StreamedProcess(const std::string& id)
 	: Process(id)
 {
 	// Read streamed input into a virtual file.

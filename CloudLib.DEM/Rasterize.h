@@ -110,7 +110,7 @@ public:
 	/// <param name="targetPath">The raster target path.</param>
 	/// <param name="layers">The layers to be rasterized. If empty, the first layer will be used.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	Rasterize(std::string sourcePath, std::string targetPath,
+	Rasterize(const std::string& sourcePath, const std::string& targetPath,
 	          const std::vector<std::string>& layers = std::vector<std::string>(),
 	          ProgressType progress = nullptr);
 
@@ -124,7 +124,7 @@ public:
 	/// <param name="targetPath">The raster target path.</param>
 	/// <param name="layers">The layers to be rasterized. If empty, the first layer will be used.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	Rasterize(GDALDataset* sourceDataset, std::string targetPath,
+	Rasterize(GDALDataset* sourceDataset, const std::string& targetPath,
 	          const std::vector<std::string>& layers = std::vector<std::string>(),
 	          ProgressType progress = nullptr);
 

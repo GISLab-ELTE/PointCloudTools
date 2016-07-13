@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) try
 			rasterizer.spatialReference = vm["srs"].as<std::string>();
 		if (!vm.count("quiet"))
 		{
-			rasterizer.progress = [&reporter](float complete, std::string message)
+			rasterizer.progress = [&reporter](float complete, const std::string &message)
 			{
 				reporter->report(complete, message);
 				return true;
@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) try
 		filter->spatialReference = vm["srs"].as<std::string>();
 	if (!vm.count("quiet"))
 	{
-		filter->progress = [&reporter](float complete, std::string message)
+		filter->progress = [&reporter](float complete, const std::string &message)
 		{
 			reporter->report(complete, message);
 			return true;
