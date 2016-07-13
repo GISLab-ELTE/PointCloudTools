@@ -263,6 +263,10 @@ protected:
 /// <summary>
 /// The AHN Building Filter operation with streamed input and output.
 /// </summary>
+/// <remarks>
+/// The input stream may contain 2 or 4 bands in the following order:
+/// AHN-2 surface DEM, AHN-3 surface DEM, AHN-2 terrain DEM, AHN-3 terrain DEM.
+/// </remarks>
 class StreamedProcess : public Process
 {
 protected:

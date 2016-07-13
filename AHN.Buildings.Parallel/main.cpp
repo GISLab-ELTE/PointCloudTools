@@ -9,6 +9,7 @@
 #include <utility>
 #include <algorithm>
 #include <ctime>
+#include <stdexcept>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>

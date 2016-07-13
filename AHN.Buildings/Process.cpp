@@ -371,9 +371,20 @@ StreamedProcess::StreamedProcess(const std::string id)
 	_streamInputFile = VSIFileFromMemBuffer(StreamInputPath, &buffer[0], buffer.size(), false);
 
 	_ahn2SurfaceDataset = static_cast<GDALDataset*>(GDALOpen(StreamInputPath, GA_ReadOnly));
+	if (_ahn2SurfaceDataset->GetRasterCount() < 2)
+		throw std::runtime_error("Streamed data must contain at least 2 (surface DEM) bands.");
+
 	_ahn3SurfaceDataset = _ahn2SurfaceDataset;
-	_ahn2TerrainDataset = nullptr;
-	_ahn3TerrainDataset = nullptr;
+	if (_ahn2SurfaceDataset->GetRasterCount() < 4)
+	{
+		_ahn2TerrainDataset = nullptr;
+		_ahn3TerrainDataset = nullptr;
+	}
+	else
+	{
+		_ahn2TerrainDataset = _ahn2SurfaceDataset;
+		_ahn3TerrainDataset = _ahn2SurfaceDataset;
+	}
 }
 
 StreamedProcess::~StreamedProcess()
