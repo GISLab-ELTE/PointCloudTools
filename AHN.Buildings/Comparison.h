@@ -26,7 +26,7 @@ public:
 	/// </summary>
 	/// <remarks>
 	/// AHN elevation data is defined in meters.
-	/// The theoratical error-threshold of measurements between AHN-2 and AHN-3 is 0.4m.
+	/// The theoratical error-threshold of measurements between AHN-2 and AHN-3 is 0.35m.
 	/// </remarks>
 	double minimumThreshold = 0.4;
 

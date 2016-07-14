@@ -212,13 +212,14 @@ int main(int argc, char* argv[]) try
 					                   if (!isInitializing && futures.size() > 0)
 					                   {
 						                   std::cout << std::endl << "Job status:" << std::endl;
-						                   for (const auto& item : futures)
+						                   for (auto it = futures.begin(); it != futures.end();)
 						                   {
-							                   std::cout << "Tile '" << item.first << "': ";
-							                   if (item.second.wait_for(0s) == std::future_status::ready)
+											   const auto item = it++;
+							                   std::cout << "Tile '" << item->first << "': ";
+							                   if (item->second.wait_for(0s) == std::future_status::ready)
 							                   {
 								                   std::cout << "ready" << std::endl;
-								                   futures.erase(item.first);
+								                   futures.erase(item);
 							                   }
 							                   else
 								                   std::cout << "processing" << std::endl;
@@ -327,11 +328,12 @@ void processTile(const std::string& tileName,
 				++statusNumber;
 			}
 
-			// The first 2 statuses are the initialization
-			if (statusNumber < 3)
-				reporter.report(complete / 2 + (statusNumber - 1) * .5f, message);
-			else if (!isInitialized && statusNumber == 3)
+			// The first 3 statuses are the initialization
+			if (statusNumber < 4)
+				reporter.report(complete / 3 + (statusNumber - 1) / 3.f, message);
+			else if (!isInitialized && statusNumber == 4)
 			{
+				reporter.report(1.f);
 				isInitialized = true;
 				std::lock_guard<std::mutex> lock(initMutex);
 				isInitializing = false;
@@ -348,11 +350,17 @@ void processTile(const std::string& tileName,
 	}
 	catch(std::exception& ex)
 	{
-		std::cerr << "ERROR processing tile '" << tileName << "': " << ex.what() << std::endl;
-		std::lock_guard<std::mutex> lock(initMutex);
-		isInitializing = false;
+		std::cerr << "ERROR processing tile '" << tileName << "' " << std::endl
+			      << "ERROR: " << ex.what() << std::endl;
+
+		if (!isInitialized)
+		{
+			isInitialized = true;
+			std::lock_guard<std::mutex> lock(initMutex);
+			isInitializing = false;
+		}
 	}
+	delete process;
 
 	initCondition.notify_all();
-	delete process;
 }

@@ -119,6 +119,7 @@ void Process::onExecute()
 							  result("buildings-2").dataset, result("buildings-3").dataset,
 		                      result("changeset").path(), _progress);
 		comparison.minimumThreshold = 1.f;
+		comparison.spatialReference = "EPSG:28992"; // The SRS is given slightly differently for some AHN-2 tiles (but not all).
 		configure(comparison);
 
 		comparison.execute();
