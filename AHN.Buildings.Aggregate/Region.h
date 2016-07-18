@@ -14,18 +14,18 @@ struct Region
 	/// <summary>
 	/// The cumulative altimetry gained.
 	/// </summary>
-	float altimetryGained;
+	float gained;
 	/// <summary>
 	/// The cumulative altimetry lost.
 	/// </summary>
-	float altimetryLost;
+	float lost;
 	/// <summary>
 	/// The cumulative altimetry moved (gained + lost).
 	/// </summary>
-	float altimetryMoved;
+	float moved;
 	/// <summary>
 	/// The cumulative altimetry difference (gained - lost).
 	/// </summary>
-	float altimetryDifference;
+	float difference;
 };
 } // AHN

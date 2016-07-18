@@ -57,7 +57,6 @@ int main(int argc, char* argv[]) try
 		("admin-field", po::value<std::string>(&adminField), "attribute field name for unit identifier")
 		("admin-raster", po::value<std::string>(&adminRasterDir), "directory path for raster administrative unit tiles")
 		("output-file", po::value<std::string>(&outputFile)->default_value(outputFile), "output vector file path (Shapefile)")
-		("nodata-value", po::value<double>(), "specifies the output nodata value for filtered out values")
 		("force,f", "regenerates the raster tiles even when they exist")
 		("web-output,w", "generates GeoJSON output for web support")
 		("web-tolerance", po::value<float>(&webTolerance)->default_value(webTolerance),
@@ -77,7 +76,7 @@ int main(int argc, char* argv[]) try
 		outputFile = fs::path(outputFile).replace_extension(".shp").string();
 		webFile = fs::path(outputFile).replace_extension(".json").string();
 	}
-	if (vm.count("web-output") || vm.count("web-tolerance") || vm.count("web-srs"))
+	if (vm.count("web-output") || !vm["web-tolerance"].defaulted() || !vm["web-srs"].defaulted())
 		webEnable = true;
 
 	// Argument validation
@@ -151,7 +150,7 @@ int main(int argc, char* argv[]) try
 			fs::path ahnPath = ahnFile->path();
 			fs::path adminRasterPath = adminRasterDir / ahnPath.filename();
 			std::cout << std::endl
-				<< "Processing tile: " << ahnPath.stem() << std::endl;
+				      << "Processing tile: " << ahnPath.stem() << std::endl;
 			reporter.reset();
 
 			if (!fs::exists(adminRasterPath) || vm.count("force"))
@@ -187,25 +186,27 @@ int main(int argc, char* argv[]) try
 				reporter.report(.5f, std::string());
 
 			// Altimetry change aggregation
-			SweepLineCalculation<float> calculation({ ahnPath.string(), adminRasterPath.string() },
-				[&results](int x, int y, const std::vector<Window<float>>& data)
+			SweepLineCalculation<double> calculation({ ahnPath.string(), adminRasterPath.string() },
+				[&results](int x, int y, const std::vector<Window<double>>& data) // NOT float
 			{
-				auto ahn = data[0];
-				auto admin = data[1];
+				const auto& ahn = data[0];
+				const auto& admin = data[1];
 
-				if (admin.hasData() && ahn.hasData())
+				if (admin.hasData())
 				{
 					int id = admin.data();
-					float change = ahn.data();
-
 					if (results.find(id) == results.end())
 						results[id].id = id;
+
+					if (!ahn.hasData()) return;
+					double change = ahn.data();
+
 					if (change > 0)
-						results[id].altimetryGained += change;
+						results[id].gained += change;
 					if (change < 0)
-						results[id].altimetryLost -= change;
-					results[id].altimetryMoved += std::abs(change);
-					results[id].altimetryDifference += change;
+						results[id].lost -= change;
+					results[id].moved += std::abs(change);
+					results[id].difference += change;
 				}
 			}, 
 				[&reporter](float complete, const std::string &message)
@@ -223,7 +224,7 @@ int main(int argc, char* argv[]) try
 	// Creating output Shapefile 
 	std::cout << std::endl << "Generating output ... ";
 	GDALDataset *adminDataset = static_cast<GDALDataset*>(GDALOpenEx(adminVectorFile.c_str(),
-	                                                            GDAL_OF_VECTOR, nullptr, nullptr, nullptr));
+	                                                                 GDAL_OF_VECTOR, nullptr, nullptr, nullptr));
 	if (adminDataset == nullptr)
 		throw std::runtime_error("Error at opening the admin vector file.");
 
@@ -279,12 +280,13 @@ int main(int argc, char* argv[]) try
 	while ((feature = layer->GetNextFeature()) != nullptr)
 	{
 		int id = feature->GetFieldAsInteger(adminField.c_str());
-		if (results[id].altimetryMoved > 0)
+		auto result = results.find(id);
+		if (result != results.end())
 		{
-			feature->SetField(LabelGained, std::round(results[id].altimetryGained));
-			feature->SetField(LabelLost, std::round(results[id].altimetryLost));
-			feature->SetField(LabelMoved, std::round(results[id].altimetryMoved));
-			feature->SetField(LabelDifference, std::round(results[id].altimetryDifference));
+			feature->SetField(LabelGained, std::round(result->second.gained));
+			feature->SetField(LabelLost, std::round(result->second.lost));
+			feature->SetField(LabelMoved, std::round(result->second.moved));
+			feature->SetField(LabelDifference, std::round(result->second.difference));
 			layer->SetFeature(feature);
 		}
 		else
@@ -292,7 +294,7 @@ int main(int argc, char* argv[]) try
 		OGRFeature::DestroyFeature(feature);
 	}
 
-	// Removing features without changes
+	// Removing features out of scope
 	for (auto id : emptyFeatures)
 		layer->DeleteFeature(id);
 	emptyFeatures.clear();
