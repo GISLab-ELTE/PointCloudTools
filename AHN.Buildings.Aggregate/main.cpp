@@ -39,8 +39,8 @@ int main(int argc, char* argv[]) try
 	std::string ahnDir;
 	std::string adminVectorFile;
 	std::string adminRasterDir = fs::current_path().string();
-	std::string outputFile = fs::current_path().append("out.shp").string();
-	std::string webFile = fs::current_path().append("out.json").string();
+	std::string outputFile = (fs::current_path() / "out.shp").string();
+	std::string webFile = (fs::current_path() / "out.json").string();
 	std::string adminLayer;
 	std::string adminField;
 

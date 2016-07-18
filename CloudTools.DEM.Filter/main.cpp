@@ -26,13 +26,13 @@ using namespace CloudTools::IO;
 int main(int argc, char* argv[]) try
 {
 	std::string inputPath;
-	std::string outputPath = fs::current_path().append("out.tif").string();
+	std::string outputPath = (fs::current_path() / "out.tif").string();
 	std::string outputFormat;
 	std::vector<std::string> outputOptions;
 
 	std::string filterVectorPath;
 	std::vector<std::string> filterLayers;
-	std::string filterRasterPath = fs::current_path().append(std::tmpnam(nullptr)).replace_extension("tif").string();
+	std::string filterRasterPath = (fs::current_path() / std::tmpnam(nullptr)).replace_extension("tif").string();
 	short filterValue;
 
 	// Read console arguments

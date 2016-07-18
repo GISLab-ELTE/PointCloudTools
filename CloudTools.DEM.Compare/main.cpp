@@ -23,7 +23,7 @@ using namespace CloudTools::IO;
 int main(int argc, char* argv[]) try
 {
 	std::vector<std::string> inputPaths;
-	std::string outputPath = fs::current_path().append("out.tif").string();
+	std::string outputPath = (fs::current_path() / "out.tif").string();
 	std::string outputFormat;
 	std::vector<std::string> outputOptions;
 
