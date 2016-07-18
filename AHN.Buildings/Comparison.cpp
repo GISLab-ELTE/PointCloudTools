@@ -44,7 +44,12 @@ Comparison::Comparison(GDALDataset* ahn2Dataset, GDALDataset* ahn3Dataset,
 			const Window<float>& ahn2Filter = sources[2];
 			const Window<float>& ahn3Filter = sources[3];
 
-			if (!ahn2Filter.hasData() && !ahn3Filter.hasData())
+			/*
+			 * Since AHN-3 is incomplete, side tiles are partial, 
+			 * resulting in false positive detection of mass building demolition.
+			 */
+			//if (!ahn2Filter.hasData() && !ahn3Filter.hasData())
+			if (!ahn3Filter.hasData())
 				return static_cast<float>(this->nodataValue);
 
 			float difference = 0.f;
