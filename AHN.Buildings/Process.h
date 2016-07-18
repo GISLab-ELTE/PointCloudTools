@@ -49,7 +49,7 @@ protected:
 	std::string _progressMessage;
 
 private:
-	std::unordered_multimap<std::string, Result*> _results;
+	std::multimap<std::string, Result*> _results;
 
 public:
 	~Process();
