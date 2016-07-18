@@ -22,7 +22,6 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-using namespace std::chrono_literals;
 using namespace CloudTools::IO;
 using namespace AHN::Buildings;
 
@@ -216,7 +215,7 @@ int main(int argc, char* argv[]) try
 						                   {
 											   const auto item = it++;
 							                   std::cout << "Tile '" << item->first << "': ";
-							                   if (item->second.wait_for(0s) == std::future_status::ready)
+							                   if (item->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 							                   {
 								                   std::cout << "ready" << std::endl;
 								                   futures.erase(item);

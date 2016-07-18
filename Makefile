@@ -20,6 +20,7 @@ CloudTools: CloudTools.Common CloudTools.DEM
 .PHONY: CloudTools.Common
 CloudTools.Common: $(OBJDIR)
 	$(MAKE) -C CloudTools.Common
+	$(CP) CloudTools.Common/$(OBJDIR)/*.a $(OBJDIR)
 
 .PHONY: CloudTools.DEM
 CloudTools.DEM: $(OBJDIR) CloudLib.DEM CloudTools.Common
@@ -34,7 +35,12 @@ AHN: AHN.Buildings
 .PHONY: AHN.Buildings
 AHN.Buildings: $(OBJDIR) CloudLib.DEM CloudTools.Common
 	$(MAKE) -C AHN.Buildings
+	$(MAKE) -C AHN.Buildings.Parallel
+	$(MAKE) -C AHN.Buildings.Aggregate
+	$(CP) AHN.Buildings/$(OBJDIR)/*.a $(OBJDIR)
 	$(CP) AHN.Buildings/$(OBJDIR)/ahn_buildings $(OBJDIR)
+	$(CP) AHN.Buildings.Parallel/$(OBJDIR)/ahn_buildings_par $(OBJDIR)
+	$(CP) AHN.Buildings.Aggregate/$(OBJDIR)/ahn_buildings_agg $(OBJDIR)
 
 .PHONY: clean
 clean:
@@ -43,4 +49,6 @@ clean:
 	$(MAKE) -C CloudTools.DEM.Compare clean
 	$(MAKE) -C CloudTools.DEM.Filter clean
 	$(MAKE) -C AHN.Buildings clean
+	$(MAKE) -C AHN.Buildings.Parallel clean
+	$(MAKE) -C AHN.Buildings.Aggregate clean
 	$(RM) $(OBJDIR)/*

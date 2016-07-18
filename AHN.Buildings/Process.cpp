@@ -61,28 +61,28 @@ void Process::onPrepare()
 void Process::onExecute()
 {
 	// Building filtering / extraction
-	newResult("buildings-2");
-	newResult("buildings-3");
+	newResult("buildings-ahn2");
+	newResult("buildings-ahn3");
 	if(_ahn2TerrainDataset && _ahn3TerrainDataset)
 	{
 		_progressMessage = "Building extraction / AHN-2";
 		{
 			BuildingExtraction extraction(_ahn2SurfaceDataset, _ahn2TerrainDataset,
-				result("buildings-2").path(), _progress);
+				result("buildings-ahn2").path(), _progress);
 			configure(extraction);
 
 			extraction.execute();
-			result("buildings-2").dataset = extraction.target();
+			result("buildings-ahn2").dataset = extraction.target();
 		}
 
 		_progressMessage = "Building extraction / AHN-3";
 		{
 			BuildingExtraction extraction(_ahn3SurfaceDataset, _ahn3TerrainDataset,
-				result("buildings-3").path(), _progress);
+				result("buildings-ahn3").path(), _progress);
 			configure(extraction);
 
 			extraction.execute();
-			result("buildings-3").dataset = extraction.target();
+			result("buildings-ahn3").dataset = extraction.target();
 		}
 
 		GDALClose(_ahn2TerrainDataset); _ahn2TerrainDataset = nullptr;
@@ -93,21 +93,21 @@ void Process::onExecute()
 		_progressMessage = "Building filtering / AHN-2";
 		{
 			BuildingFilter filter(_ahn2SurfaceDataset,
-				result("buildings-2").path(), _progress);
+				result("buildings-ahn2").path(), _progress);
 			configure(filter);
 
 			filter.execute();
-			result("buildings-2").dataset = filter.target();
+			result("buildings-ahn2").dataset = filter.target();
 		}
 
 		_progressMessage = "Building filtering / AHN-3";
 		{
 			BuildingFilter filter(_ahn3SurfaceDataset,
-				result("buildings-3").path(), _progress);
+				result("buildings-ahn3").path(), _progress);
 			configure(filter);
 
 			filter.execute();
-			result("buildings-3").dataset = filter.target();
+			result("buildings-ahn3").dataset = filter.target();
 		}
 	}
 
@@ -116,7 +116,7 @@ void Process::onExecute()
 	newResult("changeset");
 	{
 		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset, 
-							  result("buildings-2").dataset, result("buildings-3").dataset,
+							  result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
 		                      result("changeset").path(), _progress);
 		comparison.minimumThreshold = 1.f;
 		comparison.spatialReference = "EPSG:28992"; // The SRS is given slightly differently for some AHN-2 tiles (but not all).
@@ -127,8 +127,8 @@ void Process::onExecute()
 	}
 	GDALClose(_ahn2SurfaceDataset); _ahn2SurfaceDataset = nullptr;
 	GDALClose(_ahn3SurfaceDataset); _ahn3SurfaceDataset = nullptr;
-	deleteResult("buildings-2");
-	deleteResult("buildings-3");
+	deleteResult("buildings-ahn2");
+	deleteResult("buildings-ahn3");
 
 	// Noise filtering
 	_progressMessage = "Noise filtering";

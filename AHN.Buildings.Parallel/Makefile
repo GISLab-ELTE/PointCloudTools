@@ -1,38 +1,30 @@
 include ../Makefile.config
 
-ARFLAGS += -rs
 INCLUDE += -I../
+CFLAGS  += -pthread
 LDFLAGS += -L../
-LDLIBS  += -l:CloudLib.DEM/$(OBJDIR)/dem.a \
+LDLIBS  += -l:AHN.Buildings/$(OBJDIR)/ahn_buildings.a \
+           -l:CloudLib.DEM/$(OBJDIR)/dem.a \
            -l:CloudTools.Common/$(OBJDIR)/common.a \
            -lboost_system -lboost_filesystem \
            -lboost_program_options \
+           -lboost_regex \
            -lgdal
 
 DEPS    := $(wildcard *.h)
 DEPS    += $(wildcard *.hpp)
 SRCS     = $(wildcard *.cpp)
 OBJS     = $(SRCS:.cpp=.o)
-MAIN     = ahn_buildings
+MAIN     = ahn_buildings_par
 
 OBJECTS  = $(addprefix $(OBJDIR)/, $(OBJS))
 TARGET   = $(OBJDIR)/$(MAIN)
 
-L_SRCS  := $(wildcard *.cpp)
-L_SRCS  := $(filter-out main.cpp, $(L_SRCS))
-L_OBJS   = $(L_SRCS:.cpp=.o)
-L_MAIN   = $(MAIN).a
-L_OBJECTS= $(addprefix $(OBJDIR)/, $(L_OBJS))
-L_TARGET = $(OBJDIR)/$(L_MAIN)
-
 .PHONY: all
-all: $(TARGET) $(L_TARGET)
+all: $(TARGET)
 
 $(TARGET): $(OBJDIR) $(OBJECTS)
 	$(CXX) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(LDFLAGS) $(LDLIBS)
-
-$(L_TARGET): $(OBJDIR) $(L_OBJECTS)
-	$(AR) $(ARFLAGS) $(L_TARGET) $(L_OBJECTS)
 
 $(OBJDIR):
 	$(MKDIR) $(OBJDIR)
@@ -42,4 +34,4 @@ $(OBJDIR)/%.o: %.cpp $(DEPS)
 
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) $(TARGET).a $(OBJECTS)
+	$(RM) $(TARGET) $(OBJECTS)
