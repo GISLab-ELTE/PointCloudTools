@@ -281,6 +281,8 @@ void Rasterize::onExecute()
 		params = CSLAddString(params, "-co");
 		params = CSLSetNameValue(params, co.first.c_str(), co.second.c_str());
 	}
+	params = CSLAddString(params, "-of");
+	params = CSLAddString(params, targetFormat.c_str());
 	
 	// Execute GDALRasterize
 	GDALRasterizeOptions *options = GDALRasterizeOptionsNew(params, nullptr);
