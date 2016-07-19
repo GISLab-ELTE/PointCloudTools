@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) try
 	// Argument validation
 	if (vm.count("help"))
 	{
-		std::cout << "Transforms a vector filter into a raster filter and/or applies the latter on a DEM." << std::endl;
+		std::cout << "Computes aggregative change of volume for administrative units." << std::endl;
 		std::cout << desc << std::endl;
 		return Success;
 	}
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) try
 				rasterizer.pixelSizeX = ahnMetadata.pixelSizeX();
 				rasterizer.pixelSizeY = ahnMetadata.pixelSizeY();
 				rasterizer.clip(ahnMetadata.originX(), ahnMetadata.originY(),
-					ahnMetadata.rasterSizeX(), ahnMetadata.rasterSizeY());
+				                ahnMetadata.rasterSizeX(), ahnMetadata.rasterSizeY());
 				GDALClose(ahnDataset);
 
 				// Execute operation

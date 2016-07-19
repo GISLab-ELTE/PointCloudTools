@@ -37,10 +37,12 @@ AHN.Buildings: $(OBJDIR) CloudLib.DEM CloudTools.Common
 	$(MAKE) -C AHN.Buildings
 	$(MAKE) -C AHN.Buildings.Parallel
 	$(MAKE) -C AHN.Buildings.Aggregate
+	$(MAKE) -C AHN.Buildings.Verify
 	$(CP) AHN.Buildings/$(OBJDIR)/*.a $(OBJDIR)
 	$(CP) AHN.Buildings/$(OBJDIR)/ahn_buildings $(OBJDIR)
 	$(CP) AHN.Buildings.Parallel/$(OBJDIR)/ahn_buildings_par $(OBJDIR)
 	$(CP) AHN.Buildings.Aggregate/$(OBJDIR)/ahn_buildings_agg $(OBJDIR)
+	$(CP) AHN.Buildings.Verify/$(OBJDIR)/ahn_buildings_ver $(OBJDIR)
 
 .PHONY: clean
 clean:
@@ -51,4 +53,5 @@ clean:
 	$(MAKE) -C AHN.Buildings clean
 	$(MAKE) -C AHN.Buildings.Parallel clean
 	$(MAKE) -C AHN.Buildings.Aggregate clean
+	$(MAKE) -C AHN.Buildings.Verify clean
 	$(RM) $(OBJDIR)/*
