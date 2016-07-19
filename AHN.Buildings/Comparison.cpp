@@ -46,10 +46,11 @@ Comparison::Comparison(GDALDataset* ahn2Dataset, GDALDataset* ahn3Dataset,
 
 			/*
 			 * Since AHN-3 is incomplete, side tiles are partial, 
-			 * resulting in false positive detection of mass building demolition.
+			 * resulting in false positive detection of mass building demolition
+			 * when relying only on the filter laysers.
 			 */
-			//if (!ahn2Filter.hasData() && !ahn3Filter.hasData())
-			if (!ahn3Filter.hasData())
+			if (!ahn2Filter.hasData() && !ahn3Filter.hasData() ||
+				!ahn3Data.hasData())
 				return static_cast<float>(this->nodataValue);
 
 			float difference = 0.f;
