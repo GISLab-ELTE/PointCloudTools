@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) try
 			boost::regex tilePattern(pattern);
 			boost::smatch tileMatch;
 
-			if (boost::regex_search(item->path().string(), tileMatch, tilePattern))
+			if (boost::regex_search(item->path().filename().string(), tileMatch, tilePattern))
 			{
 				std::string tileName = tileMatch.str();
 				std::string ahn3SurfaceFile,

@@ -35,7 +35,7 @@ public:
 	/// <remarks>
 	/// For supported formats, <see cref="http://www.gdal.org/formats_list.html" />.
 	/// </remarks>
-	std::string targetFormat;
+	std::string targetFormat = "GTiff";
 	
 	/// <summary>
 	/// The target value that will be burned.

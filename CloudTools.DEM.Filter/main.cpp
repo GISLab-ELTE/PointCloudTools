@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) try
 		{
 			rasterizer.prepare();
 		}
-		catch (std::logic_error ex)
+		catch (std::logic_error &ex)
 		{
 			std::cerr << "WARNING: " << ex.what() << std::endl;
 			std::cerr << "Skipping raster filter generation."

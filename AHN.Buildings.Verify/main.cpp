@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) try
 				if (!boost::regex_search(ahnFile->path().string(), groupMatch, boost::regex("[[:digit:]]{2}")))
 					throw std::runtime_error("Unable to deduce the group number from AHN tile filename.");
 
-				boost::regex groupRegex(".*" + groupMatch.str() + ".*");
+				boost::regex groupRegex(".*" + groupMatch.str() + "[^_]*");
 				boost::regex referenceRegex(".*");
 				if (dirPatterns.size() > i)
 					referenceRegex.assign(dirPatterns[i]);
@@ -163,8 +163,8 @@ int main(int argc, char* argv[]) try
 					++referenceFile)
 				{
 					if (fs::is_regular_file(referenceFile->status()) &&
-						boost::regex_match(referenceFile->path().string(), groupRegex) &&
-						boost::regex_match(referenceFile->path().string(), referenceRegex))
+						boost::regex_match(referenceFile->path().stem().string(), groupRegex) &&
+						boost::regex_match(referenceFile->path().filename().string(), referenceRegex))
 					{
 						listReferences.push_back(referenceFile->path().string());
 						if (dirLayers.size() > i)
@@ -181,9 +181,9 @@ int main(int argc, char* argv[]) try
 				throw std::runtime_error("Error at opening the AHN tile.");
 			RasterMetadata ahnMetadata(ahnDataset);
 
-			std::vector<GDALDataset*> sources(listReferences.size() + 1);
+			std::vector<GDALDataset*> sources(1);
 			sources[0] = ahnDataset;
-			unsigned int computationStep = sources.size();
+			unsigned int computationStep = listReferences.size() + 1;
 
 			// Write process header
 			std::cout << std::endl
@@ -215,8 +215,17 @@ int main(int argc, char* argv[]) try
 					ahnMetadata.rasterSizeX(), ahnMetadata.rasterSizeY());
 
 				// Execute operation
+				try
+				{
+					rasterizer.prepare();
+				}
+				catch(std::logic_error&) // no overlap
+				{
+					reporter.report(1.f * (i + 1) / computationStep);
+					continue;
+				}
 				rasterizer.execute();
-				sources[i + 1] = rasterizer.target();
+				sources.push_back(rasterizer.target());
 			}
 
 			// AHN altimetry change location verification
