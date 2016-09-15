@@ -52,10 +52,13 @@ void Process::onPrepare()
 		throw std::runtime_error("Defining the surface DEM files is mandatory.");
 
 	// Piping the internal progress reporter to override message.
-	_progress = [this](float complete, std::string message)
-		{
-			return this->progress(complete, this->_progressMessage);
-		};
+	if (progress != nullptr)
+		_progress = [this](float complete, std::string message)
+	{
+		return this->progress(complete, this->_progressMessage);
+	};
+	else
+		_progress = nullptr;
 }
 
 void Process::onExecute()
