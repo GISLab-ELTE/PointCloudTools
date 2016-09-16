@@ -1,5 +1,7 @@
 include ../Makefile.config
 
+CXX      = mpicxx
+
 INCLUDE += -I../
 LDFLAGS += -L../
 LDLIBS  += -l:AHN.Buildings/$(OBJDIR)/ahn_buildings.a \
