@@ -48,6 +48,7 @@ Comparison::Comparison(GDALDataset* ahn2Dataset, GDALDataset* ahn3Dataset,
 			 * Since AHN-3 is incomplete, side tiles are partial, 
 			 * resulting in false positive detection of mass building demolition
 			 * when relying only on the filter laysers.
+			 * TODO: this removes demolitions over water (e.g. TU Delft Faculty of Architecture building.)
 			 */
 			if (!ahn2Filter.hasData() && !ahn3Filter.hasData() ||
 				!ahn3Data.hasData())
