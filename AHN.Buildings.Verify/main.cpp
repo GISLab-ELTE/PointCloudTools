@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) try
 
 			std::vector<GDALDataset*> sources(1);
 			sources[0] = ahnDataset;
-			unsigned int computationStep = listReferences.size() + 1;
+			std::size_t computationStep = listReferences.size() + 1;
 
 			// Write process header
 			std::cout << std::endl

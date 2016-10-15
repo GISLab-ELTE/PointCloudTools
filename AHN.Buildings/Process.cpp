@@ -177,7 +177,7 @@ void Process::onExecute()
 	for (int range = 1; range <= 2; ++range)
 	{
 		_progressMessage = "Majority filtering / r=" + std::to_string(range);
-		unsigned int index = newResult("majority");
+		std::size_t index = newResult("majority");
 		{
 			MajorityFilter filter(
 				index == 0 ? result("dilation").dataset : result("majority", 0).dataset,
@@ -211,7 +211,7 @@ void Process::onExecute()
 	deleteResult("majority");
 }
 
-Result& Process::result(const std::string& name, unsigned int index)
+Result& Process::result(const std::string& name, std::size_t index)
 {
 	if (_results.count(name) <= index)
 		throw std::out_of_range("No result found with the given name and index.");
@@ -222,14 +222,14 @@ Result& Process::result(const std::string& name, unsigned int index)
 	return *it->second;
 }
 
-unsigned int Process::newResult(const std::string& name, bool isFinal)
+std::size_t Process::newResult(const std::string& name, bool isFinal)
 {
 	std::pair<std::string, Result*> item(name, createResult(name, isFinal));
 	_results.emplace(std::move(item));
 	return _results.count(name) - 1;
 }
 
-void Process::deleteResult(const std::string& name, unsigned int index)
+void Process::deleteResult(const std::string& name, std::size_t index)
 {
 	if (_results.count(name) <= index)
 		throw std::out_of_range("No result found with the given name and index.");

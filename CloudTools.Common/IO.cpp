@@ -44,7 +44,7 @@ void reportProgress(float complete, const std::string &message)
 		std::cout << std::endl;
 }
 
-void eraseLine(unsigned int size)
+void eraseLine(std::size_t size)
 {
 	for (unsigned int i = 0; i < size; ++i)
 		std::cout << '\b';

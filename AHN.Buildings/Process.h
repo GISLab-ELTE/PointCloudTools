@@ -83,7 +83,7 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="index">The index of the result with the same name.</param>
-	Result& result(const std::string& name, unsigned int index = 0);
+	Result& result(const std::string& name, std::size_t index = 0);
 	
 	/// <summary>
 	/// Creates and inserts new result object.
@@ -91,7 +91,7 @@ protected:
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
 	/// <returns>The index of the result with the same name.</returns>
-	unsigned int newResult(const std::string& name, bool isFinal = false);
+	std::size_t newResult(const std::string& name, bool isFinal = false);
 	
 	/// <summary>
 	/// Creates a new result object.
@@ -106,7 +106,7 @@ protected:
 	/// </summary>
 	/// <param name="name">The name of the result.</param>
 	/// <param name="index">The index of the result with the same name.</param>
-	void deleteResult(const std::string& name, unsigned int index = 0);
+	void deleteResult(const std::string& name, std::size_t index = 0);
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -207,7 +207,7 @@ public:
 	bool debug = false;
 
 protected:
-	unsigned int _nextResult = 1;
+	std::size_t _nextResult = 1;
 
 public:	
 	/// <summary>
@@ -276,7 +276,7 @@ protected:
 	static const char* StreamInputPath;
 	VSILFILE* _streamInputFile = nullptr;
 
-	unsigned int _nextResult = 1;
+	std::size_t _nextResult = 1;
 
 public:	
 	/// <summary>

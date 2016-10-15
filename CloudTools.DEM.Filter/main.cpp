@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) try
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
-				: filter->nodataValue;
+				: static_cast<GInt16>(filter->nodataValue);
 		});
 		break;
 	}
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) try
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
-				: filter->nodataValue;
+				: static_cast<GInt32>(filter->nodataValue);
 		});
 		break;
 	}
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) try
 		{
 			return (!vm.count("invert") ? sources[1].hasData() : !sources[1].hasData()) && sources[0].hasData()
 				? sources[0].data()
-				: filter->nodataValue;
+				: static_cast<float>(filter->nodataValue);
 		});
 		break;
 	}

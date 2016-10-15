@@ -34,7 +34,7 @@ public:
 /// </summary>
 class TextReporter : public Reporter
 {
-	int _eraseSize = 0;
+	std::size_t  _eraseSize = 0;
 
 public:			
 	/// <summary>

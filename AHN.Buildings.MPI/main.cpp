@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) try
 					ahn3SurfaceFile = item->path().string();
 					ahn2SurfaceFile = lookupFile(ahn2SurfaceDir, tileName).string();
 				}
-				catch (std::exception& ex)
+				catch (std::exception&)
 				{
 					std::cerr << "WARNING: skipped tile '" << tileName << "' because not all surface DEM files were present." << std::endl;
 					continue;
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) try
 						ahn3TerrainFile = lookupFile(ahn3TerrainDir, tileName).string();
 						ahn2TerrainFile = lookupFile(ahn2TerrainDir, tileName).string();
 					}
-					catch (std::exception& ex)
+					catch (std::exception&)
 					{
 						std::cerr << "WARNING: skipped tile '" << tileName << "' because not all terrain DEM files were present." << std::endl;
 						continue;

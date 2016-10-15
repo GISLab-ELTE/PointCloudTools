@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <ostream>
 #include <algorithm>
+#include <stdexcept>
 
 #include <ogrsf_frmts.h>
 
@@ -47,7 +48,8 @@ void VectorMetadata::load(const std::vector<OGRLayer*>& layers)
 		[](OGRLayer *layer)
 	{
 		OGREnvelope *extent = new OGREnvelope;
-		layer->GetExtent(extent, true);
+		if (layer->GetExtent(extent, true) != OGRERR_NONE)
+			throw std::logic_error("Extent unknown for an input layer.");
 		return extent;
 	});
 

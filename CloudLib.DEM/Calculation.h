@@ -66,7 +66,7 @@ public:
 	Calculation& operator=(const Calculation&) = delete;
 	~Calculation();
 
-	unsigned int sourceCount() const
+	std::size_t sourceCount() const
 	{
 		return _sourceDatasets.size();
 	}

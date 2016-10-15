@@ -48,7 +48,7 @@ void reportProgress(float complete, const std::string &message = std::string());
 /// Erases the current line on console.
 /// </summary>
 /// <param name="complete">The number of characters to erase.</param>
-void eraseLine(unsigned int size = 32);
+void eraseLine(std::size_t size = 32);
 
 #pragma endregion 
 } // IO

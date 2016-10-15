@@ -205,10 +205,10 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 	for (unsigned int i = 0; i < sourceCount(); ++i)
 	{
 		// Default band index: multiplicity of same source
-		int bandIndex = _sourceOwnership
+		long long bandIndex = _sourceOwnership
 			? std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1
 			: std::count(_sourceDatasets.begin(), _sourceDatasets.begin() + i, _sourceDatasets[i]) + 1;
-		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(bandIndex);
+		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(static_cast<int>(bandIndex));
 	}
 	GDALRasterBand* targetBand = _targetDataset->GetRasterBand(1);
 	targetBand->SetNoDataValue(nodataValue);
@@ -233,6 +233,8 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 
 	for (int y = 0; y < _targetMetadata.rasterSizeY(); ++y)
 	{
+		CPLErr ioResult = CE_None;
+
 		dataWindows.clear();
 		for (unsigned int i = 0; i < sourceCount(); ++i)
 		{
@@ -247,23 +249,28 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 				int readSizeX = _sourceMetadata[i].rasterSizeX();
 				int readSizeY = -readOffsetY + std::min(readOffsetY + windowSize, _sourceMetadata[i].rasterSizeY());
 
-				sourceBands[i]->RasterIO(GF_Read,
-					readOffsetX, readOffsetY,
-					readSizeX, readSizeY,
-					sourceScanlines[i], _sourceMetadata[i].rasterSizeX(), windowSize,
-					sourceType, 0, 0);
+				ioResult = static_cast<CPLErr>(ioResult |
+					sourceBands[i]->RasterIO(GF_Read,
+						readOffsetX, readOffsetY,
+						readSizeX, readSizeY,
+						sourceScanlines[i], _sourceMetadata[i].rasterSizeX(), windowSize,
+						sourceType, 0, 0));
 
-				dataWindows.emplace_back(sourceScanlines[i], sourceBands[i]->GetNoDataValue(),
+				dataWindows.emplace_back(sourceScanlines[i], 
+					static_cast<SourceType>(sourceBands[i]->GetNoDataValue()),
 					readSizeX, readSizeY,
 					sourceOffsetX + readOffsetX, sourceOffsetY + readOffsetY,
 					0, y);
 			}
 			else
-				dataWindows.emplace_back(sourceScanlines[i], sourceBands[i]->GetNoDataValue(),
-				0, 0,
-				sourceOffsetX, sourceOffsetY,
-				0, y);
+				dataWindows.emplace_back(sourceScanlines[i], 
+					static_cast<SourceType>(sourceBands[i]->GetNoDataValue()),
+					0, 0,
+					sourceOffsetX, sourceOffsetY,
+					0, y);
 		}
+		if (ioResult != CE_None)
+			throw std::runtime_error("Source read error occured.");
 
 		for (int x = 0; x < _targetMetadata.rasterSizeX(); ++x)
 		{
@@ -272,11 +279,13 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 			targetScanline[x] = computation(x, y, dataWindows);
 		}
 
-		targetBand->RasterIO(GF_Write,
+		ioResult = targetBand->RasterIO(GF_Write,
 			0, y,
 			_targetMetadata.rasterSizeX(), 1,
 			targetScanline, _targetMetadata.rasterSizeX(), 1,
 			targetType, 0, 0);
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 
 		if (progress && (computationProgress++ % computationStep == 0 || computationProgress == computationSize))
 			progress(1.f * computationProgress / computationSize, std::string());

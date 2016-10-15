@@ -194,12 +194,12 @@ int main(int argc, char* argv[]) try
 
 				if (admin.hasData())
 				{
-					int id = admin.data();
+					int id = static_cast<int>(admin.data());
 					if (results.find(id) == results.end())
 						results[id].id = id;
 
 					if (!ahn.hasData()) return;
-					double change = ahn.data();
+					float change = static_cast<float>(ahn.data());
 
 					if (change > 0)
 						results[id].gained += change;
@@ -275,6 +275,7 @@ int main(int argc, char* argv[]) try
 
 	// Writing attribute data
 	OGRFeature *feature;
+	OGRErr featureError = OGRERR_NONE;
 	std::set<GIntBig> emptyFeatures;
 	layer->ResetReading();
 	while ((feature = layer->GetNextFeature()) != nullptr)
@@ -287,16 +288,22 @@ int main(int argc, char* argv[]) try
 			feature->SetField(LabelLost, std::round(result->second.lost));
 			feature->SetField(LabelMoved, std::round(result->second.moved));
 			feature->SetField(LabelDifference, std::round(result->second.difference));
-			layer->SetFeature(feature);
+			featureError = static_cast<OGRErr>(featureError |
+				layer->SetFeature(feature));
 		}
 		else
 			emptyFeatures.insert(feature->GetFID());
 		OGRFeature::DestroyFeature(feature);
 	}
+	if(featureError != OGRERR_NONE)
+		throw std::logic_error("Could not set the arregated fields for an admin unit.");
 
 	// Removing features out of scope
 	for (auto id : emptyFeatures)
-		layer->DeleteFeature(id);
+		featureError = static_cast<OGRErr>(featureError | 
+			layer->DeleteFeature(id));
+	if (featureError != OGRERR_NONE)
+		throw std::logic_error("Could not remove an unrequired admin unit.");
 	emptyFeatures.clear();
 	std::cout << "done." << std::endl;
 

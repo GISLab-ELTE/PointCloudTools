@@ -145,10 +145,10 @@ namespace DEM
 		for (unsigned int i = 0; i < sourceCount(); ++i)
 		{
 			// Default band index: multiplicity of same source
-			int bandIndex = _sourceOwnership
+			long long bandIndex = _sourceOwnership
 				? std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1
 				: std::count(_sourceDatasets.begin(), _sourceDatasets.begin() + i, _sourceDatasets[i]) + 1;
-			sourceBands[i] = _sourceDatasets[i]->GetRasterBand(bandIndex);
+			sourceBands[i] = _sourceDatasets[i]->GetRasterBand(static_cast<int>(bandIndex));
 		}
 
 		GDALDataType sourceType = gdalType<SourceType>();
@@ -171,6 +171,8 @@ namespace DEM
 
 		for (int y = 0; y < _targetMetadata.rasterSizeY(); ++y)
 		{
+			CPLErr ioResult = CE_None;
+
 			dataWindows.clear();
 			for (unsigned int i = 0; i < sourceCount(); ++i)
 			{
@@ -185,11 +187,12 @@ namespace DEM
 					int readSizeX = _sourceMetadata[i].rasterSizeX();
 					int readSizeY = -readOffsetY + std::min(readOffsetY + windowSize, _sourceMetadata[i].rasterSizeY());
 
-					sourceBands[i]->RasterIO(GF_Read,
-						readOffsetX, readOffsetY,
-						readSizeX, readSizeY,
-						sourceScanlines[i], _sourceMetadata[i].rasterSizeX(), windowSize,
-						sourceType, 0, 0);
+					ioResult = static_cast<CPLErr>(ioResult | 
+						sourceBands[i]->RasterIO(GF_Read,
+							readOffsetX, readOffsetY,
+							readSizeX, readSizeY,
+							sourceScanlines[i], _sourceMetadata[i].rasterSizeX(), windowSize,
+							sourceType, 0, 0));
 
 					dataWindows.emplace_back(sourceScanlines[i], sourceBands[i]->GetNoDataValue(),
 						readSizeX, readSizeY,
@@ -202,6 +205,8 @@ namespace DEM
 						sourceOffsetX, sourceOffsetY,
 						0, y);
 			}
+			if (ioResult != CE_None)
+				throw std::runtime_error("Source read error occured.");
 
 			for (int x = 0; x < _targetMetadata.rasterSizeX(); ++x)
 			{
