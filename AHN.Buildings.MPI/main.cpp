@@ -276,7 +276,7 @@ void processTile(const std::string& tileName,
 		process = new InMemoryProcess(tileName, ahn2Surface, ahn3Surface, outputDir);
 	else
 		process = new InMemoryProcess(tileName, ahn2Surface, ahn3Surface, ahn2Terrain, ahn3Terrain, outputDir);
-	process->progress = [](float complete, const std::string &message) // TODO: bad function call when nullptr
+	process->progress = [](float complete, const std::string &message)
 	{
 		return true;
 	};

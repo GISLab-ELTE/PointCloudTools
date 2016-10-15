@@ -194,13 +194,15 @@ namespace DEM
 							sourceScanlines[i], _sourceMetadata[i].rasterSizeX(), windowSize,
 							sourceType, 0, 0));
 
-					dataWindows.emplace_back(sourceScanlines[i], sourceBands[i]->GetNoDataValue(),
+					dataWindows.emplace_back(sourceScanlines[i], 
+						static_cast<SourceType>(sourceBands[i]->GetNoDataValue()),
 						readSizeX, readSizeY,
 						sourceOffsetX + readOffsetX, sourceOffsetY + readOffsetY,
 						0, y);
 				}
 				else
-					dataWindows.emplace_back(sourceScanlines[i], sourceBands[i]->GetNoDataValue(),
+					dataWindows.emplace_back(sourceScanlines[i], 
+						static_cast<SourceType>(sourceBands[i]->GetNoDataValue()),
 						0, 0,
 						sourceOffsetX, sourceOffsetY,
 						0, y);

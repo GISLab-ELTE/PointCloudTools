@@ -304,6 +304,7 @@ void Rasterize::onExecute()
 int Rasterize::gdalProgress(double dfComplete, const char *pszMessage, void *pProgressArg)
 {
 	Rasterize *filter = static_cast<Rasterize*>(pProgressArg);
+	if (!filter->progress) return true;
 	return filter->progress(static_cast<float>(dfComplete), std::string());
 }
 } // DEM

@@ -73,7 +73,7 @@ void ClusterFilter::onExecute()
 	GDALSieveFilter(
 		band, nullptr, band,
 		this->sizeThreshold, this->diagonalConnectedness ? 8 : 4,
-		nullptr, gdalProgress, static_cast<void*>(&_progressSieve));
+		nullptr, gdalProgress, static_cast<void*>(_progressSieve ? &_progressSieve : nullptr));
 
 	// Apply sieve filter on input
 	SweepLineTransformation<float> filter(std::vector<GDALDataset*>{_sourceDatasets[0], _sieveDataset},
@@ -98,6 +98,7 @@ void ClusterFilter::onExecute()
 int ClusterFilter::gdalProgress(double dfComplete, const char* pszMessage, void* pProgressArg)
 {
 	ProgressType* progress = static_cast<ProgressType*>(pProgressArg);
+	if (!progress) return true;
 	return (*progress)(static_cast<float>(dfComplete), pszMessage);
 }
 } // Buildings
