@@ -2,6 +2,8 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <stdexcept>
@@ -17,6 +19,8 @@
 #include <CloudLib.DEM/Metadata.h>
 #include <CloudLib.DEM/Rasterize.h>
 #include <CloudLib.DEM/SweepLineCalculation.h>
+#include <CloudLib.DEM/SweepLineTransformation.h>
+#include "Coverage.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -36,6 +40,8 @@ int main(int argc, char* argv[]) try
 	std::vector<std::string> dirPatterns;
 	std::vector<std::string> dirLayers;
 
+	unsigned int coverageExpansion = 2;
+
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -53,6 +59,8 @@ int main(int argc, char* argv[]) try
 			"file pattern for reference directories")
 		("dir-layer", po::value<std::vector<std::string>>(&dirLayers), 
 			"layer name for reference directories")
+		("coverage-expansion", po::value<unsigned int>(&coverageExpansion)->default_value(coverageExpansion),
+			"expansion of coverage in meters for overlay correction")
 		("help,h", "produce help message")
 		;
 
@@ -119,10 +127,14 @@ int main(int argc, char* argv[]) try
 
 	BarReporter reporter;
 	GDALAllRegister();
-	unsigned long approvedCount = 0,
-		          rejectedCount = 0;
-	double approvedSum = 0,
-		   rejectedSum = 0;
+	unsigned long approvedBasicCount = 0,
+		          rejectedBasicCount = 0,
+		          approvedCorrectedCount = 0,
+		          rejectedCorrectedCount = 0;
+	double approvedBasicSum = 0,
+		   rejectedBasicSum = 0,
+		   approvedCorrectedSum = 0,
+		   rejectedCorrectedSum = 0;
 
 	// For each AHN tile
 	boost::regex ahnRegex(ahnPattern);
@@ -181,9 +193,23 @@ int main(int argc, char* argv[]) try
 				throw std::runtime_error("Error at opening the AHN tile.");
 			RasterMetadata ahnMetadata(ahnDataset);
 
-			std::vector<GDALDataset*> sources(1);
-			sources[0] = ahnDataset;
-			std::size_t computationStep = listReferences.size() + 1;
+			std::vector<GDALDataset*> references;
+			references.reserve(listReferences.size());
+
+			// Computation mark points are the lower boundaries of the processes
+			std::map<std::string, std::size_t> computationMark =
+			{
+				{"basic", listReferences.size()},
+				{"correctedBinarization", listReferences.size() + 1},
+				{"correctedCoverage", listReferences.size() + 2},
+				{"correctedExpansion", listReferences.size() + 3},
+				{"correctedCalculation", listReferences.size() + 3 + 2 * coverageExpansion},
+			};
+			std::size_t computationSteps = std::max_element(computationMark.begin(), computationMark.end(),
+				[](const std::map<std::string, std::size_t>::value_type& a, const std::map<std::string, std::size_t>::value_type& b)
+			{
+				return a.second < b.second;
+			})->second + 1;
 
 			// Write process header
 			std::cout << std::endl
@@ -199,12 +225,12 @@ int main(int argc, char* argv[]) try
 			{
 				// Create the raster reference tile for the AHN tile
 				Rasterize rasterizer(listReferences[i], "",
-				                     !listLayers[i].empty() ? std::vector<std::string>{listLayers[i]} : std::vector<std::string>());
+					!listLayers[i].empty() ? std::vector<std::string>{listLayers[i]} : std::vector<std::string>());
 				rasterizer.targetFormat = "MEM";
 
-				rasterizer.progress = [&reporter, i, computationStep](float complete, const std::string &message)
+				rasterizer.progress = [&reporter, i, computationSteps](float complete, const std::string &message)
 				{
-					reporter.report(1.f * i / computationStep + complete / computationStep, message);
+					reporter.report(1.f * i / computationSteps + complete / computationSteps, message);
 					return true;
 				};
 
@@ -219,59 +245,207 @@ int main(int argc, char* argv[]) try
 				{
 					rasterizer.prepare();
 				}
-				catch(std::logic_error&) // no overlap
+				catch (std::logic_error&) // no overlap
 				{
-					reporter.report(1.f * (i + 1) / computationStep);
+					reporter.report(1.f * (i + 1) / computationSteps);
 					continue;
 				}
 				rasterizer.execute();
-				sources.push_back(rasterizer.target());
+				references.push_back(rasterizer.target());
 			}
 
-			// AHN altimetry change location verification
-			SweepLineCalculation<float> calculation(sources, 0,
-				[&approvedCount, &rejectedCount, &approvedSum, &rejectedSum]
-			(int x, int y, const std::vector<Window<float>>& data)
-			{
-				const auto& ahn = data[0];
-				if (!ahn.hasData()) return;
+			std::vector<GDALDataset*> sources(references.size() + 1);
+			sources[0] = ahnDataset;
+			std::copy(references.begin(), references.end(), sources.begin() + 1);
 
-				for (int i = 1; i < data.size(); ++i)
-					if (data[i].hasData())
+#pragma region Basic AHN altimetry change location verification
+			{
+				// Operation definition
+				SweepLineCalculation<float> verification(sources, 0,
+					[&approvedBasicCount, &rejectedBasicCount, &approvedBasicSum, &rejectedBasicSum]
+				(int x, int y, const std::vector<Window<float>>& data)
+				{
+					const auto& ahn = data[0];
+					if (!ahn.hasData()) return;
+
+					for (int i = 1; i < data.size(); ++i)
+						if (data[i].hasData())
+						{
+							++approvedBasicCount;
+							approvedBasicSum += std::abs(ahn.data());
+							return;
+						}
+					++rejectedBasicCount;
+					rejectedBasicSum += std::abs(ahn.data());
+				},
+					[&reporter, &computationMark, computationSteps](float complete, const std::string &message)
+				{
+					reporter.report(1.f * (computationMark["basic"]) / computationSteps + complete / computationSteps, message);
+					return true;
+				});
+				verification.spatialReference = "EPSG:28992";
+
+				// Execute operation
+				verification.execute();
+			}
+#pragma endregion
+
+#pragma region Corrected AHN altimetry change location verification
+			// AHN binarization
+			GDALDataset* ahnCoverage;
+			{
+				SweepLineTransformation<GByte, float> binarization({ ahnDataset }, 0, 
+					[](int x, int y, const std::vector<Window<float>>& data)
+				{
+					const auto& ahn = data[0];
+					return ahn.hasData() ? Coverage::Accept : Coverage::NoData;
+				},
+					[&reporter, &computationMark, computationSteps](float complete, const std::string &message)
+				{
+					reporter.report(1.f * (computationMark["correctedBinarization"]) / computationSteps + complete / computationSteps, message);
+					return true;
+				});
+				binarization.nodataValue = Coverage::NoData;
+
+				// Execute operation
+				binarization.execute();
+				ahnCoverage = binarization.target();
+			}
+
+			// AHN coverage with reference data
+			sources[0] = ahnCoverage;
+			{
+				SweepLineTransformation<GByte> coverage({ sources }, 0, 
+					[](int x, int y, const std::vector<Window<GByte>>& data)
+				{
+					const auto& ahn = data[0];
+					if (!ahn.hasData()) return Coverage::NoData;
+
+					for (int i = 1; i < data.size(); ++i)
+						if (data[i].hasData())
+							return Coverage::Accept;
+					return Coverage::Reject;
+				},
+					[&reporter, &computationMark, computationSteps](float complete, const std::string &message)
+				{
+					reporter.report(1.f * (computationMark["correctedCoverage"]) / computationSteps + complete / computationSteps, message);
+					return true;
+				});
+				coverage.nodataValue = Coverage::NoData;
+				coverage.spatialReference = "EPSG:28992";
+
+				// Execute operation
+				coverage.execute();
+				GDALClose(ahnCoverage);
+				ahnCoverage = coverage.target();
+			}
+
+			// Iterative coverage expansion
+			unsigned int iterations = 0;
+			for(; iterations < 2 * coverageExpansion; ++iterations)
+			{
+				unsigned int change = 0;
+				SweepLineTransformation<GByte> expansion({ ahnCoverage }, 1, 
+					[&change](int x, int y, const std::vector<Window<GByte>>& data)
+				{
+					const auto& coverage = data[0];
+					if (!coverage.hasData()) return Coverage::NoData;
+
+					if(coverage.data() == Coverage::Reject)
 					{
-						++approvedCount;
-						approvedSum += std::abs(ahn.data());
-						return;
+						if (coverage.data(-1, 0) == Coverage::Accept ||
+							coverage.data(1, 0)  == Coverage::Accept ||
+							coverage.data(0, -1) == Coverage::Accept ||
+							coverage.data(0, 1)  == Coverage::Accept)
+						{
+							++change;
+							return Coverage::Accept;
+						}
+						else
+							return Coverage::Reject;
 					}
-				++rejectedCount;
-				rejectedSum += std::abs(ahn.data());
-			},
-				[&reporter, computationStep](float complete, const std::string &message)
+					return Coverage::Accept;
+				},
+					[&reporter, &computationMark, computationSteps, iterations](float complete, const std::string &message)
+				{
+					reporter.report(1.f * (computationMark["correctedExpansion"] + iterations) / computationSteps + complete / computationSteps, message);
+					return true;
+				});
+				expansion.nodataValue = Coverage::NoData;
+				expansion.spatialReference = "EPSG:28992";
+
+				// Execute operation
+				expansion.execute();
+				GDALClose(ahnCoverage);
+				ahnCoverage = expansion.target();
+
+				// Break if no expansion
+				if (change == 0) break;
+			}
+
+			// Calculate corrected verification
 			{
-				reporter.report(1.f * (computationStep - 1) / computationStep + complete / computationStep, message);
-				return true;
-			});
-			calculation.spatialReference = "EPSG:28992";
+				SweepLineCalculation<float> calculation(std::vector<GDALDataset*>{ ahnDataset, ahnCoverage }, 0,
+					[&approvedCorrectedCount, &rejectedCorrectedCount, &approvedCorrectedSum, &rejectedCorrectedSum]
+				(int x, int y, const std::vector<Window<float>>& data)
+				{
+					const auto& ahn = data[0];
+					const auto& coverage = data[1];
+					if (!ahn.hasData()) return;
 
-			// Execute operation
-			calculation.execute();
+					if (coverage.data() == Coverage::Accept)
+					{
+						++approvedCorrectedCount;
+						approvedCorrectedSum += std::abs(ahn.data());
+					}
+					else
+					{
+						++rejectedCorrectedCount;
+						rejectedCorrectedSum += std::abs(ahn.data());
+					}
+				},
+					[&reporter, &computationMark, computationSteps](float complete, const std::string &message)
+				{
+					reporter.report(1.f * (computationMark["correctedCalculation"]) / computationSteps + complete / computationSteps, message);
+					return true;
+				});
+				calculation.spatialReference = "EPSG:28992";
+
+				// Execute operation
+				calculation.execute();
+			}
 			reporter.report(1.f);
+#pragma endregion
 
-			// Close datasets
-			for (GDALDataset *dataset : sources)
+			// Close reference datasets
+			for (GDALDataset *dataset : references)
 				GDALClose(dataset);
+
+			// Close AHN datasets
+			GDALClose(ahnDataset);
+			GDALClose(ahnCoverage);
 		}
 	}
 
 	// Write results to standard output
 	std::cout << std::endl
-		<< "All completed!" << std::endl << std::fixed << std::setprecision(2)
-		<< "Approved count: " << approvedCount << std::endl
-		<< "Approved sum: " << approvedSum << std::endl
-		<< "Rejected count: " << rejectedCount << std::endl
-		<< "Rejected sum: " << rejectedSum<< std::endl
-		<< "Ratio by count: " << ((100.f * approvedCount) / (approvedCount + rejectedCount)) << "%" << std::endl
-		<< "Ratio by sum: " << ((100.f * approvedSum) / (approvedSum + rejectedSum)) << "%" << std::endl;
+		<< "All completed!" << std::endl 
+		<< std::endl << std::fixed << std::setprecision(2)
+		<< "[Basic]" << std::endl
+		<< "Approved count: " << approvedBasicCount << std::endl
+		<< "Approved sum: " << approvedBasicSum << std::endl
+		<< "Rejected count: " << rejectedBasicCount << std::endl
+		<< "Rejected sum: " << rejectedBasicSum<< std::endl
+		<< "Ratio by count: " << ((100.f * approvedBasicCount) / (approvedBasicCount + rejectedBasicCount)) << "%" << std::endl
+		<< "Ratio by sum: " << ((100.f * approvedBasicSum) / (approvedBasicSum + rejectedBasicSum)) << "%" << std::endl
+		<< std::endl
+		<< "[Corrected]" << std::endl
+		<< "Approved count: " << approvedCorrectedCount << std::endl
+		<< "Approved sum: " << approvedCorrectedSum << std::endl
+		<< "Rejected count: " << rejectedCorrectedCount << std::endl
+		<< "Rejected sum: " << rejectedCorrectedSum << std::endl
+		<< "Ratio by count: " << ((100.f * approvedCorrectedCount) / (approvedCorrectedCount + rejectedCorrectedCount)) << "%" << std::endl
+		<< "Ratio by sum: " << ((100.f * approvedCorrectedSum) / (approvedCorrectedSum + rejectedCorrectedSum)) << "%" << std::endl;
 
 	// Execution time measurement
 	std::clock_t clockEnd = std::clock();
