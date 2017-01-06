@@ -134,17 +134,21 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Program
+	std::ofstream nullStream;
+	std::ostream &out = !hasFlag(mode, IOMode::Stream) ? std::cout : nullStream;
+	Reporter *reporter = !hasFlag(mode, IOMode::Stream)
+		? static_cast<Reporter*>(new BarReporter())
+		: static_cast<Reporter*>(new NullReporter());
+
 	if (!vm.count("quiet"))
-		std::cout << "=== AHN Building Filter ===" << std::endl;
+		out << "=== AHN Building Filter ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
-
-	BarReporter reporter;
-	std::string lastStatus;
 
 	// Configure the operation
 	GDALAllRegister();
 	Process* process;
+	std::string lastStatus;
 
 	switch (mode)
 	{
@@ -185,16 +189,16 @@ int main(int argc, char* argv[]) try
 	
 	if (!vm.count("quiet"))
 	{
-		process->progress = [&reporter, &lastStatus](float complete, const std::string &message)
+		process->progress = [&out, &reporter, &lastStatus](float complete, const std::string &message)
 		{
 			if(message != lastStatus)
 			{
-				std::cout << std::endl
+				out << std::endl
 					<< "Task: " << message << std::endl;
-				reporter.reset();
+				reporter->reset();
 				lastStatus = message;
 			}
-			reporter.report(complete, message);
+			reporter->report(complete, message);
 			return true;
 		};
 	}
@@ -202,6 +206,7 @@ int main(int argc, char* argv[]) try
 	// Execute operation
 	process->execute();
 	delete process;
+	delete reporter;
 
 	// Execution time measurement
 	std::clock_t clockEnd = std::clock();
@@ -209,7 +214,7 @@ int main(int argc, char* argv[]) try
 
 	if (!vm.count("quiet"))
 	{
-		std::cout << std::endl 
+		out << std::endl 
 			<< "All completed!" << std::endl
 			<< std::fixed << std::setprecision(2) << "CPU time used: "
 			<< 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl

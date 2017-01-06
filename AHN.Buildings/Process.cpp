@@ -369,6 +369,11 @@ const char* StreamedProcess::StreamInputPath = "/vsimem/stream.tif";
 StreamedProcess::StreamedProcess(const std::string& id)
 	: Process(id)
 {
+	#ifdef _MSC_VER
+	// Prepares input binary read mode on Windows
+	_setmode(_fileno(stdin), _O_BINARY);
+	#endif
+
 	// Read streamed input into a virtual file.
 	std::vector<GByte> buffer((
 		std::istreambuf_iterator<char>(std::cin)),
@@ -402,17 +407,6 @@ StreamedProcess::~StreamedProcess()
 	}
 }
 
-void StreamedProcess::onPrepare()
-{
-	Process::onPrepare();
-
-	// Prepares streaming
-	#ifdef _MSC_VER
-	_setmode(_fileno(stdin), _O_BINARY);
-	_setmode(_fileno(stdout), _O_BINARY);
-	#endif
-}
-
 void StreamedProcess::onExecute()
 {
 	Process::onExecute();
@@ -424,6 +418,11 @@ void StreamedProcess::onExecute()
 		VSIUnlink(StreamInputPath);
 		_streamInputFile = nullptr;
 	}
+
+	#ifdef _MSC_VER
+	// Prepares output binary write mode on Windows
+	_setmode(_fileno(stdout), _O_BINARY);
+	#endif
 
 	// Stream the output
 	vsi_l_offset length;

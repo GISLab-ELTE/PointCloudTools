@@ -288,11 +288,6 @@ public:
 
 protected:
 	/// <summary>
-	/// Verifies the configuration, prepares streaming.
-	/// </summary>
-	void onPrepare() override;
-
-	/// <summary>
 	/// Produces the output and streams.
 	/// </summary>
 	void onExecute() override;
