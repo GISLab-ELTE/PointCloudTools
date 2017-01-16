@@ -35,10 +35,14 @@ namespace Buildings
 
 Process::~Process()
 {
-	if (_ahn2SurfaceDataset) GDALClose(_ahn2SurfaceDataset);
-	if (_ahn3SurfaceDataset) GDALClose(_ahn3SurfaceDataset);
-	if (_ahn2TerrainDataset) GDALClose(_ahn2TerrainDataset);
-	if (_ahn3TerrainDataset) GDALClose(_ahn3TerrainDataset);
+	if (_ahn2SurfaceDataset)
+		GDALClose(_ahn2SurfaceDataset);
+	if (_ahn3SurfaceDataset && _ahn3SurfaceDataset != _ahn2SurfaceDataset)
+		GDALClose(_ahn3SurfaceDataset);
+	if (_ahn2TerrainDataset)
+		GDALClose(_ahn2TerrainDataset);
+	if (_ahn3TerrainDataset && _ahn3TerrainDataset != _ahn2TerrainDataset)
+		GDALClose(_ahn3TerrainDataset);
 
 	for (auto& item : _results)
 		delete item.second;
@@ -88,8 +92,11 @@ void Process::onExecute()
 			result("buildings-ahn3").dataset = extraction.target();
 		}
 
-		GDALClose(_ahn2TerrainDataset); _ahn2TerrainDataset = nullptr;
-		GDALClose(_ahn3TerrainDataset); _ahn3TerrainDataset = nullptr;
+		GDALClose(_ahn2TerrainDataset);
+		if (_ahn3TerrainDataset != _ahn2TerrainDataset)
+			GDALClose(_ahn3TerrainDataset);
+		_ahn2TerrainDataset = nullptr;
+		_ahn3TerrainDataset = nullptr;
 	}
 	else
 	{
@@ -128,8 +135,11 @@ void Process::onExecute()
 		comparison.execute();
 		result("changeset").dataset = comparison.target();
 	}
-	GDALClose(_ahn2SurfaceDataset); _ahn2SurfaceDataset = nullptr;
-	GDALClose(_ahn3SurfaceDataset); _ahn3SurfaceDataset = nullptr;
+	GDALClose(_ahn2SurfaceDataset);
+	if (_ahn3SurfaceDataset != _ahn2SurfaceDataset)
+		GDALClose(_ahn3SurfaceDataset);
+	_ahn2SurfaceDataset = nullptr;
+	_ahn3SurfaceDataset = nullptr;
 	deleteResult("buildings-ahn2");
 	deleteResult("buildings-ahn3");
 
@@ -375,10 +385,10 @@ StreamedProcess::StreamedProcess(const std::string& id)
 	#endif
 
 	// Read streamed input into a virtual file.
-	std::vector<GByte> buffer((
-		std::istreambuf_iterator<char>(std::cin)),
+	_buffer = new std::vector<GByte>(
+		(std::istreambuf_iterator<char>(std::cin)),
 		(std::istreambuf_iterator<char>()));
-	_streamInputFile = VSIFileFromMemBuffer(StreamInputPath, &buffer[0], buffer.size(), false);
+	_streamInputFile = VSIFileFromMemBuffer(StreamInputPath, &(*_buffer)[0], _buffer->size(), false);
 
 	_ahn2SurfaceDataset = static_cast<GDALDataset*>(GDALOpen(StreamInputPath, GA_ReadOnly));
 	if (_ahn2SurfaceDataset->GetRasterCount() < 2)
@@ -405,6 +415,10 @@ StreamedProcess::~StreamedProcess()
 		VSIFCloseL(_streamInputFile);
 		VSIUnlink(StreamInputPath);
 	}
+	if(_buffer)
+	{
+		delete _buffer;
+	}
 }
 
 void StreamedProcess::onExecute()
@@ -417,6 +431,11 @@ void StreamedProcess::onExecute()
 		VSIFCloseL(_streamInputFile);
 		VSIUnlink(StreamInputPath);
 		_streamInputFile = nullptr;
+	}
+	if (_buffer)
+	{
+		delete _buffer;
+		_buffer = nullptr;
 	}
 
 	#ifdef _MSC_VER

@@ -275,6 +275,7 @@ protected:
 	/// </summary>
 	static const char* StreamInputPath;
 	VSILFILE* _streamInputFile = nullptr;
+	std::vector<GByte>* _buffer = nullptr;
 
 	std::size_t _nextResult = 1;
 
