@@ -387,8 +387,21 @@ void FileBasedProcess::configure(CloudLib::DEM::Transformation& transformation) 
 
 const char* StreamedProcess::StreamInputPath = "/vsimem/stream.tif";
 
-StreamedProcess::StreamedProcess(const std::string& id)
-	: Process(id)
+StreamedProcess::~StreamedProcess()
+{
+	// Closes streamed input
+	if (_streamInputFile)
+	{
+		VSIFCloseL(_streamInputFile);
+		VSIUnlink(StreamInputPath);
+	}
+	if(_buffer)
+	{
+		delete _buffer;
+	}
+}
+
+void StreamedProcess::onPrepare()
 {
 	#ifdef _MSC_VER
 	// Prepares input binary read mode on Windows
@@ -415,20 +428,6 @@ StreamedProcess::StreamedProcess(const std::string& id)
 	{
 		_ahn2TerrainDataset = _ahn2SurfaceDataset;
 		_ahn3TerrainDataset = _ahn2SurfaceDataset;
-	}
-}
-
-StreamedProcess::~StreamedProcess()
-{
-	// Closes streamed input
-	if (_streamInputFile)
-	{
-		VSIFCloseL(_streamInputFile);
-		VSIUnlink(StreamInputPath);
-	}
-	if(_buffer)
-	{
-		delete _buffer;
 	}
 }
 
@@ -488,15 +487,10 @@ void StreamedProcess::configure(CloudLib::DEM::Transformation& transformation) c
 
 #pragma region HadoopProcess
 
-HadoopProcess::HadoopProcess() 
-	: StreamedProcess("placeholder")
+void HadoopProcess::onPrepare()
 {
 	std::cin >> _key;
 	std::cin.get(); // tabulator
-}
-
-void HadoopProcess::onPrepare()
-{
 	std::cout << _key << '\t';
 	_id = fs::path(_key).stem().string();
 

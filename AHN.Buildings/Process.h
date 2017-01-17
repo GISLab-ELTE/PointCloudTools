@@ -279,15 +279,23 @@ protected:
 
 	std::size_t _nextResult = 1;
 
-public:	
+public:
 	/// <summary>
-	/// Initializes a new instance of the class. Read streamed input.
+	/// Initializes a new instance of the class.
 	/// </summary>
+	/// <remarks>
+	/// Streamed input is only read by <see cref="onPrepare"/>.
+	/// </remarks>
 	/// <param name="id">Unique identifier, in most cases the name of the tile to process.</param>
-	StreamedProcess(const std::string& id);
+	StreamedProcess(const std::string& id) : Process(id) { }
 	~StreamedProcess();
 
 protected:
+	/// <summary>
+	/// Read streamed input and verifies the configuration.
+	/// </summary>
+	void onPrepare() override;
+
 	/// <summary>
 	/// Produces the output and streams.
 	/// </summary>
@@ -325,7 +333,7 @@ public:
 	/// <remarks>
 	/// The identifier which will be the filename will be read from the stream.
 	/// </remarks>
-	HadoopProcess();
+	HadoopProcess() : StreamedProcess("placeholder") { }
 
 protected:
 	/// <summary>
