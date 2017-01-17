@@ -315,6 +315,9 @@ protected:
 /// </summary>
 class HadoopProcess : public StreamedProcess
 {
+protected:
+	std::string _key;
+
 public:	
 	/// <summary>
 	/// Initializes a new instance of the class.
@@ -322,8 +325,7 @@ public:
 	/// <remarks>
 	/// The identifier which will be the filename will be read from the stream.
 	/// </remarks>
-	HadoopProcess() : StreamedProcess("placeholder")
-	{ }
+	HadoopProcess();
 
 protected:
 	/// <summary>

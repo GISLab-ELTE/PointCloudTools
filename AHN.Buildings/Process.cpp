@@ -488,13 +488,17 @@ void StreamedProcess::configure(CloudLib::DEM::Transformation& transformation) c
 
 #pragma region HadoopProcess
 
+HadoopProcess::HadoopProcess() 
+	: StreamedProcess("placeholder")
+{
+	std::cin >> _key;
+	std::cin.get(); // tabulator
+}
+
 void HadoopProcess::onPrepare()
 {
-	std::string key;
-	std::cin >> key;
-	std::cin.get(); // tabulator
-	std::cout << key << '\t';
-	_id = fs::path(key).stem().string();
+	std::cout << _key << '\t';
+	_id = fs::path(_key).stem().string();
 
 	StreamedProcess::onPrepare();
 }
