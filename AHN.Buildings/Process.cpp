@@ -76,6 +76,8 @@ void Process::onExecute()
 		{
 			BuildingExtraction extraction(_ahn2SurfaceDataset, _ahn2TerrainDataset,
 				result("buildings-ahn2").path(), _progress);
+			if (_ahn2SurfaceDataset == _ahn2TerrainDataset)
+				extraction.bands = { 1, 2 };
 			configure(extraction);
 
 			extraction.execute();
@@ -86,17 +88,15 @@ void Process::onExecute()
 		{
 			BuildingExtraction extraction(_ahn3SurfaceDataset, _ahn3TerrainDataset,
 				result("buildings-ahn3").path(), _progress);
+			if (_ahn3SurfaceDataset == _ahn3TerrainDataset)
+				extraction.bands = { 1, 2 };
+			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
+				extraction.bands = { 3, 4 };
 			configure(extraction);
 
 			extraction.execute();
 			result("buildings-ahn3").dataset = extraction.target();
 		}
-
-		GDALClose(_ahn2TerrainDataset);
-		if (_ahn3TerrainDataset != _ahn2TerrainDataset)
-			GDALClose(_ahn3TerrainDataset);
-		_ahn2TerrainDataset = nullptr;
-		_ahn3TerrainDataset = nullptr;
 	}
 	else
 	{
@@ -114,6 +114,8 @@ void Process::onExecute()
 		{
 			BuildingFilter filter(_ahn3SurfaceDataset,
 				result("buildings-ahn3").path(), _progress);
+			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
+				filter.bands = { 2 };
 			configure(filter);
 
 			filter.execute();
@@ -138,8 +140,14 @@ void Process::onExecute()
 	GDALClose(_ahn2SurfaceDataset);
 	if (_ahn3SurfaceDataset != _ahn2SurfaceDataset)
 		GDALClose(_ahn3SurfaceDataset);
+	if (_ahn2TerrainDataset != _ahn2SurfaceDataset)
+		GDALClose(_ahn2TerrainDataset);
+	if (_ahn3TerrainDataset != _ahn3SurfaceDataset)
+		GDALClose(_ahn3TerrainDataset);
 	_ahn2SurfaceDataset = nullptr;
 	_ahn3SurfaceDataset = nullptr;
+	_ahn2TerrainDataset = nullptr;
+	_ahn3TerrainDataset = nullptr;
 	deleteResult("buildings-ahn2");
 	deleteResult("buildings-ahn3");
 
@@ -443,11 +451,15 @@ void StreamedProcess::onExecute()
 	_setmode(_fileno(stdout), _O_BINARY);
 	#endif
 
+	// Close the dataset to finalize the binary data behind it.
+	GDALClose(result("").dataset);
+	result("").dataset = nullptr;
+
 	// Stream the output
 	vsi_l_offset length;
-	GByte* buffer = VSIGetMemFileBuffer(result("").path().c_str(), &length, true);
+	GByte* buffer = VSIGetMemFileBuffer(result("").path().c_str(), &length, false);
 	std::copy(buffer, buffer + length, std::ostream_iterator<GByte>(std::cout));
-	delete[] buffer;
+	// Do not delete buffer, as it is still owned and freed by VSI file.
 }
 
 Result* StreamedProcess::createResult(const std::string& name, bool isFinal)
