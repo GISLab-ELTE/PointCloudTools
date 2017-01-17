@@ -29,7 +29,11 @@ class SweepLineTransformation : public Transformation
 {
 public:
 	typedef std::function<TargetType(int, int, const std::vector<Window<SourceType>>&)> ComputationType;
-	ComputationType computation;
+	ComputationType computation;	
+	/// <summary>
+	/// The indices of bands to use respectively for each data source.
+	/// </summary>
+	std::vector<int> bands;
 
 protected:
 	int _range;
@@ -204,10 +208,19 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 	std::vector<GDALRasterBand*> sourceBands(sourceCount());
 	for (unsigned int i = 0; i < sourceCount(); ++i)
 	{
-		// Default band index: multiplicity of same source
-		long long bandIndex = _sourceOwnership
-			? std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1
-			: std::count(_sourceDatasets.begin(), _sourceDatasets.begin() + i, _sourceDatasets[i]) + 1;
+		long long bandIndex;
+		if (bands.size() > i)
+		{
+			// Use manually defined band index
+			bandIndex = bands[i];
+		}
+		else
+		{
+			// Default band index: multiplicity of same source
+			bandIndex = _sourceOwnership
+				? std::count(_sourcePaths.begin(), _sourcePaths.begin() + i, _sourcePaths[i]) + 1
+				: std::count(_sourceDatasets.begin(), _sourceDatasets.begin() + i, _sourceDatasets[i]) + 1;
+		}
 		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(static_cast<int>(bandIndex));
 	}
 	GDALRasterBand* targetBand = _targetDataset->GetRasterBand(1);
