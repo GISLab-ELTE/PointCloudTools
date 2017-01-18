@@ -4,6 +4,10 @@
 #include <ctime>
 #include <chrono>
 
+#ifdef __linux__
+#include <cstdlib>
+#endif
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <gdal.h>
@@ -21,6 +25,16 @@ using namespace AHN::Buildings;
 
 int main(int argc, char* argv[]) try
 {
+	#ifdef __linux__
+	{
+		// For Boost verion <1.56 Boost internally tries to construct a std::locale("").
+		// This call will fail on Linux if the LC_ALL environment variable is not configured (or misconfigured).
+		const char* lc_all = std::getenv("LC_ALL");
+		if(!lc_all || !strlen(lc_all))
+			std::setenv("LC_ALL", "C", 1);
+	}
+	#endif
+
 	std::string tileName;
 	std::string ahn2Surface,
 	            ahn3Surface,
