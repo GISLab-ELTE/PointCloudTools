@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) try
 		// This call will fail on Linux if the LC_ALL environment variable is not configured (or misconfigured).
 		const char* lc_all = std::getenv("LC_ALL");
 		if(!lc_all || !strlen(lc_all))
-			std::setenv("LC_ALL", "C", 1);
+			setenv("LC_ALL", "C", 1);
 	}
 	#endif
 
