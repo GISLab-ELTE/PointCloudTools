@@ -8,7 +8,7 @@ if exist "%~dp0\Shell.config.cmd" (
   echo Create Shell.config.cmd config file from Shell.config.cmd.sample!
   exit /b
 )
-set PATH=%CLOUDTOOLS_BIN%;%GDAL_BIN%;%PATH%
+set PATH=%~dp0;%GDAL_BIN%;%PATH%
 
 :: Check GDAL/OGR
 where gdalinfo >nul 2>&1

@@ -1,4 +1,3 @@
-set CLOUDTOOLS_BIN=%~dp0\Release\x64
 set GDAL_BIN=
 set GDAL_DATA=
 set GDAL_DRIVER_PATH=

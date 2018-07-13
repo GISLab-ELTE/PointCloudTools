@@ -22,19 +22,16 @@ The MPI dependency is required for the `AHN.Buildings.MPI` project to evaluate i
 Structure
 ------------
 
-The repository in consisted of 3 solutions and 9 projects altogether.
-- **CloudLib**: Library of general point cloud processing algorithms.
-  - *CloubLib.DEM:* Algorithms on DEM transformation and calculation.
-- **CloudTools**: General tools for point cloud processing and comparison.
-  - *CloudTools.Common:* Reporting and I/O management.
-  - *CloudTools.DEM.Compare:* Compares multi-temporal DEMs of same area to retrieve differences.
-  - *CloudTools.DEM.Filter:* Transforms a vector filter into a raster filter and/or applies the latter on a DEM.
-- **AHN**: Specific tools for processing the AHN dataset.
-  - *AHN.Buildings:* Compares an AHN-2 and AHN-3 tile pair and filters out changes in buildings.
-  - *AHN.Buildings.Parallel:* Compares pairs of AHN-2 and AHN-3 tiles parallely and filters out changes in buildings.
-  - *AHN.Buildings.MPI:* Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
-  - *AHN.Buildings.Aggregate:* Computes aggregative change of volume for administrative units.
-  - *AHN.Buildings.Verify:* Verifies detected building changes against reference files.
+The repository in consisted of 9 projects altogether.
+- **CloubLib.DEM:** Algorithms on DEM transformation and calculation.
+- **CloudTools.Common:** Reporting and I/O management.
+- **CloudTools.DEM.Compare:** Compares multi-temporal DEMs of same area to retrieve differences.
+- **CloudTools.DEM.Filter:** Transforms a vector filter into a raster filter and/or applies the latter on a DEM.
+- **AHN.Buildings:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in buildings.
+- **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallely and filters out changes in buildings.
+- **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
+- **AHN.Buildings.Aggregate:** Computes aggregative change of volume for administrative units.
+- **AHN.Buildings.Verify:** Verifies detected building changes against reference files.
 
 
 How to build
@@ -45,22 +42,38 @@ The project was built and tested on the following operating systems:
 - Windows 7
 - Ubuntu Linux 16.04 LTS
 
+The repository utilizes the [CMake](https://cmake.org/) cross-platform build system. To generate the build environment, run CMake:
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=<install_path>
+```
+
+The following table contains a few CMake variables which might be relevant
+during compilation.
+
+| Variable | Meaning |
+| -------- | ------- |
+| `CMAKE_INSTALL_PREFIX` | Install directory. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_INSTALL_PREFIX.html |
+| `CMAKE_BUILD_TYPE` | Specifies the build type on single-configuration generators (e.g. *Unix Makefiles*). Possible values are empty, **Debug**, **Release**, **RelWithDebInfo** and **MinSizeRel**. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_BUILD_TYPE.html |
+| `CMAKE_GENERATOR_PLATFORM` | Configures the target platform for generators supporting it (e.g. *MSVC*). Possible values are empty, **x86** and **x64**. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_GENERATOR_PLATFORM.html |
 
 ### On Windows
 
-The repository contains the respective Visual Studio solution and project files which can be used to open and/or build the projects.
+Using CMake with the *MSVC generator* it will construct a Visual Studio solution which can be used to build the projects. Open a *Developer Command Prompt for Visual Studio* to build the solution and optionally install the binaries to the specified destination:
+```batch
+msbuild CloudTools.sln
+msbuild INSTALL.vcxproj
+```
 
-Before compiling the source, the include and library paths of the Boost and GDAL libraries must be configured in the `CloudLib.DEM.<arch>` and the `CloudTools.DEM.<arch>` property sheets (e.g. `CloudTools.DEM.x64`). You can edit them visually in Visual Studio through the *Property Manager* or by opening the respective files in any text editor (e.g. `CloudTools.DEM.x64.props`)
+You may specify the `/property:Configuration=<value>` flag to set the project configuration. Supported values are **Debug** and **Release**.
 
 ### On Linux
 
-The repository contains the required [GNU Makefile](https://www.gnu.org/software/make/) for building.  
-Create a `Makefile.config` file based on the given sample (`Makefile.config.sample`) and modify the flags and options as desired. Make sure that all libraries mentioned in the [Dependencies](#dependencies) section are available on the standard include and library paths or define them in the respective flags.
-
-Then a simple `make` command is sufficient for compilation.  
-Specify one of the above mentioned project or solution names in section [Structure](#structure) as the build target to only build a subset of the projects, e.g.:
+Using CMake with the *Unix Makefiles* generator it will construct [GNU Makefiles](https://www.gnu.org/software/make/) as a build system. Then a simple `make` command is sufficient for compilation.  
+Specify one of the above mentioned project names in section [Structure](#structure) as the build target to only build a subset of the projects, e.g.:
 ~~~bash
-make CloudTools
+make
 make AHN.Buildings.Parallel
 ~~~
 *Note:* you may add the `-j<N>` flag to compile on multiple threads (where `<N>` is the number of threads).  
@@ -68,7 +81,7 @@ make AHN.Buildings.Parallel
 How to use
 ------------
 
-On build of the *CloudTools* and *AHN* solutions, the following executables will be available:
+On build of repository, the following executables will be available:
 ```
 dem_compare
 dem_filter
@@ -80,4 +93,5 @@ ahn_buildings_mpi
 ```
 Get usage information and available arguments with the `-h` flag.
 
-*Note:* since the GDAL library is linked dynamically, some environment variables (`GDAL_BIN`, `GDAL_DATA` and `GDAL_DRIVER_PATH`) must be configured to execute the above binaries. Set them correctly in your OS account or (on Windows) create a `Shell.config.cmd` file based on the given sample (`Shell.config.cmd.sample`) and run the `Shell.bat` preconfigured environment.
+*Note:* since the GDAL library is linked dynamically, some environment variables (`GDAL_BIN`, `GDAL_DATA` and `GDAL_DRIVER_PATH`) must be configured to execute the above binaries. Set them correctly in your OS account or in the active shell.  
+On Windows you may create a `Shell.config.cmd` file based on the given sample (`Shell.config.cmd.sample`) and run the `Shell.bat` preconfigured environment at the installation location.
