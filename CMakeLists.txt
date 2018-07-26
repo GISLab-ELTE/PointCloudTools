@@ -12,17 +12,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# Set a default build type if none was specified
-set(DEFAULT_GENERATOR_PLATFORM "x64")
-if(WIN32 AND NOT CMAKE_GENERATOR_PLATFORM)
-    message(STATUS "Setting build platform to '${DEFAULT_GENERATOR_PLATFORM}' as none was specified.")
-    set(CMAKE_GENERATOR_PLATFORM "${DEFAULT_GENERATOR_PLATFORM}" CACHE
-        STRING "Choose the platform of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_GENERATOR_PLATFORM PROPERTY STRINGS
-        "x86" "x64")
-endif()
-
 set(CMAKE_CXX_STANDARD 11)
 
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem program_options regex)

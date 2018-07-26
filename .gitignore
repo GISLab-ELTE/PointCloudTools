@@ -245,6 +245,8 @@ ModelManifest.xml
 .fake/
 
 # Customization
-/Test
-/Makefile.config
+/[Bb]uild/
+/[Ii]nstall/
+/[Tt]est/
 /Shell.config.cmd
+/CMakeSettings.json

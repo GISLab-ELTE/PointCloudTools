@@ -1,0 +1,79 @@
+{
+  // See https://go.microsoft.com//fwlink//?linkid=834763 for more information about this file.
+  "configurations": [
+    {
+      "name": "x86-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "buildRoot": "${workspaceRoot}\\build\\${name}",
+      "installRoot": "${workspaceRoot}\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "environments": [
+        {
+          "GDAL_ROOT": "${cloudtools_x86.GDAL_ROOT}"
+        }
+      ]
+    },
+    {
+      "name": "x86-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [ "msvc_x86", "cloudtools_x86" ],
+      "buildRoot": "${workspaceRoot}\\build\\${name}",
+      "installRoot": "${workspaceRoot}\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "environments": [
+        {
+          "GDAL_ROOT": "${cloudtools_x86.GDAL_ROOT}"
+        }
+      ]
+    },
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${workspaceRoot}\\build\\${name}",
+      "installRoot": "${workspaceRoot}\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "environments": [
+        {
+          "GDAL_ROOT": "${cloudtools_x64.GDAL_ROOT}"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${workspaceRoot}\\build\\${name}",
+      "installRoot": "${workspaceRoot}\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "environments": [
+        {
+          "GDAL_ROOT": "${cloudtools_x64.GDAL_ROOT}"
+        }
+      ]
+    }
+  ],
+  "environments": [
+    {
+      "namespace": "cloudtools_x86",
+      "GDAL_ROOT": "${env.GDAL_ROOT}"
+    },
+    {
+      "namespace": "cloudtools_x64",
+      "GDAL_ROOT": "${env.GDAL_ROOT}"
+    }
+  ]
+}
