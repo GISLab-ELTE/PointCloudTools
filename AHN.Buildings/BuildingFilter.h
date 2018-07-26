@@ -4,7 +4,7 @@
 
 #include <gdal.h>
 
-#include <CloudLib.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineTransformation.h>
 
 namespace AHN
 {
@@ -13,7 +13,7 @@ namespace Buildings
 /// <summary>
 /// Represents a building (artifical object) filter for DEM datasets.
 /// </summary>
-class BuildingFilter : public CloudLib::DEM::SweepLineTransformation<GByte, float>
+class BuildingFilter : public CloudTools::DEM::SweepLineTransformation<GByte, float>
 {
 public:
 	/// <summary>

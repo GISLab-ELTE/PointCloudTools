@@ -14,17 +14,17 @@
 #include <gdal_utils.h>
 
 #include <CloudTools.Common/Reporter.h>
-#include <CloudLib.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineTransformation.h>
 #include "Process.h"
 #include "BuildingExtraction.h"
 #include "BuildingFilter.h"
 #include "Comparison.h"
-#include "NoiseFilter.h"
-#include "MajorityFilter.h"
-#include "ClusterFilter.h"
-#include "MorphologyFilter.h"
+#include <CloudTools.DEM/Filters/NoiseFilter.hpp>
+#include <CloudTools.DEM/Filters/MajorityFilter.hpp>
+#include <CloudTools.DEM/Filters/ClusterFilter.hpp>
+#include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 
-using namespace CloudLib::DEM;
+using namespace CloudTools::DEM;
 using namespace CloudTools::IO;
 
 namespace AHN
@@ -158,7 +158,7 @@ void Process::onExecute()
 	_progressMessage = "Noise filtering";
 	newResult("noise");
 	{
-		NoiseFilter filter(result("changeset").dataset, result("noise").path(), 2, _progress);
+		NoiseFilter<float> filter(result("changeset").dataset, result("noise").path(), 2, _progress);
 		configure(filter);
 
 		filter.execute();
@@ -171,7 +171,7 @@ void Process::onExecute()
 	newResult("sieve");
 	newResult("cluster");
 	{
-		ClusterFilter filter(result("noise").dataset, result("sieve").path(), result("cluster").path(), _progress);
+		ClusterFilter<float> filter(result("noise").dataset, result("sieve").path(), result("cluster").path(), _progress);
 		filter.nodataValue = 0;
 		configure(filter);
 
@@ -186,7 +186,7 @@ void Process::onExecute()
 	_progressMessage = "Morpohology dilation";
 	newResult("dilation");
 	{
-		MorphologyFilter filter(result("cluster").dataset, result("dilation").path(), MorphologyFilter::Dilation, _progress);
+		MorphologyFilter<float> filter(result("cluster").dataset, result("dilation").path(), MorphologyFilter<float>::Dilation, _progress);
 		configure(filter);
 
 		filter.execute();
@@ -200,7 +200,7 @@ void Process::onExecute()
 		_progressMessage = "Majority filtering / r=" + std::to_string(range);
 		std::size_t index = newResult("majority");
 		{
-			MajorityFilter filter(
+			MajorityFilter<float> filter(
 				index == 0 ? result("dilation").dataset : result("majority", 0).dataset,
 				result("majority", index).path(),
 				range, _progress);
@@ -351,7 +351,7 @@ Result* InMemoryProcess::createResult(const std::string& name, bool isFinal)
 		return new MemoryResult();
 }
 
-void InMemoryProcess::configure(CloudLib::DEM::Transformation& transformation) const
+void InMemoryProcess::configure(CloudTools::DEM::Transformation& transformation) const
 {
 	transformation.targetFormat = "MEM";
 }
@@ -375,7 +375,7 @@ Result* FileBasedProcess::createResult(const std::string& name, bool isFinal)
 		return new TemporaryFileResult(fs::path(_outputPath) / filename);
 }
 
-void FileBasedProcess::configure(CloudLib::DEM::Transformation& transformation) const
+void FileBasedProcess::configure(CloudTools::DEM::Transformation& transformation) const
 {
 	transformation.targetFormat = "GTiff";
 	transformation.createOptions.insert(std::make_pair("COMPRESS", "DEFLATE"));
@@ -478,7 +478,7 @@ Result* StreamedProcess::createResult(const std::string& name, bool isFinal)
 		return new MemoryResult();
 }
 
-void StreamedProcess::configure(CloudLib::DEM::Transformation& transformation) const
+void StreamedProcess::configure(CloudTools::DEM::Transformation& transformation) const
 {
 	transformation.targetFormat = "MEM";
 }

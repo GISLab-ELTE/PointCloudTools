@@ -7,8 +7,8 @@
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
-#include <CloudLib.DEM/Operation.h>
-#include <CloudLib.DEM/Transformation.h>
+#include <CloudTools.DEM/Operation.h>
+#include <CloudTools.DEM/Transformation.h>
 #include "Result.h"
 
 namespace fs = boost::filesystem;
@@ -20,7 +20,7 @@ namespace Buildings
 /// <summary>
 /// The AHN Building Filter operation.
 /// </summary>
-class Process : public CloudLib::DEM::Operation
+class Process : public CloudTools::DEM::Operation
 {
 public:
 	/// <summary>
@@ -114,7 +114,7 @@ protected:
 	/// <remarks>
 	/// The targets of these transformations are never final.
 	/// </remarks>
-	virtual void configure(CloudLib::DEM::Transformation& transformation) const = 0;
+	virtual void configure(CloudTools::DEM::Transformation& transformation) const = 0;
 
 	/// <summary>
 	/// Routes the C-style GDAL progress reports to the defined reporter.
@@ -189,7 +189,7 @@ protected:
 	/// <remarks>
 	/// The targets of these transformations are never final.
 	/// </remarks>
-	void configure(CloudLib::DEM::Transformation& transformation) const override;
+	void configure(CloudTools::DEM::Transformation& transformation) const override;
 };
 
 /// <summary>
@@ -257,7 +257,7 @@ protected:
 	/// <remarks>
 	/// The targets of these transformations are never final.
 	/// </remarks>
-	void configure(CloudLib::DEM::Transformation& transformation) const override;
+	void configure(CloudTools::DEM::Transformation& transformation) const override;
 };
 
 /// <summary>
@@ -315,7 +315,7 @@ protected:
 	/// <remarks>
 	/// The targets of these transformations are never final.
 	/// </remarks>
-	void configure(CloudLib::DEM::Transformation& transformation) const override;
+	void configure(CloudTools::DEM::Transformation& transformation) const override;
 };
 
 /// <summary>

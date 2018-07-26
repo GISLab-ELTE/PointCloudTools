@@ -23,10 +23,10 @@ Structure
 ------------
 
 The repository in consisted of 9 projects altogether.
-- **CloubLib.DEM:** Algorithms on DEM transformation and calculation.
+- **CloudTools.DEM:** Algorithms on DEM transformation and calculation.
+- **CloudTools.DEM.Difference:** Compares multi-temporal DEMs of same area to retrieve differences.
+- **CloudTools.DEM.Mask:** Transforms a vector filter mask into a raster filter mask and/or applies the latter on a DEM.
 - **CloudTools.Common:** Reporting and I/O management.
-- **CloudTools.DEM.Compare:** Compares multi-temporal DEMs of same area to retrieve differences.
-- **CloudTools.DEM.Filter:** Transforms a vector filter into a raster filter and/or applies the latter on a DEM.
 - **AHN.Buildings:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in buildings.
 - **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallely and filters out changes in buildings.
 - **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
@@ -56,7 +56,6 @@ during compilation.
 | -------- | ------- |
 | `CMAKE_INSTALL_PREFIX` | Install directory. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_INSTALL_PREFIX.html |
 | `CMAKE_BUILD_TYPE` | Specifies the build type on single-configuration generators (e.g. *Unix Makefiles*). Possible values are empty, **Debug**, **Release**, **RelWithDebInfo** and **MinSizeRel**. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_BUILD_TYPE.html |
-| `CMAKE_GENERATOR_PLATFORM` | Configures the target platform for generators supporting it (e.g. *MSVC*). Possible values are empty, **x86** and **x64**. For more information see: https://cmake.org/cmake/help/v3.5/variable/CMAKE_GENERATOR_PLATFORM.html |
 
 ### On Windows
 
@@ -67,6 +66,8 @@ msbuild INSTALL.vcxproj
 ```
 
 You may specify the `/property:Configuration=<value>` flag to set the project configuration. Supported values are **Debug** and **Release**.
+
+The project supports Visual Studio's CMake integration, you may create a `CMakeSettings.json` file based on the given sample (`CMakeSettings.json.sample`) and use the multi-configuration *Ninja* generator to compile against x86 or x64 architectures.
 
 ### On Linux
 
@@ -83,8 +84,8 @@ How to use
 
 On build of repository, the following executables will be available:
 ```
-dem_compare
-dem_filter
+dem_diff
+dem_mask
 ahn_buildings
 ahn_buildings_par
 ahn_buildings_agg

@@ -4,7 +4,7 @@
 
 #include <gdal.h>
 
-#include <CloudLib.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineTransformation.h>
 
 namespace AHN
 {
@@ -16,7 +16,7 @@ namespace Buildings
 /// <remarks>
 /// The terrain dataset should be non-interpolated, containing nodata-value at the location of buildings.
 /// </remarks>
-class BuildingExtraction : public CloudLib::DEM::SweepLineTransformation<GByte, float>
+class BuildingExtraction : public CloudTools::DEM::SweepLineTransformation<GByte, float>
 {
 public:
 	/// <summary>

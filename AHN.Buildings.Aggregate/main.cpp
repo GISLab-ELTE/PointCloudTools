@@ -16,15 +16,15 @@
 
 #include <CloudTools.Common/IO.h>
 #include <CloudTools.Common/Reporter.h>
-#include <CloudLib.DEM/Metadata.h>
-#include <CloudLib.DEM/Rasterize.h>
-#include <CloudLib.DEM/SweepLineCalculation.h>
+#include <CloudTools.DEM/Metadata.h>
+#include <CloudTools.DEM/Rasterize.h>
+#include <CloudTools.DEM/SweepLineCalculation.h>
 #include "Region.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-using namespace CloudLib::DEM;
+using namespace CloudTools::DEM;
 using namespace CloudTools::IO;
 using namespace AHN;
 

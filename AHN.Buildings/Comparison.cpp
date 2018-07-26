@@ -1,9 +1,9 @@
 #include <cmath>
 
-#include <CloudLib.DEM/Window.h>
+#include <CloudTools.DEM/Window.h>
 #include "Comparison.h"
 
-using namespace CloudLib::DEM;
+using namespace CloudTools::DEM;
 
 namespace AHN
 {

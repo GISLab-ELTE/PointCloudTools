@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <CloudLib.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineTransformation.h>
 
 namespace AHN
 {
@@ -11,7 +11,7 @@ namespace Buildings
 /// <summary>
 /// Represents a difference comparison for AHN-2 & AHN-3 datasets.
 /// </summary>
-class Comparison : public CloudLib::DEM::SweepLineTransformation<float>
+class Comparison : public CloudTools::DEM::SweepLineTransformation<float>
 {
 public:
 	/// <summary>
