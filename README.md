@@ -86,7 +86,7 @@ On build of repository, the following executables will be available:
 ```
 dem_diff
 dem_mask
-ahn_buildings
+ahn_buildings_sim
 ahn_buildings_par
 ahn_buildings_agg
 ahn_buildings_ver
