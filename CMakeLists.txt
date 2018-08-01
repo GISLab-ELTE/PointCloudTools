@@ -37,6 +37,7 @@ add_subdirectory(AHN.Buildings)
 add_subdirectory(AHN.Buildings.Parallel)
 add_subdirectory(AHN.Buildings.Aggregate)
 add_subdirectory(AHN.Buildings.Verify)
+add_subdirectory(AHN.Vegetation)
 
 if(MPI_CXX_FOUND)
     add_subdirectory(AHN.Buildings.MPI)
