@@ -17,7 +17,7 @@ namespace DEM
 VectorMetadata::VectorMetadata(GDALDataset* dataset, const std::vector<std::string>& layerNames)
 {
 	std::vector<OGRLayer*> layers(layerNames.size());
-	if (layerNames.size() > 0)
+	if (!layerNames.empty())
 	{
 		for (const std::string &layerName : layerNames)
 		{
@@ -112,38 +112,28 @@ void VectorMetadata::load(const std::vector<OGRLayer*>& layers)
 		if (!references[i - 1]->IsSame(references[i]))
 			throw std::logic_error("Spatial reference systems differ for the input layers.");
 
-	if (references.size())
-		_reference = new OGRSpatialReference(*references[0]);
+	if (!references.empty())
+		_reference = *references[0];
 	else
 		_reference = nullptr;
 }
 
-VectorMetadata::~VectorMetadata()
-{
-	if (_reference)
-		delete _reference;
-}
-
 VectorMetadata::VectorMetadata(const VectorMetadata& other)
 	: _originX(other._originX), _originY(other._originY),
-	_extentX(other._extentX), _extentY(other._extentY)
-{
-	_reference = other._reference ? new OGRSpatialReference(*other._reference) : nullptr;
-}
+	_extentX(other._extentX), _extentY(other._extentY),
+	_reference(other._reference)
+{ }
 
 VectorMetadata& VectorMetadata::operator= (const VectorMetadata& other)
 {
 	if (this == &other)
 		return *this;
 
-	if (_reference)
-		delete _reference;
-
 	_originX = other._originX;
 	_originY = other._originY;
 	_extentX = other._extentX;
 	_extentY = other._extentY;
-	_reference = other._reference ? new OGRSpatialReference(*other._reference) : nullptr;
+	_reference = other._reference;
 	return *this;
 }
 
@@ -154,7 +144,7 @@ inline bool VectorMetadata::operator==(const VectorMetadata &other) const
 		_originY == other._originY &&
 		_extentX == other._extentX &&
 		_extentY == other._extentY &&
-		_reference->IsSame(other._reference);
+		_reference.IsSame(&other._reference);
 }
 
 inline bool VectorMetadata::operator!=(const VectorMetadata &other) const
@@ -178,31 +168,21 @@ RasterMetadata::RasterMetadata(GDALDataset* dataset)
 	setGeoTransform(geoTransform);
 
 	// Retrieving spatial reference system
-	_reference = new OGRSpatialReference(dataset->GetProjectionRef());
-}
-
-RasterMetadata::~RasterMetadata()
-{
-	if (_reference)
-		delete _reference;
+	_reference = OGRSpatialReference(dataset->GetProjectionRef());
 }
 
 RasterMetadata::RasterMetadata(const RasterMetadata& other)
 	: _originX(other._originX), _originY(other._originY),
 	  _rasterSizeX(other._rasterSizeX), _rasterSizeY(other._rasterSizeY),
 	  _pixelSizeX(other._pixelSizeX), _pixelSizeY(other._pixelSizeY),
-	  _extentX(other._extentX), _extentY(other._extentY)
-{
-	_reference = other._reference ? new OGRSpatialReference(*other._reference) : nullptr;
-}
+	  _extentX(other._extentX), _extentY(other._extentY),
+	  _reference(other._reference)
+{ }
 
 RasterMetadata& RasterMetadata::operator= (const RasterMetadata& other)
 {
 	if (this == &other)
 		return *this;
-
-	if (_reference)
-		delete _reference;
 
 	_originX = other._originX;
 	_originY = other._originY;
@@ -212,7 +192,7 @@ RasterMetadata& RasterMetadata::operator= (const RasterMetadata& other)
 	_pixelSizeY = other._pixelSizeY;
 	_extentX = other._extentX;
 	_extentY = other._extentY;
-	_reference = other._reference ? new OGRSpatialReference(*other._reference) : nullptr;
+	_reference = other._reference;
 	return *this;
 }
 
@@ -227,7 +207,7 @@ inline bool RasterMetadata::operator==(const RasterMetadata &other) const
 		_pixelSizeY == other._pixelSizeY &&
 		_extentX == other._extentX &&
 		_extentY == other._extentY &&
-		_reference->IsSame(other._reference);
+		_reference.IsSame(&other._reference);
 }
 
 inline bool RasterMetadata::operator!=(const RasterMetadata &other) const
@@ -253,7 +233,6 @@ void RasterMetadata::setGeoTransform(const std::array<double, 6>& geoTransform)
 {
 	setGeoTransform(&geoTransform[0]);
 }
-
 
 void RasterMetadata::setGeoTransform(const double* geoTransform)
 {

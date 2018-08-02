@@ -191,10 +191,10 @@ void SweepLineTransformation<TargetType, SourceType>::onExecute()
 		throw std::runtime_error("Target file creation failed.");
 
 	_targetDataset->SetGeoTransform(&_targetMetadata.geoTransform()[0]);
-	if (_targetMetadata.reference()->Validate() == OGRERR_NONE)
+	if (_targetMetadata.reference().Validate() == OGRERR_NONE)
 	{
 		char *wkt;
-		_targetMetadata.reference()->exportToWkt(&wkt);
+		_targetMetadata.reference().exportToWkt(&wkt);
 		_targetDataset->SetProjection(wkt);
 		OGRFree(wkt);
 	}
