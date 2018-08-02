@@ -38,7 +38,7 @@ public:
 	MorphologyFilter(const std::string& sourcePath,
 	                 const std::string& targetPath,
 	                 Method method = Method::Dilation,
-	                 ProgressType progress = nullptr)
+					 Operation::ProgressType progress = nullptr)
 		: SweepLineTransformation<DataType>({ sourcePath }, targetPath, 1, nullptr, progress),
 		  method(method)
 	{
@@ -55,7 +55,7 @@ public:
 	MorphologyFilter(GDALDataset* sourceDataset,
 		             const std::string& targetPath,
 		             Method method = Method::Dilation,
-		             ProgressType progress = nullptr)
+					 Operation::ProgressType progress = nullptr)
 		: SweepLineTransformation<DataType>({ sourceDataset }, targetPath, 1, nullptr, progress),
 		  method(method)
 	{

@@ -27,7 +27,7 @@ public:
 	MajorityFilter(const std::string& sourcePath,
 	               const std::string& targetPath,
 	               int range,
-	               ProgressType progress = nullptr)
+				   Operation::ProgressType progress = nullptr)
 		: SweepLineTransformation<DataType>({ sourcePath }, targetPath, range, nullptr, progress)
 	{
 		initialize();
@@ -43,7 +43,7 @@ public:
 	MajorityFilter(GDALDataset* sourceDataset,
 		           const std::string& targetPath,
 		           int range,
-		           ProgressType progress = nullptr)
+				   Operation::ProgressType progress = nullptr)
 		: SweepLineTransformation<DataType>({ sourceDataset }, targetPath, range, nullptr, progress)
 	{
 		initialize();
