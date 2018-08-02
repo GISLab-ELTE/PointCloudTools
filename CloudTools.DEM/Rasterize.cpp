@@ -150,21 +150,20 @@ void Rasterize::onPrepare()
 	}
 
 	// Determining spatial reference system
-	OGRSpatialReference* reference = nullptr;
+	OGRSpatialReference reference;
 	if (spatialReference.length())
 	{
 		// User defined spatial reference system
-		reference = new OGRSpatialReference;
-		reference->SetFromUserInput(spatialReference.c_str());
+		reference.SetFromUserInput(spatialReference.c_str());
 	}
-	else if (_sourceMetadata.reference())
+	else if (_sourceMetadata.reference().Validate() == OGRERR_NONE)
 	{
 		// Input defines spatial reference system
-		reference = new OGRSpatialReference(*_sourceMetadata.reference());
+		reference = _sourceMetadata.reference();
 	}
 
-	if (reference)
-		_targetMetadata.setReference(std::move(reference));
+	if (reference.Validate() == OGRERR_NONE)
+		_targetMetadata.setReference(reference);
 
 	// Check the existence of the target field and determine data type
 	if (!targetField.empty())
@@ -292,10 +291,10 @@ void Rasterize::onExecute()
 	CSLDestroy(params);
 
 	// Set the spatial reference system
-	if (_targetMetadata.reference())
+	if (_targetMetadata.reference().Validate() == OGRERR_NONE)
 	{
 		char *wkt;
-		_targetMetadata.reference()->exportToWkt(&wkt);
+		_targetMetadata.reference().exportToWkt(&wkt);
 		_targetDataset->SetProjection(wkt);
 		OGRFree(wkt);
 	}

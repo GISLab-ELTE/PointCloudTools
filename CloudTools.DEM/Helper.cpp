@@ -28,31 +28,24 @@ GDALDataType gdalType(std::string& dataType)
 	return GDALDataType::GDT_Unknown;
 }
 
-std::string SRSName(const OGRSpatialReference* reference)
+std::string SRSName(const OGRSpatialReference& reference)
 {
-	const char* authorityName = nullptr;
-	const char* authorityCode = nullptr;
-	if (reference)
-	{
-		authorityName = reference->GetAuthorityName(nullptr);
-		authorityCode = reference->GetAuthorityCode(nullptr);
-	}
+	const char* authorityName = reference.GetAuthorityName(nullptr);
+	const char* authorityCode = reference.GetAuthorityCode(nullptr);
+
 	if (authorityName && authorityCode)
 		return std::string(authorityName).append(":").append(authorityCode);
 	else
 		return std::string();
 }
 
-std::string SRSDescription(const OGRSpatialReference* reference)
+std::string SRSDescription(const OGRSpatialReference& reference)
 {
-	std::string srs;
-	if (reference)
-	{
-		char *wkt;
-		reference->exportToPrettyWkt(&wkt);
-		srs = std::string(wkt);
-		OGRFree(wkt);
-	}
+	char *wkt;
+	reference.exportToPrettyWkt(&wkt);
+	std::string srs = std::string(wkt);
+	OGRFree(wkt);
+
 	return srs;
 }
 } // DEM

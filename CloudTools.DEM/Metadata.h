@@ -29,7 +29,7 @@ public:
 	virtual double originY() const = 0;
 	virtual double extentX() const = 0;
 	virtual double extentY() const = 0;
-	virtual const OGRSpatialReference* reference() const = 0;
+	virtual const OGRSpatialReference& reference() const = 0;
 };
 
 /// <summary>
@@ -42,16 +42,15 @@ protected:
 	double _originY;
 	double _extentX;
 	double _extentY;
-	OGRSpatialReference* _reference;
+	OGRSpatialReference _reference;
 
 public:
 	VectorMetadata() : _originX(0), _originY(0),
 		_extentX(0), _extentY(0),
 		_reference(nullptr)
 	{ }
-	VectorMetadata(GDALDataset* dataset, const std::vector<std::string>& layers);
+	VectorMetadata(GDALDataset* dataset, const std::vector<std::string>& layerNames);
 	VectorMetadata(const std::vector<OGRLayer*>& layers);
-	~VectorMetadata();
 
 	VectorMetadata(const VectorMetadata& other);
 	VectorMetadata& operator= (const VectorMetadata& other);
@@ -65,8 +64,8 @@ public:
 	double originY() const override { return _originY; }
 	double extentX() const override { return _extentX; }
 	double extentY() const override { return _extentY; }
-	const OGRSpatialReference* reference() const override {	return _reference; }
-	virtual OGRSpatialReference* reference() { return _reference; }
+	const OGRSpatialReference& reference() const override {	return _reference; }
+	virtual OGRSpatialReference& reference() { return _reference; }
 
 #pragma endregion
 
@@ -78,12 +77,7 @@ public:
 	virtual void setExtentY(double extentY) { _extentY = extentY; }
 	virtual void setReference(const OGRSpatialReference &reference)
 	{
-		_reference = new OGRSpatialReference(reference);
-	}
-	virtual void setReference(OGRSpatialReference* &&reference)
-	{
 		_reference = reference;
-		reference = nullptr;
 	}
 
 #pragma endregion
@@ -106,7 +100,7 @@ protected:
 	double _pixelSizeY;
 	double _extentX;
 	double _extentY;
-	OGRSpatialReference* _reference;
+	OGRSpatialReference _reference;
 
 public:
 	RasterMetadata() : _originX(0), _originY(0),
@@ -116,7 +110,6 @@ public:
 					   _reference(nullptr)
 	{ }
 	RasterMetadata(GDALDataset* dataset);
-	~RasterMetadata();
 
 	RasterMetadata(const RasterMetadata& other);
 	RasterMetadata& operator= (const RasterMetadata& other);
@@ -134,8 +127,8 @@ public:
 	virtual double pixelSizeY() const { return _pixelSizeY; }
 	double extentX() const override { return _extentX; }
 	double extentY() const override { return _extentY; }
-	const OGRSpatialReference* reference() const override { return _reference; }
-	virtual OGRSpatialReference* reference() { return _reference; }
+	const OGRSpatialReference& reference() const override { return _reference; }
+	virtual OGRSpatialReference& reference() { return _reference; }
 
 #pragma endregion
 
@@ -175,12 +168,7 @@ public:
 	}
 	virtual void setReference(const OGRSpatialReference &reference)
 	{
-		_reference = new OGRSpatialReference(reference);
-	}
-	virtual void setReference(OGRSpatialReference* &&reference)
-	{
 		_reference = reference;
-		reference = nullptr;
 	}
 
 #pragma endregion

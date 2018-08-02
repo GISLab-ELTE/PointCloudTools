@@ -48,12 +48,12 @@ GDALDataType gdalType(std::string& dataType);
 /// Retrieves the well known name for a spatial reference system.
 /// </summary>
 /// <param name="reference">The spatial reference system.</param>
-std::string SRSName(const OGRSpatialReference* reference);
+std::string SRSName(const OGRSpatialReference& reference);
 
 /// <summary>
 /// Retrieves the pretty-formatted WKT string for a spatial reference system.
 /// </summary>
 /// <param name="reference">The spatial reference system.</param>
-std::string SRSDescription(const OGRSpatialReference* reference);
+std::string SRSDescription(const OGRSpatialReference& reference);
 } // DEM
 } // CloudTools

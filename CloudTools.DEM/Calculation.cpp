@@ -111,17 +111,16 @@ void Calculation::onPrepare()
 		throw std::logic_error("Vertical pixel sizes differ.");
 
 	// Determining spatial reference system
-	OGRSpatialReference* reference = nullptr;
+	OGRSpatialReference reference;
 	if (spatialReference.length())
 	{
 		// User defined spatial reference system
-		reference = new OGRSpatialReference;
-		reference->SetFromUserInput(spatialReference.c_str());
+		reference.SetFromUserInput(spatialReference.c_str());
 	}
 	else
 	{
 		// Verify matching spatial reference systems
-		std::vector<OGRSpatialReference*> references(_sourceMetadata.size());
+		std::vector<OGRSpatialReference> references(_sourceMetadata.size());
 		std::transform(_sourceMetadata.begin(), _sourceMetadata.end(), references.begin(),
 		               [](RasterMetadata& metadata)
 		               {
@@ -129,19 +128,18 @@ void Calculation::onPrepare()
 		               });
 		references.erase(std::remove_if(
 			                 references.begin(), references.end(),
-			                 [](OGRSpatialReference* reference)
+			                 [](OGRSpatialReference reference)
 			                 {
-				                 return reference == nullptr ||
-					                 reference->Validate() != OGRERR_NONE;
+				                 return reference.Validate() != OGRERR_NONE;
 			                 }), references.end());
 
 		for (unsigned int i = 1; i < references.size(); ++i)
-			if (!references[i - 1]->IsSame(references[i]))
+			if (!references[i - 1].IsSame(&references[i]))
 				throw std::logic_error("Spatial reference systems for the sources differ.");
 
 		// Set the reference system
-		if (references.size())
-			reference = new OGRSpatialReference(*references[0]);
+		if (!references.empty())
+			reference = references[0];
 		else
 			throw std::logic_error("No spatial reference system in the source files and none are given manually.");
 	}
@@ -182,7 +180,7 @@ void Calculation::onPrepare()
 	_targetMetadata.setPixelSizeY(_sourceMetadata[0].pixelSizeY());
 	_targetMetadata.setRasterSizeX(static_cast<int>(std::abs(extentX / _targetMetadata.pixelSizeX())));
 	_targetMetadata.setRasterSizeY(static_cast<int>(std::abs(extentY / _targetMetadata.pixelSizeY())));
-	_targetMetadata.setReference(std::move(reference));
+	_targetMetadata.setReference(reference);
 }
 } // DEM
 } // CloudTools
