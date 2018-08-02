@@ -94,13 +94,11 @@ int main(int argc, char* argv[])
 			return true;
 		};
 	}
-
 	comparison->execute();
-	delete comparison;
 	
 	// Vegetation filter
 	reporter->reset();
-	NoiseFilter* filter = new NoiseFilter("CHM.tif", outputPath, 3);
+	NoiseFilter* filter = new NoiseFilter(comparison->target(), outputPath, 3);
 	if (!vm.count("quiet"))
 	{
 		filter->progress = [&reporter](float complete, const std::string &message)
@@ -109,9 +107,11 @@ int main(int argc, char* argv[])
 			return true;
 		};
 	}
-
 	filter->execute();
+
+	delete comparison;
 	delete filter;
+
 	delete reporter;
 	return Success;
 }

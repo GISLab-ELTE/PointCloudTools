@@ -1,8 +1,8 @@
 #include <cmath>
 #include <algorithm>
-#include <iostream>
 
 #include <CloudTools.DEM/Window.h>
+
 #include "NoiseFilter.h"
 
 using namespace CloudTools::DEM;
@@ -11,11 +11,11 @@ namespace AHN
 {
 namespace Vegetation
 {
-NoiseFilter::NoiseFilter(const std::string& sourcePath,
+NoiseFilter::NoiseFilter(GDALDataset *sourceDataset,
                          const std::string& targetPath,
                          int range,
                          ProgressType progress)
-	: SweepLineTransformation<float>({sourcePath}, targetPath, range, nullptr, progress)
+	: SweepLineTransformation<float>({ sourceDataset }, targetPath, range, nullptr, progress)
 {
 	// Noise is the average percentage of difference compared to the surrounding area.
 	this->computation = [this](int x, int y, const std::vector<Window<float>>& sources)

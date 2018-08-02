@@ -30,7 +30,7 @@ public:
 	/// <param name="targetPath">The target file of the filter.</param>
 	/// <param name="range">The range of surrounding data to involve.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	NoiseFilter(const std::string& sourcePath,
+	NoiseFilter(GDALDataset *sourceDataset,
 	            const std::string& targetPath,
 				int range,
 	            ProgressType progress = nullptr);
