@@ -62,6 +62,9 @@ private:
 template <typename DataType>
 void MajorityFilter<DataType>::initialize()
 {
+	// http://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/majority-filter.htm
+	// http://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/smoothing-zone-edges-with-boundary-clean-and-majority-filter.htm
+
 	this->computation = [this](int x, int y, const std::vector<Window<DataType>>& sources)
 	{
 		const Window<DataType>& source = sources[0];
