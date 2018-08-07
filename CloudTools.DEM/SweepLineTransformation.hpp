@@ -11,7 +11,7 @@
 #include <gdal_priv.h>
 
 #include "Transformation.h"
-#include "Window.h"
+#include "Window.hpp"
 #include "Metadata.h"
 #include "Helper.h"
 

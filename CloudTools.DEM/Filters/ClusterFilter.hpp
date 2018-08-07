@@ -7,8 +7,8 @@
 #include <gdal_alg.h>
 
 #include "../Transformation.h"
-#include "../SweepLineTransformation.h"
-#include "../Window.h"
+#include "../SweepLineTransformation.hpp"
+#include "../Window.hpp"
 
 namespace CloudTools
 {

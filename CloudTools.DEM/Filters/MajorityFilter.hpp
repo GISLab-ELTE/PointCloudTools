@@ -3,8 +3,8 @@
 #include <cmath>
 #include <string>
 
-#include "../Window.h"
-#include "../SweepLineTransformation.h"
+#include "../Window.hpp"
+#include "../SweepLineTransformation.hpp"
 
 namespace CloudTools
 {

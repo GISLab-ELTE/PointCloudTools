@@ -5,10 +5,10 @@ add_library(dem
 	Metadata.cpp Metadata.h
 	Operation.cpp Operation.h
 	Rasterize.cpp Rasterize.h
-	SweepLineCalculation.h
-	SweepLineTransformation.h
+	SweepLineCalculation.hpp
+	SweepLineTransformation.hpp
 	Transformation.cpp Transformation.h
-	Window.h
+	Window.hpp
 	Filters/ClusterFilter.hpp
 	Filters/MajorityFilter.hpp
 	Filters/MorphologyFilter.hpp

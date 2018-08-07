@@ -1,4 +1,5 @@
-#include <CloudTools.DEM/Window.h>
+#include <CloudTools.DEM/Window.hpp>
+
 #include "BuildingExtraction.h"
 
 using namespace CloudTools::DEM;
