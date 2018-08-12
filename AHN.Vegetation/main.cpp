@@ -7,7 +7,9 @@
 #include <CloudTools.Common/IO.h>
 #include <CloudTools.DEM/Comparers/Difference.hpp>
 #include <CloudTools.Common/Reporter.h>
+#include <CloudTools.DEM/SweepLineCalculation.h>
 #include "NoiseFilter.h"
+#include "MatrixTransformation.h"
 
 namespace po = boost::program_options;
 
@@ -95,10 +97,51 @@ int main(int argc, char* argv[])
 		};
 	}
 	comparison->execute();
+
+	SweepLineCalculation<float>* countLocalMax = new SweepLineCalculation<float>(
+		{ comparison->target() }, 1, nullptr);
+
+	int counter = 0;
+	countLocalMax->computation = [&countLocalMax, &counter](int x, int y, const std::vector<Window<float>>& sources)
+	{
+		const Window<float>& source = sources[0];
+		for (int i = -countLocalMax->range(); i < countLocalMax->range(); i++)
+			for (int j = -countLocalMax->range(); j < countLocalMax->range(); j++)
+				if (source.data(i, j) > source.data(0, 0))
+				{
+					return;
+				}
+		++counter;
+	};
+
+	reporter->reset();
+	if (!vm.count("quiet"))
+	{
+		countLocalMax->progress = [&reporter](float complete, const std::string &message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+	countLocalMax->execute();
+
+	std::cout << "Number of local maximums are: " << counter;
+
 	
 	// Vegetation filter
 	reporter->reset();
-	NoiseFilter* filter = new NoiseFilter(comparison->target(), outputPath, 3);
+	/*NoiseFilter* filter = new NoiseFilter(comparison->target(), outputPath, 3);
+	if (!vm.count("quiet"))
+	{
+		filter->progress = [&reporter](float complete, const std::string &message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+	filter->execute();*/
+
+	MatrixTransformation* filter = new MatrixTransformation(comparison->target(), outputPath, 1);
 	if (!vm.count("quiet"))
 	{
 		filter->progress = [&reporter](float complete, const std::string &message)
@@ -109,9 +152,39 @@ int main(int argc, char* argv[])
 	}
 	filter->execute();
 
+	SweepLineCalculation<float>* calculation = new SweepLineCalculation<float>(
+		{ outputPath }, 1, nullptr);
+
+	counter = 0;
+	calculation->computation = [&calculation, &counter](int x, int y, const std::vector<Window<float>>& sources)
+	{
+		const Window<float>& source = sources[0];
+		for (int i = -calculation->range(); i < calculation->range(); i++)
+			for (int j = -calculation->range(); j < calculation->range(); j++)
+				if (source.data(i, j) > source.data(0, 0))
+				{
+					return;
+				}
+		++counter;
+	};
+
+	reporter->reset();
+	if (!vm.count("quiet"))
+	{
+		calculation->progress = [&reporter](float complete, const std::string &message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+	calculation->execute();
+
+	std::cout << "Number of local maximums are: " << counter;
+
+	delete countLocalMax;
 	delete comparison;
 	delete filter;
-
+	delete calculation;
 	delete reporter;
 	return Success;
 }

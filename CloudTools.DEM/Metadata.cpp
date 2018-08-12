@@ -114,8 +114,8 @@ void VectorMetadata::load(const std::vector<OGRLayer*>& layers)
 
 	if (!references.empty())
 		_reference = *references[0];
-	else
-		_reference = nullptr;
+	//else
+		//_reference = nullptr;
 }
 
 VectorMetadata::VectorMetadata(const VectorMetadata& other)
