@@ -105,12 +105,12 @@ int main(int argc, char* argv[])
 	countLocalMax->computation = [&countLocalMax, &counter](int x, int y, const std::vector<Window<float>>& sources)
 	{
 		const Window<float>& source = sources[0];
-		for (int i = -countLocalMax->range(); i < countLocalMax->range(); i++)
-			for (int j = -countLocalMax->range(); j < countLocalMax->range(); j++)
+		if (!source.hasData()) return;
+
+		for (int i = -countLocalMax->range(); i <= countLocalMax->range(); i++)
+			for (int j = -countLocalMax->range(); j <= countLocalMax->range(); j++)
 				if (source.data(i, j) > source.data(0, 0))
-				{
 					return;
-				}
 		++counter;
 	};
 
@@ -159,12 +159,12 @@ int main(int argc, char* argv[])
 	calculation->computation = [&calculation, &counter](int x, int y, const std::vector<Window<float>>& sources)
 	{
 		const Window<float>& source = sources[0];
-		for (int i = -calculation->range(); i < calculation->range(); i++)
-			for (int j = -calculation->range(); j < calculation->range(); j++)
+		if (!source.hasData()) return;
+
+		for (int i = -calculation->range(); i <= calculation->range(); i++)
+			for (int j = -calculation->range(); j <= calculation->range(); j++)
 				if (source.data(i, j) > source.data(0, 0))
-				{
 					return;
-				}
 		++counter;
 	};
 
