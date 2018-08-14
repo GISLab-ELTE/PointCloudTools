@@ -47,9 +47,6 @@ MatrixTransformation::MatrixTransformation(GDALDataset *sourceDataset,
 					}
 				}
 
-		if(value == 0)
-			return static_cast<float>(this->nodataValue);
-
 		return value / counter;
 	};
 	this->nodataValue = 0;

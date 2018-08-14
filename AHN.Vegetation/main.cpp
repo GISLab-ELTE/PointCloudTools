@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 	filter->execute();
 
 	SweepLineCalculation<float>* calculation = new SweepLineCalculation<float>(
-		{ outputPath }, 1, nullptr);
+		{ filter->target() }, 1, nullptr);
 
 	counter = 0;
 	calculation->computation = [&calculation, &counter](int x, int y, const std::vector<Window<float>>& sources)
@@ -167,6 +167,23 @@ int main(int argc, char* argv[])
 					return;
 		++counter;
 	};
+
+  SweepLineTransformation<GByte, float>* visualMaximums = new SweepLineTransformation<GByte, float>(
+    { filter->target() }, "maximum_map.tif", 1, nullptr);
+
+  visualMaximums->computation = [&visualMaximums](int x, int y, const std::vector<Window<float>>& sources)
+  {
+      const Window<float>& source = sources[0];
+      if (!source.hasData()) return static_cast<GByte>(visualMaximums->nodataValue);
+
+      for (int i = -visualMaximums->range(); i <= visualMaximums->range(); i++)
+        for (int j = -visualMaximums->range(); j <= visualMaximums->range(); j++)
+          if (source.data(i, j) > source.data(0, 0))
+            return static_cast<GByte>(0);
+
+      return static_cast<GByte>(255);
+  };
+  visualMaximums->execute();
 
 	reporter->reset();
 	if (!vm.count("quiet"))
