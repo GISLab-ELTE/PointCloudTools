@@ -18,8 +18,8 @@
 #include <CloudTools.Common/Reporter.h>
 #include <CloudTools.DEM/Metadata.h>
 #include <CloudTools.DEM/Rasterize.h>
-#include <CloudTools.DEM/SweepLineCalculation.h>
-#include <CloudTools.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineCalculation.hpp>
+#include <CloudTools.DEM/SweepLineTransformation.hpp>
 #include "Coverage.h"
 
 namespace po = boost::program_options;

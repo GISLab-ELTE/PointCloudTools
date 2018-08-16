@@ -14,15 +14,15 @@
 #include <gdal_utils.h>
 
 #include <CloudTools.Common/Reporter.h>
-#include <CloudTools.DEM/SweepLineTransformation.h>
-#include "Process.h"
-#include "BuildingExtraction.h"
-#include "BuildingFilter.h"
-#include "Comparison.h"
+#include <CloudTools.DEM/SweepLineTransformation.hpp>
 #include <CloudTools.DEM/Filters/NoiseFilter.hpp>
 #include <CloudTools.DEM/Filters/MajorityFilter.hpp>
 #include <CloudTools.DEM/Filters/ClusterFilter.hpp>
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
+#include "Process.h"
+#include "BuildingExtraction.h"
+#include "BuildingFilter.h"
+#include "Comparison.h"
 
 using namespace CloudTools::DEM;
 using namespace CloudTools::IO;

@@ -4,8 +4,8 @@
 #include <string>
 #include <algorithm>
 
-#include "../SweepLineTransformation.h"
-#include "../Window.h"
+#include "../SweepLineTransformation.hpp"
+#include "../Window.hpp"
 
 namespace CloudTools
 {

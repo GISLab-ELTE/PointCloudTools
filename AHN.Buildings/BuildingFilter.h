@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include <gdal.h>
-
-#include <CloudTools.DEM/SweepLineTransformation.h>
+#include <CloudTools.DEM/SweepLineTransformation.hpp>
 
 namespace AHN
 {

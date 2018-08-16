@@ -67,14 +67,20 @@ int main(int argc, char* argv[]) try
 		return Success;
 	}
 
+	bool argumentError = false;
 	if (inputPaths.size() < 2)
+	{
 		std::cerr << "At least 2 input files must be given." << std::endl;
+		argumentError = true;
+	}
 
 	if (dataType == GDALDataType::GDT_Unknown)
+	{
 		std::cerr << "Unrecognized data type." << std::endl;
+		argumentError = true;
+	}
 
-	if (inputPaths.size() < 2 ||
-		dataType == GDALDataType::GDT_Unknown)
+	if (argumentError)
 	{
 		std::cerr << "Use the --help option for description." << std::endl;
 		return InvalidInput;

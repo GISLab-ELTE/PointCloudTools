@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include <CloudTools.DEM/Window.h>
+#include <CloudTools.DEM/Window.hpp>
 #include "Comparison.h"
 
 using namespace CloudTools::DEM;

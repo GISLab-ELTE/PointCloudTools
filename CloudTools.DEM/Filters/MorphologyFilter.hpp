@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "../Window.h"
-#include "../SweepLineTransformation.h"
+#include "../Window.hpp"
+#include "../SweepLineTransformation.hpp"
 
 namespace CloudTools
 {
@@ -76,6 +76,8 @@ template <typename DataType>
 void MorphologyFilter<DataType>::initialize()
 {
 	// https://en.wikipedia.org/wiki/Mathematical_morphology
+	// https://www.cs.auckland.ac.nz/courses/compsci773s1c/lectures/ImageProcessing-html/topic4.htm
+
 	this->computation = [this](int x, int y, const std::vector<Window<DataType>>& sources)
 	{
 		const Window<DataType>& source = sources[0];
@@ -92,7 +94,7 @@ void MorphologyFilter<DataType>::initialize()
 
 		if (this->method == Method::Dilation && !source.hasData() && counter > 0)
 			return sum / counter;
-		if (this->method == Method::Erosion && source.hasData() && counter == 1)
+		if (this->method == Method::Erosion && source.hasData() && counter < 9)
 			return static_cast<DataType>(this->nodataValue);
 		return source.hasData() ? source.data() : static_cast<DataType>(this->nodataValue);
 	};
