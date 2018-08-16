@@ -1,4 +1,4 @@
-#include <CloudTools.DEM/Window.h>
+#include <CloudTools.DEM/Window.hpp>
 #include <iostream>
 
 #include "MatrixTransformation.h"

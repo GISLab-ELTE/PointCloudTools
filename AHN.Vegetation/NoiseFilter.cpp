@@ -1,7 +1,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include <CloudTools.DEM/Window.h>
+#include <CloudTools.DEM/Window.hpp>
 
 #include "NoiseFilter.h"
 

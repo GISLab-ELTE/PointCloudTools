@@ -7,7 +7,8 @@
 #include <CloudTools.Common/IO.h>
 #include <CloudTools.DEM/Comparers/Difference.hpp>
 #include <CloudTools.Common/Reporter.h>
-#include <CloudTools.DEM/SweepLineCalculation.h>
+#include <CloudTools.DEM/SweepLineCalculation.hpp>
+#include <CloudTools.DEM/ClusterMap.h>
 #include "NoiseFilter.h"
 #include "MatrixTransformation.h"
 
@@ -98,6 +99,9 @@ int main(int argc, char* argv[])
 	}
 	comparison->execute();
 
+	std::cout << "CHM generated.\n";
+
+	// Count local maximum values in CHM
 	SweepLineCalculation<float>* countLocalMax = new SweepLineCalculation<float>(
 		{ comparison->target() }, 1, nullptr);
 
@@ -125,7 +129,7 @@ int main(int argc, char* argv[])
 	}
 	countLocalMax->execute();
 
-	std::cout << "Number of local maximums are: " << counter;
+	std::cout << "Number of local maximums are: " << counter << std::endl;
 
 	
 	// Vegetation filter
@@ -141,6 +145,7 @@ int main(int argc, char* argv[])
 	}
 	filter->execute();*/
 
+	// Perform anti-aliasing via convolution matrix
 	MatrixTransformation* filter = new MatrixTransformation(comparison->target(), outputPath, 1);
 	if (!vm.count("quiet"))
 	{
@@ -152,11 +157,42 @@ int main(int argc, char* argv[])
 	}
 	filter->execute();
 
+	std::cout << "Matrix transformation performed.\n";
+
+  // Eliminate all points that are shorter than a possible tree
+  float thresholdOfTrees = 1.5;
+  SweepLineTransformation<float>* eliminateNonTrees = new SweepLineTransformation<float>(
+    { filter->target() }, "test.tif", 0, nullptr);
+
+  eliminateNonTrees->computation = [&eliminateNonTrees, &thresholdOfTrees](int x, int y, const std::vector<Window<float>>& sources)
+  {
+      const Window<float>& source = sources[0];
+      if (!source.hasData() || source.data() < thresholdOfTrees)
+        return static_cast<float>(eliminateNonTrees->nodataValue);
+      else
+        return source.data();
+  };
+
+  reporter->reset();
+  if (!vm.count("quiet"))
+  {
+    eliminateNonTrees->progress = [&reporter](float complete, const std::string &message)
+    {
+        reporter->report(complete, message);
+        return true;
+    };
+  }
+  eliminateNonTrees->execute();
+
+  std::cout << "Too small values eliminated.\n";
+
+	// Count local maximum values
 	SweepLineCalculation<float>* calculation = new SweepLineCalculation<float>(
 		{ filter->target() }, 1, nullptr);
 
 	counter = 0;
-	calculation->computation = [&calculation, &counter](int x, int y, const std::vector<Window<float>>& sources)
+	std::vector<float> seedPoints;
+	calculation->computation = [&calculation, &counter, &seedPoints](int x, int y, const std::vector<Window<float>>& sources)
 	{
 		const Window<float>& source = sources[0];
 		if (!source.hasData()) return;
@@ -166,9 +202,24 @@ int main(int argc, char* argv[])
 				if (source.data(i, j) > source.data(0, 0))
 					return;
 		++counter;
+		seedPoints.push_back(source.data(0,0));
 	};
 
-  SweepLineTransformation<GByte, float>* visualMaximums = new SweepLineTransformation<GByte, float>(
+  reporter->reset();
+  if (!vm.count("quiet"))
+  {
+    calculation->progress = [&reporter](float complete, const std::string &message)
+    {
+        reporter->report(complete, message);
+        return true;
+    };
+  }
+  calculation->execute();
+
+  std::cout << "Number of local maximums are: " << counter << std::endl;
+
+	// Visualize the local maximum values
+  /*SweepLineTransformation<GByte, float>* visualMaximums = new SweepLineTransformation<GByte, float>(
     { filter->target() }, "maximum_map.tif", 1, nullptr);
 
   visualMaximums->computation = [&visualMaximums](int x, int y, const std::vector<Window<float>>& sources)
@@ -183,21 +234,22 @@ int main(int argc, char* argv[])
 
       return static_cast<GByte>(255);
   };
+
+  reporter->reset();
+  if (!vm.count("quiet"))
+  {
+    visualMaximums->progress = [&reporter](float complete, const std::string &message)
+    {
+        reporter->report(complete, message);
+        return true;
+    };
+  }
   visualMaximums->execute();
 
-	reporter->reset();
-	if (!vm.count("quiet"))
-	{
-		calculation->progress = [&reporter](float complete, const std::string &message)
-		{
-			reporter->report(complete, message);
-			return true;
-		};
-	}
-	calculation->execute();
+  std::cout << "Local maximums visualized.\n";*/
 
-	std::cout << "Number of local maximums are: " << counter;
-
+  ClusterMap* clusters = new ClusterMap();
+	//delete visualMaximums;
 	delete countLocalMax;
 	delete comparison;
 	delete filter;

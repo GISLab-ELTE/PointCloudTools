@@ -55,6 +55,8 @@ public:
 	/// <returns>The indexes.</returns>
 	std::vector<GUInt32> clusterIndexes() const;
 
+	void addPoint(GUInt32 clusterIndex, int x, int y) const;
+
 	/// <summary>
 	/// Retrieves the points in a cluster.
 	/// </summary>
