@@ -21,6 +21,21 @@ std::vector<GUInt32> ClusterMap::clusterIndexes() const
 	return indexes;
 }
 
+void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
+{
+	Point point = std::make_pair(x, y);
+
+	if (_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
+		throw std::out_of_range("Cluster is out of range.");
+
+	if (std::find(_clusterIndexes[clusterIndex].begin(),
+		_clusterIndexes[clusterIndex].end(), point)
+		!= _clusterIndexes[clusterIndex].end())
+		throw std::logic_error("Point is already in cluster.");
+
+	_clusterIndexes[clusterIndex].push_back(std::make_pair(x,y));
+}
+
 const std::vector<ClusterMap::Point>& ClusterMap::points(GUInt32 clusterIndex) const
 {
 	return _clusterIndexes.at(clusterIndex);

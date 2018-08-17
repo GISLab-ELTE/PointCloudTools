@@ -55,7 +55,13 @@ public:
 	/// <returns>The indexes.</returns>
 	std::vector<GUInt32> clusterIndexes() const;
 
-	void addPoint(GUInt32 clusterIndex, int x, int y) const;
+	/// <summary>
+	/// Attaches a given grid point to the given cluster.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <param name="x">The abcissa of the point.</param>
+	/// <param name="y">The ordinate of the point.</param>
+	void addPoint(GUInt32 clusterIndex, int x, int y);
 
 	/// <summary>
 	/// Retrieves the points in a cluster.
