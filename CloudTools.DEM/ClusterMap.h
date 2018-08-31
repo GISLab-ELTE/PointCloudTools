@@ -2,10 +2,10 @@
 
 #include <vector>
 #include <unordered_map>
-#include <utility>
 
-#include <boost/functional/hash/hash.hpp>
 #include <gdal.h>
+
+#include "Helper.h"
 
 namespace CloudTools
 {
@@ -16,25 +16,6 @@ namespace DEM
 /// </summary>
 class ClusterMap
 {
-public:
-	typedef std::pair<int, int> Point;
-
-private:
-	struct PairHash
-	{
-		template <class T1, class T2>
-		std::size_t operator() (const std::pair<T1, T2>& p) const
-		{
-			std::size_t seed = 0;
-			auto h1 = std::hash<T1>{}(p.first);
-			auto h2 = std::hash<T2>{}(p.second);
-			
-			boost::hash_combine(seed, h1);
-			boost::hash_combine(seed, h2);
-			return seed;
-		}
-	};
-
 public:
 	/// <summary>
 	/// nitializes a new, empty instance of the class.
@@ -102,7 +83,7 @@ public:
 
 private:
 	std::unordered_map<GUInt32, std::vector<Point>> _clusterIndexes;
-	std::unordered_map<Point, GUInt32, PairHash> _clusterPoints;
+	std::unordered_map<Point, GUInt32> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
 };
 } // DEM

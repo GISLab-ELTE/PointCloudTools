@@ -177,7 +177,7 @@ void HierarchicalClustering<DataType>::initialize()
 		}
 
 		for (GUInt32 index : clusterMap.clusterIndexes())
-			for (const ClusterMap::Point& point : clusterMap.points(index))
+			for (const Point& point : clusterMap.points(index))
 			{
 				this->setTargetData(point.first, point.second, index);
 			}

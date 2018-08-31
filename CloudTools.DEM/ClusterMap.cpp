@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ClusterMap.h"
 
 namespace CloudTools
@@ -36,7 +38,7 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 	_clusterIndexes[clusterIndex].push_back(std::make_pair(x,y));
 }
 
-const std::vector<ClusterMap::Point>& ClusterMap::points(GUInt32 clusterIndex) const
+const std::vector<Point>& ClusterMap::points(GUInt32 clusterIndex) const
 {
 	return _clusterIndexes.at(clusterIndex);
 }
