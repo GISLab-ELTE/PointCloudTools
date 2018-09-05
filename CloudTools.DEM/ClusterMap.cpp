@@ -38,6 +38,22 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 	_clusterIndexes[clusterIndex].push_back(std::make_pair(x,y));
 }
 
+std::vector<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex, int x, int y)
+{
+	std::vector<Point> neighbors;
+	Point point;
+	for(int i = x - 1; i <= x + 1; i++)
+		for (int j = y - 1; j <= y + 1; j++)
+			if (i != x && j != y)
+			{
+				point = std::make_pair(x, y);
+				if (_clusterPoints.find(point) != _clusterPoints.end())
+					neighbors.push_back(point);
+			}
+
+	return neighbors;
+}
+
 const std::vector<Point>& ClusterMap::points(GUInt32 clusterIndex) const
 {
 	return _clusterIndexes.at(clusterIndex);
