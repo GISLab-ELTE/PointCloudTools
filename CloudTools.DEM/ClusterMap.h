@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <gdal.h>
 
@@ -44,7 +45,7 @@ public:
 	/// <param name="y">The ordinate of the point.</param>
 	void addPoint(GUInt32 clusterIndex, int x, int y);
 
-	std::vector<Point> getNeighbors(GUInt32 clusterIndex, int x, int y);
+	std::unordered_set<Point> getNeighbors(GUInt32 clusterIndex);
 
 	/// <summary>
 	/// Retrieves the points in a cluster.

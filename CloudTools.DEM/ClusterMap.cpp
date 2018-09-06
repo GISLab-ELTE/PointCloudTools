@@ -35,21 +35,26 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 		!= _clusterIndexes[clusterIndex].end())
 		throw std::logic_error("Point is already in cluster.");
 
-	_clusterIndexes[clusterIndex].push_back(std::make_pair(x,y));
+	_clusterIndexes[clusterIndex].push_back(point);
+	_clusterPoints.insert(std::make_pair(point, clusterIndex));
 }
 
-std::vector<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex, int x, int y)
+std::unordered_set<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex)
 {
-	std::vector<Point> neighbors;
+	std::unordered_set<Point> neighbors;
 	Point point;
-	for(int i = x - 1; i <= x + 1; i++)
-		for (int j = y - 1; j <= y + 1; j++)
-			if (i != x && j != y)
-			{
-				point = std::make_pair(x, y);
-				if (_clusterPoints.find(point) != _clusterPoints.end())
-					neighbors.push_back(point);
-			}
+	for(const Point& p : points(clusterIndex))
+  {
+    for(int i = p.first - 1; i <= p.first + 1; i++)
+      for (int j = p.second - 1; j <= p.second + 1; j++)
+        if (i != p.first && j != p.second)
+        {
+          point = std::make_pair(i, j);
+          auto index = _clusterPoints.find(point);
+          if (index != _clusterPoints.end() && index->second != clusterIndex)
+            neighbors.insert(point);
+        }
+  }
 
 	return neighbors;
 }
