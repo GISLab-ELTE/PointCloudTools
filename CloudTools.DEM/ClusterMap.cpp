@@ -47,11 +47,11 @@ std::unordered_set<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex)
   {
     for(int i = p.first - 1; i <= p.first + 1; i++)
       for (int j = p.second - 1; j <= p.second + 1; j++)
-        if (i != p.first && j != p.second)
+        if (i != p.first || j != p.second)
         {
           point = std::make_pair(i, j);
           auto index = _clusterPoints.find(point);
-          if (index != _clusterPoints.end() && index->second != clusterIndex)
+          if (index == _clusterPoints.end() || index->second != clusterIndex)
             neighbors.insert(point);
         }
   }
