@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 
 	// Tree crown segmentation
 	TreeCrownSegmentation *crownSegmentation = new TreeCrownSegmentation(
-		{ filter->target() }, outputPath, seedPoints, nullptr);
+		{ eliminateNonTrees->target() }, outputPath, seedPoints, nullptr);
 	if (!vm.count("quiet"))
 	{
 		crownSegmentation->progress = [&reporter](float complete, const std::string &message)

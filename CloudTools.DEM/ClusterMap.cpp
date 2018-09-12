@@ -1,5 +1,5 @@
 #include <algorithm>
-
+#include <iostream>
 #include "ClusterMap.h"
 
 namespace CloudTools
@@ -41,22 +41,24 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 
 std::unordered_set<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex)
 {
-	std::unordered_set<Point> neighbors;
-	Point point;
-	for(const Point& p : points(clusterIndex))
+  std::unordered_set<Point> neighbors;
+  Point point;
+  for (const Point &p : points(clusterIndex))
   {
-    for(int i = p.first - 1; i <= p.first + 1; i++)
+    for (int i = p.first - 1; i <= p.first + 1; i++)
       for (int j = p.second - 1; j <= p.second + 1; j++)
         if (i != p.first || j != p.second)
         {
           point = std::make_pair(i, j);
-          auto index = _clusterPoints.find(point);
-          if (index == _clusterPoints.end() || index->second != clusterIndex)
+          auto it = _clusterPoints.find(point);
+          if (it == _clusterPoints.end())
+          {
             neighbors.insert(point);
+          }
         }
   }
 
-	return neighbors;
+  return neighbors;
 }
 
 const std::vector<Point>& ClusterMap::points(GUInt32 clusterIndex) const
