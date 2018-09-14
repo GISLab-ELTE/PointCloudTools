@@ -14,11 +14,6 @@ namespace CloudTools
 namespace DEM
 {
 /// <summary>
-/// A point coordinate in a DEM.
-/// </summary>
-typedef std::pair<int, int> Point;
-
-/// <summary>
 /// Returns the GDAL type for <paramref name="T" />.
 /// </summary>
 template <typename T>

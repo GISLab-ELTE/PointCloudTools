@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
+
+#include <boost/functional/hash/hash.hpp>
 
 #include <gdal.h>
+#include <ogr_geometry.h>
 
 #include "Helper.h"
 
@@ -17,6 +19,31 @@ namespace DEM
 /// </summary>
 class ClusterMap
 {
+private:
+	/// <summary>
+	/// Represents a (X, Y) point hashing functor for OGRPoint.
+	/// </summary>
+	struct PointHash
+	{
+		std::size_t operator() (const OGRPoint& p) const
+		{
+			std::size_t seed = 0;
+			auto h1 = std::hash<double>{}(p.getX());
+			auto h2 = std::hash<double>{}(p.getY());
+
+			boost::hash_combine(seed, h1);
+			boost::hash_combine(seed, h2);
+			return seed;
+		}
+	};
+
+	struct PointEqual
+	{
+		bool operator() (const OGRPoint& a, const OGRPoint& b) const
+		{
+			return a.Equals(&const_cast<OGRPoint&>(b));
+		}
+	};
 public:
 	/// <summary>
 	/// nitializes a new, empty instance of the class.
@@ -45,14 +72,14 @@ public:
 	/// <param name="y">The ordinate of the point.</param>
 	void addPoint(GUInt32 clusterIndex, int x, int y);
 
-	std::unordered_set<Point> getNeighbors(GUInt32 clusterIndex);
+	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
 
 	/// <summary>
 	/// Retrieves the points in a cluster.
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The points contained by the cluster.</returns>
-	const std::vector<Point>& points(GUInt32 clusterIndex) const;
+	const std::vector<OGRPoint>& points(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Creates a new cluster with an initial point.
@@ -85,8 +112,8 @@ public:
 	std::size_t removeSmallClusters(int threshold);
 
 private:
-	std::unordered_map<GUInt32, std::vector<Point>> _clusterIndexes;
-	std::unordered_map<Point, GUInt32> _clusterPoints;
+	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
+	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
 };
 } // DEM

@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 		{ eliminateNonTrees->target() }, 1, nullptr);
 
 	counter = 0;
-	std::vector<Point> seedPoints;
+	std::vector<OGRPoint> seedPoints;
 	collectSeeds->computation = [&collectSeeds, &counter, &seedPoints](int x, int y,
 		const std::vector<Window<float>> &sources)
 	{
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
 				if (source.data(i, j) > source.data(0, 0))
 					return;
 		++counter;
-		seedPoints.push_back(std::make_pair(x, y));
+		seedPoints.emplace_back(x, y);
 	};
 
 	if (!vm.count("quiet"))

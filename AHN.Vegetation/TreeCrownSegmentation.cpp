@@ -1,8 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-
 #include <CloudTools.DEM/ClusterMap.h>
 #include "TreeCrownSegmentation.h"
 
@@ -23,10 +20,10 @@ void TreeCrownSegmentation::initialize()
       // Create initial clusters from seed points
       for (const auto& point : this->seedPoints)
       {
-          clusterMap.createCluster(point.first, point.second);
+          clusterMap.createCluster(point.getX(), point.getY());
       }
 
-      std::unordered_set<Point> neighbors;
+      std::vector<OGRPoint> neighbors;
       int iteration = 0;
       bool hasChanged;
       do
@@ -34,11 +31,11 @@ void TreeCrownSegmentation::initialize()
         hasChanged = false;
         for (GUInt32 index : clusterMap.clusterIndexes())
         {
-          neighbors = clusterMap.getNeighbors(index);
-          for (const Point &p : neighbors)
-            if (this->hasSourceData(p.first, p.second))
+          neighbors = clusterMap.neighbors(index);
+          for (const OGRPoint& p : neighbors)
+            if (this->hasSourceData(p.getX(), p.getY()))
             {
-              clusterMap.addPoint(index, p.first, p.second);
+              clusterMap.addPoint(index, p.getX(), p.getY());
               hasChanged = true;
               ++iteration;
             }
@@ -48,9 +45,9 @@ void TreeCrownSegmentation::initialize()
 
       // Write out the clusters as a DEM
       for (GUInt32 index : clusterMap.clusterIndexes())
-          for (const Point& point : clusterMap.points(index))
+          for (const OGRPoint& point : clusterMap.points(index))
           {
-              this->setTargetData(point.first, point.second, index);
+              this->setTargetData(point.getX(), point.getY(), index);
           }
 
       if (this->progress)

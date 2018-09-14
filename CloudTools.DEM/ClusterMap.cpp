@@ -1,5 +1,6 @@
 #include <algorithm>
-#include <iostream>
+#include <unordered_set>
+
 #include "ClusterMap.h"
 
 namespace CloudTools
@@ -8,7 +9,7 @@ namespace DEM
 {
 GUInt32 ClusterMap::clusterIndex(int x, int y) const
 {
-	return _clusterPoints.at(std::make_pair(x, y));
+	return _clusterPoints.at(OGRPoint(x, y));
 }
 
 std::vector<GUInt32> ClusterMap::clusterIndexes() const
@@ -25,13 +26,14 @@ std::vector<GUInt32> ClusterMap::clusterIndexes() const
 
 void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 {
-	Point point = std::make_pair(x, y);
+	OGRPoint point(x, y);
 
 	if (_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
 		throw std::out_of_range("Cluster is out of range.");
 
-	if (std::find(_clusterIndexes[clusterIndex].begin(),
-		_clusterIndexes[clusterIndex].end(), point)
+	if (std::find_if(_clusterIndexes[clusterIndex].begin(),
+		_clusterIndexes[clusterIndex].end(),
+		[&point](OGRPoint& p) { return point.Equals(&p); })
 		!= _clusterIndexes[clusterIndex].end())
 		throw std::logic_error("Point is already in cluster.");
 
@@ -39,17 +41,17 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 	_clusterPoints.insert(std::make_pair(point, clusterIndex));
 }
 
-std::unordered_set<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex)
+std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
 {
-  std::unordered_set<Point> neighbors;
-  Point point;
-  for (const Point &p : points(clusterIndex))
+  std::unordered_set<OGRPoint, PointHash, PointEqual> neighbors;
+  for (const OGRPoint& p : points(clusterIndex))
   {
-    for (int i = p.first - 1; i <= p.first + 1; i++)
-      for (int j = p.second - 1; j <= p.second + 1; j++)
-        if (i != p.first || j != p.second)
+    for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
+      for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
+      for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
+        if (i != p.getX() || j != p.getY())
         {
-          point = std::make_pair(i, j);
+          OGRPoint point(i, j);
           auto it = _clusterPoints.find(point);
           if (it == _clusterPoints.end())
           {
@@ -58,17 +60,17 @@ std::unordered_set<Point> ClusterMap::getNeighbors(GUInt32 clusterIndex)
         }
   }
 
-  return neighbors;
+  return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
 }
 
-const std::vector<Point>& ClusterMap::points(GUInt32 clusterIndex) const
+const std::vector<OGRPoint>& ClusterMap::points(GUInt32 clusterIndex) const
 {
 	return _clusterIndexes.at(clusterIndex);
 }
 
 void ClusterMap::createCluster(int x, int y)
 {
-	Point point = std::make_pair(x, y);
+	OGRPoint point(x, y);
 	if (_clusterPoints.find(point) != _clusterPoints.end())
 		throw std::logic_error("Point already in cluster map.");
 

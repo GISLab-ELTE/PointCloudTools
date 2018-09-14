@@ -16,7 +16,7 @@ public:
 	/// <summary>
 	/// The tree crown seed points of the algorithm.
 	/// </summary>
-	std::vector<CloudTools::DEM::Point> seedPoints;
+	std::vector<OGRPoint> seedPoints;
 
 public:
 	/// <summary>
@@ -28,7 +28,7 @@ public:
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(const std::string& sourcePath,
 			              const std::string& targetPath,
-			              const std::vector<CloudTools::DEM::Point>& seedPoints,
+			              const std::vector<OGRPoint>& seedPoints,
 			              Operation::ProgressType progress = nullptr)
 		: DatasetTransformation<GUInt32, float>({ sourcePath }, targetPath, nullptr, progress),
 		  seedPoints(seedPoints)
@@ -45,7 +45,7 @@ public:
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(GDALDataset* sourceDataset,
 			              const std::string& targetPath,
-						  const std::vector<CloudTools::DEM::Point>& seedPoints,
+						  const std::vector<OGRPoint>& seedPoints,
 			              Operation::ProgressType progress = nullptr)
 		: DatasetTransformation<GUInt32, float>({ sourceDataset }, targetPath, nullptr, progress),
 		  seedPoints(seedPoints)
