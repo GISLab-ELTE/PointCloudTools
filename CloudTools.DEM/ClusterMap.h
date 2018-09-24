@@ -74,6 +74,8 @@ public:
 
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
 
+	OGRPoint getCenter(GUInt32 clusterIndex);
+
 	/// <summary>
 	/// Retrieves the points in a cluster.
 	/// </summary>

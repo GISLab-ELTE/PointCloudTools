@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <numeric>
 #include <unordered_set>
 
 #include "ClusterMap.h"
@@ -61,6 +62,15 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
   }
 
   return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
+}
+
+OGRPoint ClusterMap::getCenter(GUInt32 clusterIndex)
+{
+	auto csirip = points(clusterIndex);
+	int avgX = std::accumulate(csirip.begin(), csirip.end(), 0, [](int value, OGRPoint& p) { return value + p.getX(); }) / csirip.size();
+	int avgY = std::accumulate(csirip.begin(), csirip.end(), 0, [](int value, OGRPoint& p) { return value + p.getY(); }) / csirip.size();
+	OGRPoint center(avgX, avgY);
+	return center;
 }
 
 const std::vector<OGRPoint>& ClusterMap::points(GUInt32 clusterIndex) const

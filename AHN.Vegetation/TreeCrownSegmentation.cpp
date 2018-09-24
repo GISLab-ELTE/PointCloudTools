@@ -32,13 +32,17 @@ void TreeCrownSegmentation::initialize()
         for (GUInt32 index : clusterMap.clusterIndexes())
         {
           neighbors = clusterMap.neighbors(index);
-          for (const OGRPoint& p : neighbors)
-            if (this->hasSourceData(p.getX(), p.getY()))
-            {
-              clusterMap.addPoint(index, p.getX(), p.getY());
-              hasChanged = true;
-              ++iteration;
-            }
+		  OGRPoint center = clusterMap.getCenter(index);
+		  for (const OGRPoint& p : neighbors)
+		  {
+			  double distance = std::sqrt(std::pow((center.getX() - p.getX()), 2.0) + std::pow((center.getY() - p.getY()), 2.0));
+			  if (this->hasSourceData(p.getX(), p.getY()) && distance <= 4.0)
+			  {
+				  clusterMap.addPoint(index, p.getX(), p.getY());
+				  hasChanged = true;
+				  ++iteration;
+			  }
+		  }
         }
       }
       while(hasChanged && iteration <= 5);
