@@ -74,7 +74,9 @@ public:
 
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
 
-	OGRPoint getCenter(GUInt32 clusterIndex);
+	OGRPoint center(GUInt32 clusterIndex);
+
+	OGRPoint seedPoint(GUInt32 clusterIndex);
 
 	/// <summary>
 	/// Retrieves the points in a cluster.
@@ -117,6 +119,7 @@ private:
 	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
 	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
+	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
 };
 } // DEM
 } // CloudTools

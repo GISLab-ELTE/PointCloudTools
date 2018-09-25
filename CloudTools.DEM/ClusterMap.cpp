@@ -64,13 +64,19 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
   return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
 }
 
-OGRPoint ClusterMap::getCenter(GUInt32 clusterIndex)
+OGRPoint ClusterMap::center(GUInt32 clusterIndex)
 {
-	auto csirip = points(clusterIndex);
-	int avgX = std::accumulate(csirip.begin(), csirip.end(), 0, [](int value, OGRPoint& p) { return value + p.getX(); }) / csirip.size();
-	int avgY = std::accumulate(csirip.begin(), csirip.end(), 0, [](int value, OGRPoint& p) { return value + p.getY(); }) / csirip.size();
-	OGRPoint center(avgX, avgY);
-	return center;
+	auto clusterPoints = points(clusterIndex);
+	int avgX = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
+			[](int value, OGRPoint& p) { return value + p.getX(); }) / clusterPoints.size();
+	int avgY = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
+			[](int value, OGRPoint& p) { return value + p.getY(); }) / clusterPoints.size();
+	return OGRPoint(avgX, avgY);
+}
+
+OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
+{
+	return _seedPoints.at(clusterIndex);
 }
 
 const std::vector<OGRPoint>& ClusterMap::points(GUInt32 clusterIndex) const
@@ -86,6 +92,7 @@ void ClusterMap::createCluster(int x, int y)
 
 	_clusterIndexes[_nextClusterIndex].push_back(point);
 	_clusterPoints[point] = _nextClusterIndex;
+	_seedPoints[_nextClusterIndex] = point;
 	++_nextClusterIndex;
 }
 
