@@ -25,7 +25,7 @@ void TreeCrownSegmentation::initialize()
 
       std::vector<OGRPoint> neighbors;
       bool hasChanged;
-      double currentVerticalDistance = 0;
+      double currentVerticalDistance = 0.5;
       do
       {
         hasChanged = false;
@@ -46,8 +46,8 @@ void TreeCrownSegmentation::initialize()
 				  hasChanged = true;
 			  }
 		  }
-		  currentVerticalDistance += increaseVerticalDistance;
         }
+        currentVerticalDistance += increaseVerticalDistance;
       }
       while(hasChanged && currentVerticalDistance <= maxVerticalDistance);
 
