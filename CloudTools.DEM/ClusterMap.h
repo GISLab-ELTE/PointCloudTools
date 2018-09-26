@@ -46,7 +46,7 @@ private:
 	};
 public:
 	/// <summary>
-	/// nitializes a new, empty instance of the class.
+	/// Initializes a new, empty instance of the class.
 	/// </summary>
 	ClusterMap() = default;
 
@@ -72,10 +72,26 @@ public:
 	/// <param name="y">The ordinate of the point.</param>
 	void addPoint(GUInt32 clusterIndex, int x, int y);
 
+	/// <summary>
+	/// Retrieves the direct neighbors of the points in a cluster.
+	/// </summary>
+    /// <param name="clusterIndex">The index of the cluster.</param>
+    /// <returns>The neighboring points contained by the cluster.</returns>
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
 
+    /// <summary>
+    /// Calculates the center of gravity (?) of a cluster by
+    /// taking the average of the coordinates of its points.
+    /// </summary>
+    /// <param name="clusterIndex">The index of the cluster.</param>
+    /// <returns>The center of gravity of the cluster.</returns>
 	OGRPoint center(GUInt32 clusterIndex);
 
+	/// <summary>
+    /// Retrieves the seed point of a cluster.
+    /// </summary>
+    /// <param name="clusterIndex">The index of the cluster.</param>
+    /// <returns>The seed point of the cluster.</returns>
 	OGRPoint seedPoint(GUInt32 clusterIndex);
 
 	/// <summary>

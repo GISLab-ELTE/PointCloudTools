@@ -19,6 +19,9 @@ public:
 	std::vector<OGRPoint> seedPoints;
 
 public:
+  	double maxVerticalDistance = 100.0;
+  	double increaseVerticalDistance = 0.5;
+
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
 	/// </summary>

@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
 
 	// Count & collect local maximum values
 	SweepLineCalculation<float> *collectSeeds = new SweepLineCalculation<float>(
-		{ eliminateNonTrees->target() }, 1, nullptr);
+		{ eliminateNonTrees->target() }, 4, nullptr);
 
 	counter = 0;
 	std::vector<OGRPoint> seedPoints;

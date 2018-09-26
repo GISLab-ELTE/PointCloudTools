@@ -49,15 +49,11 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
   {
     for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
       for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-      for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
         if (i != p.getX() || j != p.getY())
         {
           OGRPoint point(i, j);
-          auto it = _clusterPoints.find(point);
-          if (it == _clusterPoints.end())
-          {
+          if (_clusterPoints.find(point) == _clusterPoints.end())
             neighbors.insert(point);
-          }
         }
   }
 
