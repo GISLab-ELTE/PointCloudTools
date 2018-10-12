@@ -27,6 +27,8 @@ public:
 	/// </summary>
 	Method method;
 
+	int threshold = -1;
+
 public:
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
@@ -80,6 +82,11 @@ void MorphologyFilter<DataType>::initialize()
 
 	this->computation = [this](int x, int y, const std::vector<Window<DataType>>& sources)
 	{
+		if (this->method == Method::Dilation && this->threshold == -1)
+			this->threshold = 0;
+	  	if (this->method == Method::Erosion && this->threshold == -1)
+	  		this->threshold = 9;
+
 		const Window<DataType>& source = sources[0];
 
 		float sum = 0;
@@ -92,9 +99,9 @@ void MorphologyFilter<DataType>::initialize()
 					++counter;
 				}
 
-		if (this->method == Method::Dilation && !source.hasData() && counter > 0)
+		if (this->method == Method::Dilation && !source.hasData() && counter > this->threshold)
 			return sum / counter;
-		if (this->method == Method::Erosion && source.hasData() && counter < 9)
+		if (this->method == Method::Erosion && source.hasData() && counter < this->threshold)
 			return static_cast<DataType>(this->nodataValue);
 		return source.hasData() ? source.data() : static_cast<DataType>(this->nodataValue);
 	};

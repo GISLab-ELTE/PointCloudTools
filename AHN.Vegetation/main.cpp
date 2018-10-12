@@ -10,6 +10,7 @@
 #include <CloudTools.Common/Reporter.h>
 #include <CloudTools.DEM/SweepLineCalculation.hpp>
 #include <CloudTools.DEM/ClusterMap.h>
+#include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include "NoiseFilter.h"
 #include "MatrixTransformation.h"
 #include "TreeCrownSegmentation.h"
@@ -221,7 +222,7 @@ int main(int argc, char* argv[])
 
 	// Tree crown segmentation
 	TreeCrownSegmentation *crownSegmentation = new TreeCrownSegmentation(
-		{ eliminateNonTrees->target() }, outputPath, seedPoints, nullptr);
+		{ eliminateNonTrees->target() }, "crownseg.tif", seedPoints, nullptr);
 	if (!vm.count("quiet"))
 	{
 		crownSegmentation->progress = [&reporter](float complete, const std::string &message)
@@ -234,7 +235,38 @@ int main(int argc, char* argv[])
 	crownSegmentation->execute();
 	std::cout << "Tree crown segmentation performed." << std::endl;
 
-	delete crownSegmentation;
+    MorphologyFilter<> *morphologyFilterErosion = new MorphologyFilter<>(
+        { crownSegmentation->target() }, "erosion.tif", MorphologyFilter<>::Method::Erosion, nullptr);
+    morphologyFilterErosion->threshold = 6;
+    if (!vm.count("quiet"))
+    {
+      morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
+      {
+        reporter->report(complete, message);
+        return true;
+      };
+    }
+    reporter->reset();
+    morphologyFilterErosion->execute();
+    std::cout << "Morphological erosion performed." << std::endl;
+
+    MorphologyFilter<> *morphologyFilterDilation = new MorphologyFilter<>(
+        { morphologyFilterErosion->target() }, outputPath, MorphologyFilter<>::Method::Dilation, nullptr);
+    if (!vm.count("quiet"))
+    {
+      morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
+      {
+        reporter->report(complete, message);
+        return true;
+      };
+    }
+    reporter->reset();
+    morphologyFilterDilation->execute();
+    std::cout << "Morphological dilation performed." << std::endl;
+
+    delete morphologyFilterDilation;
+	delete morphologyFilterErosion;
+    delete crownSegmentation;
 	delete countLocalMax;
 	delete comparison;
 	delete filter;

@@ -39,7 +39,7 @@ void TreeCrownSegmentation::initialize()
 			      + std::pow(center.getY() - p.getY(), 2.0));
 			  double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
 			      - sourceData(clusterMap.seedPoint(index).getX(), clusterMap.seedPoint(index).getY()));
-			  if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 4.0
+			  if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 8.0
                   && verticalDistance <= currentVerticalDistance)
 			  {
 				  clusterMap.addPoint(index, p.getX(), p.getY());
