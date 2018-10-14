@@ -25,13 +25,18 @@ int main(int argc, char* argv[])
 {
 	std::string DTMinputPath;
 	std::string DSMinputPath;
+	std::string AHN2DSMinputPath;
+	std::string AHN2DTMinputPath;
 	std::string outputPath = (fs::current_path() / "out.tif").string();
+	std::string AHN2outputPath = (fs::current_path() / "ahn2_out.tif").string();
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
-		("dtm-input-path,t", po::value<std::string>(&DTMinputPath), "DTM input path")
-		("dsm-input-path,s", po::value<std::string>(&DSMinputPath), "DSM input path")
+		("ahn3-dtm-input-path,t", po::value<std::string>(&DTMinputPath), "DTM input path")
+		("ahn3-dsm-input-path,s", po::value<std::string>(&DSMinputPath), "DSM input path")
+		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
+		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-path,o", po::value<std::string>(&outputPath)->default_value(outputPath), "output path")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
@@ -50,13 +55,13 @@ int main(int argc, char* argv[])
 	}
 
 	bool argumentError = false;
-	if (!vm.count("dsm-input-path"))
+	if (!vm.count("ahn3-dsm-input-path"))
 	{
 		std::cerr << "Surface input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
-	if (!vm.count("dtm-input-path"))
+	if (!vm.count("ahn3-dtm-input-path"))
 	{
 		std::cerr << "Terrain input file is mandatory." << std::endl;
 		argumentError = true;
@@ -264,6 +269,148 @@ int main(int argc, char* argv[])
     morphologyFilterDilation->execute();
     std::cout << "Morphological dilation performed." << std::endl;
 
+	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
+	{
+		// CHM
+		Difference<float> *ahn2comparison = new Difference<float>({ AHN2DTMinputPath, AHN2DSMinputPath }, "ahn2_CHM.tif");
+		if (!vm.count("quiet"))
+		{
+			ahn2comparison->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		ahn2comparison->execute();
+		std::cout << "AHN2 CHM generated." << std::endl;
+
+		// Anti-aliasing
+		MatrixTransformation *ahn2filter = new MatrixTransformation(ahn2comparison->target(), "ahn2_antialias.tif", 1);
+		if (!vm.count("quiet"))
+		{
+			ahn2filter->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2filter->execute();
+		std::cout << "AHN2 Matrix transformation performed." << std::endl;
+
+		// Eliminate small values
+		SweepLineTransformation<float> *ahn2eliminateNonTrees = new SweepLineTransformation<float>(
+			{ ahn2filter->target() }, "ahn2_nosmall.tif", 0, nullptr);
+
+		ahn2eliminateNonTrees->computation = [&ahn2eliminateNonTrees, &thresholdOfTrees](int x, int y,
+			const std::vector<Window<float>> &sources)
+		{
+			const Window<float> &source = sources[0];
+			if (!source.hasData() || source.data() < thresholdOfTrees)
+				return static_cast<float>(ahn2eliminateNonTrees->nodataValue);
+			else
+				return source.data();
+		};
+
+		if (!vm.count("quiet"))
+		{
+			ahn2eliminateNonTrees->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2eliminateNonTrees->execute();
+		std::cout << "AHN2 Too small values eliminated." << std::endl;
+
+		// Collect seeds
+		SweepLineCalculation<float> *ahn2collectSeeds = new SweepLineCalculation<float>(
+			{ ahn2eliminateNonTrees->target() }, 4, nullptr);
+
+		counter = 0;
+		std::vector<OGRPoint> ahn2seedPoints;
+		ahn2collectSeeds->computation = [&ahn2collectSeeds, &counter, &ahn2seedPoints](int x, int y,
+			const std::vector<Window<float>> &sources)
+		{
+			const Window<float> &source = sources[0];
+			if (!source.hasData())
+				return;
+
+			for (int i = -ahn2collectSeeds->range(); i <= ahn2collectSeeds->range(); i++)
+				for (int j = -ahn2collectSeeds->range(); j <= ahn2collectSeeds->range(); j++)
+					if (source.data(i, j) > source.data(0, 0))
+						return;
+			++counter;
+			ahn2seedPoints.emplace_back(x, y);
+		};
+
+		if (!vm.count("quiet"))
+		{
+			ahn2collectSeeds->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2collectSeeds->execute();
+		std::cout << "AHN2 Number of local maximums are: " << counter << std::endl;
+
+		// Tree crown segmentation
+		TreeCrownSegmentation *ahn2crownSegmentation = new TreeCrownSegmentation(
+			{ ahn2eliminateNonTrees->target() }, "ahn2_crownseg.tif", seedPoints, nullptr);
+		if (!vm.count("quiet"))
+		{
+			ahn2crownSegmentation->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2crownSegmentation->execute();
+		std::cout << "AHN2 Tree crown segmentation performed." << std::endl;
+
+		// Morphological opening
+		MorphologyFilter<> *ahn2morphologyFilterErosion = new MorphologyFilter<>(
+			{ ahn2crownSegmentation->target() }, "ahn2_erosion.tif", MorphologyFilter<>::Method::Erosion, nullptr);
+		ahn2morphologyFilterErosion->threshold = 6;
+		if (!vm.count("quiet"))
+		{
+			ahn2morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2morphologyFilterErosion->execute();
+		std::cout << "AHN2 Morphological erosion performed." << std::endl;
+
+		MorphologyFilter<> *ahn2morphologyFilterDilation = new MorphologyFilter<>(
+			{ ahn2morphologyFilterErosion->target() }, AHN2outputPath, MorphologyFilter<>::Method::Dilation, nullptr);
+		if (!vm.count("quiet"))
+		{
+			ahn2morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
+			{
+				reporter->report(complete, message);
+				return true;
+			};
+		}
+		reporter->reset();
+		ahn2morphologyFilterDilation->execute();
+		std::cout << "AHN2 Morphological dilation performed." << std::endl;
+
+		delete ahn2morphologyFilterDilation;
+		delete ahn2morphologyFilterErosion;
+		delete ahn2crownSegmentation;
+		delete ahn2collectSeeds;
+		delete ahn2eliminateNonTrees;
+		delete ahn2filter;
+		delete ahn2comparison;
+	}
+
     delete morphologyFilterDilation;
 	delete morphologyFilterErosion;
     delete crownSegmentation;
@@ -273,4 +420,14 @@ int main(int argc, char* argv[])
 	delete collectSeeds;
 	delete reporter;
 	return Success;
+}
+
+bool reporter(CloudTools::DEM::SweepLineTransformation<float> *transformation, CloudTools::IO::Reporter *reporter)
+{
+	transformation->progress = [&reporter](float complete, const std::string &message)
+	{
+		reporter->report(complete, message);
+		return true;
+	};
+	return false;
 }
