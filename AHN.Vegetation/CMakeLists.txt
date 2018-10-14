@@ -4,7 +4,8 @@ add_executable(ahn_vegetation
 	main.cpp
 	NoiseFilter.cpp NoiseFilter.h
 	MatrixTransformation.cpp MatrixTransformation.h
-	TreeCrownSegmentation.cpp TreeCrownSegmentation.h)
+	TreeCrownSegmentation.cpp TreeCrownSegmentation.h
+	HausdorffDistance.cpp HausdorffDistance.h)
 
 target_link_libraries(ahn_vegetation
 	dem
