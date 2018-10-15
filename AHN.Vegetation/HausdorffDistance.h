@@ -9,28 +9,25 @@ namespace AHN
 {
 namespace Vegetation
 {
-class HausdorffDistance : public CloudTools::DEM::DatasetTransformation<GUInt32, float>
+class HausdorffDistance : public CloudTools::DEM::Operation
 {
 public:
 	double maximumDistance = 8.0;
-	std::unordered_map<GUInt32, double> hausdorffDistances;
+	std::unordered_map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
 	ClusterMap& AHN2clusterMap;
 	ClusterMap& AHN3clusterMap;
 
-	HausdorffDistance(const std::string& sourcePath,
-					  const std::string& targetPath,
-					  ClusterMap& AHN2clusterMap,
+	HausdorffDistance(ClusterMap& AHN2clusterMap,
 					  ClusterMap& AHN3clusterMap,
 					  Operation::ProgressType progress = nullptr)
-		: DatasetTransformation<GUInt32, float>({ sourcePath }, targetPath, nullptr, progress),
-		  AHN2clusterMap(AHN2clusterMap), AHN3clusterMap(AHN3clusterMap)
+		: AHN2clusterMap(AHN2clusterMap), AHN3clusterMap(AHN3clusterMap)
 	{
-		initialize();
+		onExecute();
 	}
 
 private:
-	void initialize();
-	double distanceOfPoints(OGRPoint, OGRPoint);
+	void onPrepare() {}
+	void onExecute();
 };
 }
 }
