@@ -13,7 +13,6 @@ class HausdorffDistance : public CloudTools::DEM::Operation
 {
 public:
 	double maximumDistance = 8.0;
-	std::unordered_map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
 	ClusterMap& AHN2clusterMap;
 	ClusterMap& AHN3clusterMap;
 
@@ -25,7 +24,12 @@ public:
 		onExecute();
 	}
 
+	double clusterDistance(GUInt32, GUInt32);
+	GUInt32 closestCluster(GUInt32);
+
 private:
+	std::unordered_map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
+
 	void onPrepare() {}
 	void onExecute();
 };
