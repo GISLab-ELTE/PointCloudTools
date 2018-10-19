@@ -26,7 +26,8 @@ class DatasetTransformation : public Transformation
 {
 public:
 	typedef std::function<void(int, int)> ComputationType;
-	ComputationType computation;	
+	ComputationType computation;
+
 	/// <summary>
 	/// The indices of bands to use respectively for each data source.
 	/// </summary>
@@ -48,9 +49,9 @@ public:
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	DatasetTransformation(const std::vector<std::string>& sourcePaths,
-	                        const std::string& targetPath,
-	                        ComputationType computation,
-	                        ProgressType progress = nullptr)
+	                      const std::string& targetPath,
+	                      ComputationType computation,
+	                      ProgressType progress = nullptr)
 		: Transformation(sourcePaths, targetPath, progress),
 		computation(computation)
 	{ }
@@ -60,14 +61,12 @@ public:
 	/// </summary>
 	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
 	/// <param name="targetPath">The target file of the transformation.</param>
-	/// <param name="range">The range of surrounding data to involve in the computations.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	DatasetTransformation(const std::vector<GDALDataset*>& sourceDatasets,
-	                        const std::string& targetPath,
-	                        int range,
-	                        ComputationType computation,
-	                        ProgressType progress = nullptr)
+	                      const std::string& targetPath,
+	                      ComputationType computation,
+	                      ProgressType progress = nullptr)
 		: Transformation(sourceDatasets, targetPath, progress),
 		computation(computation)
 	{ }
@@ -79,12 +78,11 @@ public:
 	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
 	/// </remarks>
 	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
-	/// <param name="range">The range of surrounding data to involve in the computations.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	DatasetTransformation(const std::vector<GDALDataset*>& sourceDatasets,
-	                        ComputationType computation,
-	                        ProgressType progress = nullptr)
+	                      ComputationType computation,
+	                      ProgressType progress = nullptr)
 		: DatasetTransformation(sourceDatasets, std::string(), computation, progress)
 	{
 		targetFormat = "MEM";
