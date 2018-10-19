@@ -14,8 +14,6 @@
 #include "Metadata.h"
 #include "Helper.h"
 
-namespace fs = boost::filesystem;
-
 namespace CloudTools
 {
 namespace DEM
@@ -23,8 +21,8 @@ namespace DEM
 /// <summary>
 /// Represents a sweepline transformation on DEM datasets.
 /// </summary>
-template <typename TargetType, typename SourceType = TargetType>
-class DatasetTransformation : public Transformation
+template <typename SourceType>
+class DatasetCalculation : public Calculation
 {
 public:
 	typedef std::function<void(int, int)> ComputationType;
@@ -37,7 +35,6 @@ public:
 
 protected:
 	std::vector<SourceType*> _sourceData;
-	TargetType* _targetData;
 
 private:
 	std::vector<SourceType> _sourceNodataValue;
@@ -47,56 +44,32 @@ public:
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
 	/// <param name="sourcePaths">The source files of the transformation.</param>
-	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	DatasetTransformation(const std::vector<std::string>& sourcePaths,
-	                      const std::string& targetPath,
-	                      ComputationType computation,
-	                      ProgressType progress = nullptr)
-		: Transformation(sourcePaths, targetPath, progress),
+	DatasetCalculation(const std::vector<std::string>& sourcePaths,
+	                   ComputationType computation,
+	                   ProgressType progress = nullptr)
+		: Calculation(sourcePaths, progress),
 		computation(computation)
 	{ }
 
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
-	/// <remarks>
-	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
-	/// </remarks>
 	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
-	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="computation">The callback function for computation.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	DatasetTransformation(const std::vector<GDALDataset*>& sourceDatasets,
-	                      const std::string& targetPath,
-	                      ComputationType computation,
-	                      ProgressType progress = nullptr)
-		: Transformation(sourceDatasets, targetPath, progress),
+	DatasetCalculation(const std::vector<GDALDataset*>& sourceDatasets,
+	                   ComputationType computation,
+	                   ProgressType progress = nullptr)
+		: Calculation(sourceDatasets, progress),
 		computation(computation)
 	{ }
 
-	/// <summary>
-	/// Initializes a new instance of the class and loads source metadata.
-	/// </summary>
-	/// <remarks>
-	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
-	/// </remarks>
-	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
-	/// <param name="computation">The callback function for computation.</param>
-	/// <param name="progress">The callback method to report progress.</param>
-	DatasetTransformation(const std::vector<GDALDataset*>& sourceDatasets,
-	                      ComputationType computation,
-	                      ProgressType progress = nullptr)
-		: DatasetTransformation(sourceDatasets, std::string(), computation, progress)
-	{
-		targetFormat = "MEM";
-	}
+	DatasetCalculation(const DatasetCalculation&) = delete;
+	DatasetCalculation& operator=(const DatasetCalculation&) = delete;
 
-	DatasetTransformation(const DatasetTransformation&) = delete;
-	DatasetTransformation& operator=(const DatasetTransformation&) = delete;
-
-	~DatasetTransformation();
+	~DatasetCalculation();
 
 protected:
 	/// <summary>
@@ -116,19 +89,6 @@ protected:
 		return sourceData(0, i, j);
 	}
 
-	TargetType targetData(int i, int j) const
-	{
-		if (!isValid(i, j))
-			return nodataValue;
-		return _targetData[j * _targetMetadata.rasterSizeX() + i];
-	}
-
-	void setTargetData(int i, int j, TargetType value)
-	{
-		if (isValid(i, j))
-			_targetData[j * _targetMetadata.rasterSizeX() + i] = value;
-	}
-
 	bool hasSourceData(int index, int i, int j) const
 	{
 		if (!isValid(index, i, j))
@@ -139,13 +99,6 @@ protected:
 	bool hasSourceData(int i, int j) const
 	{
 		return hasSourceData(0, i, j);
-	}
-
-	bool hasTargetData(int i, int j) const
-	{
-		if (!isValid(i, j))
-			return false;
-		return targetData(i, j) != nodataValue;
 	}
 
 private:
@@ -163,47 +116,16 @@ private:
 	}
 };
 
-template <typename TargetType, typename SourceType>
-void DatasetTransformation<TargetType, SourceType>::onExecute()
+template <typename SourceType>
+void DatasetCalculation<SourceType>::onExecute()
 {
 	if (!computation)
 		throw std::logic_error("No computation method defined.");
 
-	// Create and open the target file
-	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName(targetFormat.c_str());
-	if (driver == nullptr)
-		throw std::invalid_argument("Target output format unrecognized.");
-
-	if (fs::exists(_targetPath) &&
-		driver->Delete(_targetPath.c_str()) == CE_Failure &&
-		!fs::remove(_targetPath))
-		throw std::runtime_error("Cannot overwrite previously created target file.");
-
 	GDALDataType sourceType = gdalType<SourceType>();
-	GDALDataType targetType = gdalType<TargetType>();
-
-	char **targetParams = nullptr;
-	for (auto& co : createOptions)
-		targetParams = CSLSetNameValue(targetParams, co.first.c_str(), co.second.c_str());
-
-	_targetDataset = driver->Create(_targetPath.c_str(),
-		_targetMetadata.rasterSizeX(), _targetMetadata.rasterSizeY(), 1,
-		targetType, targetParams);
-	CSLDestroy(targetParams);
-	if (_targetDataset == nullptr)
-		throw std::runtime_error("Target file creation failed.");
-
-	_targetDataset->SetGeoTransform(&_targetMetadata.geoTransform()[0]);
-	if (_targetMetadata.reference().Validate() == OGRERR_NONE)
-	{
-		char *wkt;
-		_targetMetadata.reference().exportToWkt(&wkt);
-		_targetDataset->SetProjection(wkt);
-		OGRFree(wkt);
-	}
 
 	// Determine computation progress steps
-	int computationSteps = sourceCount() + 2;
+	int computationSteps = sourceCount() + 1;
 
 	// Open and check bands
 	std::vector<GDALRasterBand*> sourceBands(sourceCount());
@@ -226,8 +148,6 @@ void DatasetTransformation<TargetType, SourceType>::onExecute()
 		sourceBands[i] = _sourceDatasets[i]->GetRasterBand(static_cast<int>(bandIndex));
 		_sourceNodataValue[i] = static_cast<SourceType>(sourceBands[i]->GetNoDataValue());
 	}
-	GDALRasterBand* targetBand = _targetDataset->GetRasterBand(1);
-	targetBand->SetNoDataValue(nodataValue);
 
 	if (strictTypes && std::any_of(sourceBands.begin(), sourceBands.end(),
 		[sourceType](GDALRasterBand* band)
@@ -259,10 +179,7 @@ void DatasetTransformation<TargetType, SourceType>::onExecute()
 	if (ioResult != CE_None)
 		throw std::runtime_error("Source read error occured.");
 
-	// Compute target
-	_targetData = new TargetType[_targetMetadata.rasterSizeX() * _targetMetadata.rasterSizeY()];
-	std::fill_n(_targetData, _targetMetadata.rasterSizeX() * _targetMetadata.rasterSizeY(), nodataValue);
-
+	// Execute computation
 	ProgressType origProgress = progress;
 	if (progress)
 	{
@@ -278,29 +195,17 @@ void DatasetTransformation<TargetType, SourceType>::onExecute()
 	if (progress)
 		progress((computationSteps - 1) * 1.f / computationSteps, "Computation performed");
 
-	// Write target
-	ioResult = targetBand->RasterIO(GF_Write,
-		0, 0,
-		_targetMetadata.rasterSizeX(), _targetMetadata.rasterSizeY(),
-		_targetData,
-		_targetMetadata.rasterSizeX(), _targetMetadata.rasterSizeY(),
-		targetType, 
-		0, 0);
-	if (ioResult != CE_None)
-		throw std::runtime_error("Target write error occured.");
-
 	if (progress)
 		progress(1.f, "Target written");
 }
 
-template <typename TargetType, typename SourceType>
-DatasetTransformation<TargetType, SourceType>::~DatasetTransformation()
+template <typename SourceType>
+DatasetCalculation<SourceType>::~DatasetCalculation()
 {
 	if (isExecuted())
 	{
 		for (int i = 0; i < sourceCount(); ++i)
 			delete[] _sourceData[i];
-		delete[] _targetData;
 	}
 }
 } // DEM

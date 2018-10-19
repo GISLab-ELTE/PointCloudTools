@@ -5,9 +5,9 @@
 #include <boost/program_options.hpp>
 #include <gdal_priv.h>
 
-#include <CloudTools.Common/IO.h>
+#include <CloudTools.Common/IO/IO.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include <CloudTools.DEM/Comparers/Difference.hpp>
-#include <CloudTools.Common/Reporter.h>
 #include <CloudTools.DEM/SweepLineCalculation.hpp>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>

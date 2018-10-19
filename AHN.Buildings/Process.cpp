@@ -13,7 +13,7 @@
 
 #include <gdal_utils.h>
 
-#include <CloudTools.Common/Reporter.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include <CloudTools.DEM/SweepLineTransformation.hpp>
 #include <CloudTools.DEM/Filters/NoiseFilter.hpp>
 #include <CloudTools.DEM/Filters/MajorityFilter.hpp>

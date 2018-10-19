@@ -1,23 +1,22 @@
 #pragma once
 
+#include <CloudTools.Common/Operation.h>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetTransformation.hpp>
-
-using namespace CloudTools::DEM;
 
 namespace AHN
 {
 namespace Vegetation
 {
-class HausdorffDistance : public CloudTools::DEM::Operation
+class HausdorffDistance : public CloudTools::Operation
 {
 public:
 	double maximumDistance = 8.0;
-	ClusterMap& AHN2clusterMap;
-	ClusterMap& AHN3clusterMap;
+	CloudTools::DEM::ClusterMap& AHN2clusterMap;
+	CloudTools::DEM::ClusterMap& AHN3clusterMap;
 
-	HausdorffDistance(ClusterMap& AHN2clusterMap,
-					  ClusterMap& AHN3clusterMap,
+	HausdorffDistance(CloudTools::DEM::ClusterMap& AHN2clusterMap,
+		              CloudTools::DEM::ClusterMap& AHN3clusterMap,
 					  Operation::ProgressType progress = nullptr)
 		: AHN2clusterMap(AHN2clusterMap), AHN3clusterMap(AHN3clusterMap)
 	{

@@ -1,5 +1,6 @@
+include_directories(../)
+
 add_library(dem
-	Operation.cpp Operation.h
 	Calculation.cpp Calculation.h
 	Transformation.cpp Transformation.h
 	Color.cpp Color.h
@@ -10,7 +11,8 @@ add_library(dem
 	Window.hpp
 	SweepLineCalculation.hpp
 	SweepLineTransformation.hpp
-	DatasetTransformation.hpp	
+	DatasetCalculation.hpp
+	DatasetTransformation.hpp
 	Filters/ClusterFilter.hpp
 	Filters/MajorityFilter.hpp
 	Filters/MorphologyFilter.hpp

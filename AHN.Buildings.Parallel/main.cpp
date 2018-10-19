@@ -15,8 +15,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
-#include <CloudTools.Common/IO.h>
-#include <CloudTools.Common/Reporter.h>
+#include <CloudTools.Common/IO/IO.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include <AHN.Buildings/Process.h>
 
 namespace po = boost::program_options;
