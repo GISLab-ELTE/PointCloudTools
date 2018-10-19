@@ -7,7 +7,7 @@
 
 #include <ogrsf_frmts.h>
 
-#include "Operation.h"
+#include <CloudTools.Common/Operation.h>
 #include "Metadata.h"
 
 namespace CloudTools

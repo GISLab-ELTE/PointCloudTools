@@ -12,8 +12,8 @@
 #include <boost/filesystem.hpp>
 #include <gdal.h>
 
-#include <CloudTools.Common/IO.h>
-#include <CloudTools.Common/Reporter.h>
+#include <CloudTools.Common/IO/IO.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include "IOMode.h"
 #include "Process.h"
 

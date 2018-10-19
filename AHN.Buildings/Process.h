@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
-#include <CloudTools.DEM/Operation.h>
+#include <CloudTools.Common/Operation.h>
 #include <CloudTools.DEM/Transformation.h>
 #include "Result.h"
 
@@ -20,7 +20,7 @@ namespace Buildings
 /// <summary>
 /// The AHN Building Filter operation.
 /// </summary>
-class Process : public CloudTools::DEM::Operation
+class Process : public CloudTools::Operation
 {
 public:
 	/// <summary>

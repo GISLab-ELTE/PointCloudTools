@@ -9,8 +9,8 @@
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
-#include <CloudTools.Common/IO.h>
-#include <CloudTools.Common/Reporter.h>
+#include <CloudTools.Common/IO/IO.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include <CloudTools.DEM/Comparers/Difference.hpp>
 
 namespace po = boost::program_options;

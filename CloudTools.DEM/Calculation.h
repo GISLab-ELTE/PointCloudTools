@@ -5,7 +5,7 @@
 
 #include <gdal_priv.h>
 
-#include "Operation.h"
+#include <CloudTools.Common/Operation.h>
 #include "Metadata.h"
 
 namespace CloudTools

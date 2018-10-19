@@ -1,5 +1,6 @@
+include_directories(../)
+
 add_library(dem
-	Operation.cpp Operation.h
 	Calculation.cpp Calculation.h
 	Transformation.cpp Transformation.h
 	Color.cpp Color.h

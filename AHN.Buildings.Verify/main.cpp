@@ -14,8 +14,8 @@
 #include <boost/regex.hpp>
 #include <gdal_priv.h>
 
-#include <CloudTools.Common/IO.h>
-#include <CloudTools.Common/Reporter.h>
+#include <CloudTools.Common/IO/IO.h>
+#include <CloudTools.Common/IO/Reporter.h>
 #include <CloudTools.DEM/Metadata.h>
 #include <CloudTools.DEM/Rasterize.h>
 #include <CloudTools.DEM/SweepLineCalculation.hpp>

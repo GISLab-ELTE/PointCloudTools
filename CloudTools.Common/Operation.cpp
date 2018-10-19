@@ -2,8 +2,6 @@
 
 namespace CloudTools
 {
-namespace DEM
-{
 #pragma region Operation
 
 void Operation::prepare(bool force)
@@ -39,5 +37,4 @@ void OperationSequence::onExecute()
 }
 
 #pragma endregion
-} // DEM
 } // CloudTools

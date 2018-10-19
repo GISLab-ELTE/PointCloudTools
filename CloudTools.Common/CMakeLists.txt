@@ -1,3 +1,4 @@
 add_library(common
-	IO.cpp IO.h
-	Reporter.cpp Reporter.h)
+	Operation.cpp Operation.h
+	IO/IO.cpp IO/IO.h
+	IO/Reporter.cpp IO/Reporter.h)

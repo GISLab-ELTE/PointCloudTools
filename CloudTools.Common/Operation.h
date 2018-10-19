@@ -5,10 +5,8 @@
 
 namespace CloudTools
 {
-namespace DEM
-{
 /// <summary>
-/// Represents an operation on DEM datasets.
+/// Represents an operation on spatial datasets.
 /// </summary>
 class Operation
 {
@@ -59,7 +57,7 @@ protected:
 };
 
 /// <summary>
-/// Represents an iterative operation sequence on DEM datasets.
+/// Represents an iterative operation sequence on spatial datasets.
 /// </summary>
 class OperationSequence : public Operation
 {
@@ -85,5 +83,4 @@ protected:
 	void onPrepare() override final { }
 	void onExecute() override final;
 };
-} // DEM
 } // CloudTools
