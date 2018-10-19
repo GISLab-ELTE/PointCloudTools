@@ -11,7 +11,8 @@ add_library(dem
 	Window.hpp
 	SweepLineCalculation.hpp
 	SweepLineTransformation.hpp
-	DatasetTransformation.hpp	
+	DatasetCalculation.hpp
+	DatasetTransformation.hpp
 	Filters/ClusterFilter.hpp
 	Filters/MajorityFilter.hpp
 	Filters/MorphologyFilter.hpp
