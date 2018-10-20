@@ -14,6 +14,7 @@
 #include "NoiseFilter.h"
 #include "MatrixTransformation.h"
 #include "TreeCrownSegmentation.h"
+#include "MorphologyClusterFilter.hpp"
 
 namespace po = boost::program_options;
 
@@ -225,9 +226,10 @@ int main(int argc, char* argv[])
 	collectSeeds->execute();
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
+	ClusterMap clusters;
 	// Tree crown segmentation
 	TreeCrownSegmentation *crownSegmentation = new TreeCrownSegmentation(
-		{ eliminateNonTrees->target() }, "crownseg.tif", seedPoints, nullptr);
+		{ eliminateNonTrees->target() }, seedPoints, nullptr);
 	if (!vm.count("quiet"))
 	{
 		crownSegmentation->progress = [&reporter](float complete, const std::string &message)
@@ -240,31 +242,31 @@ int main(int argc, char* argv[])
 	crownSegmentation->execute();
 	std::cout << "Tree crown segmentation performed." << std::endl;
 
-    MorphologyFilter<> *morphologyFilterErosion = new MorphologyFilter<>(
-        { crownSegmentation->target() }, "erosion.tif", MorphologyFilter<>::Method::Erosion, nullptr);
+    MorphologyClusterFilter *morphologyFilterErosion = new MorphologyClusterFilter(
+        clusters, "erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
     morphologyFilterErosion->threshold = 6;
-    if (!vm.count("quiet"))
+    /*if (!vm.count("quiet"))
     {
       morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
       {
         reporter->report(complete, message);
         return true;
       };
-    }
+    }*/
     reporter->reset();
     morphologyFilterErosion->execute();
     std::cout << "Morphological erosion performed." << std::endl;
 
-    MorphologyFilter<> *morphologyFilterDilation = new MorphologyFilter<>(
-        { morphologyFilterErosion->target() }, outputPath, MorphologyFilter<>::Method::Dilation, nullptr);
-    if (!vm.count("quiet"))
+    MorphologyClusterFilter *morphologyFilterDilation = new MorphologyClusterFilter(
+        clusters, outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
+    /*if (!vm.count("quiet"))
     {
       morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
       {
         reporter->report(complete, message);
         return true;
       };
-    }
+    }*/
     reporter->reset();
     morphologyFilterDilation->execute();
     std::cout << "Morphological dilation performed." << std::endl;
@@ -357,9 +359,10 @@ int main(int argc, char* argv[])
 		ahn2collectSeeds->execute();
 		std::cout << "AHN2 Number of local maximums are: " << counter << std::endl;
 
+		ClusterMap clusterMap;
 		// Tree crown segmentation
 		TreeCrownSegmentation *ahn2crownSegmentation = new TreeCrownSegmentation(
-			{ ahn2eliminateNonTrees->target() }, "ahn2_crownseg.tif", seedPoints, nullptr);
+			{ ahn2eliminateNonTrees->target() }, seedPoints, nullptr);
 		if (!vm.count("quiet"))
 		{
 			ahn2crownSegmentation->progress = [&reporter](float complete, const std::string &message)
@@ -373,31 +376,31 @@ int main(int argc, char* argv[])
 		std::cout << "AHN2 Tree crown segmentation performed." << std::endl;
 
 		// Morphological opening
-		MorphologyFilter<> *ahn2morphologyFilterErosion = new MorphologyFilter<>(
-			{ ahn2crownSegmentation->target() }, "ahn2_erosion.tif", MorphologyFilter<>::Method::Erosion, nullptr);
+		MorphologyClusterFilter *ahn2morphologyFilterErosion = new MorphologyClusterFilter(
+			clusterMap, "ahn2_erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
 		ahn2morphologyFilterErosion->threshold = 6;
-		if (!vm.count("quiet"))
+		/*if (!vm.count("quiet"))
 		{
 			ahn2morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
 			{
 				reporter->report(complete, message);
 				return true;
 			};
-		}
+		}*/
 		reporter->reset();
 		ahn2morphologyFilterErosion->execute();
 		std::cout << "AHN2 Morphological erosion performed." << std::endl;
 
-		MorphologyFilter<> *ahn2morphologyFilterDilation = new MorphologyFilter<>(
-			{ ahn2morphologyFilterErosion->target() }, AHN2outputPath, MorphologyFilter<>::Method::Dilation, nullptr);
-		if (!vm.count("quiet"))
+		MorphologyClusterFilter *ahn2morphologyFilterDilation = new MorphologyClusterFilter(
+			clusterMap, AHN2outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
+		/*if (!vm.count("quiet"))
 		{
 			ahn2morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
 			{
 				reporter->report(complete, message);
 				return true;
 			};
-		}
+		}*/
 		reporter->reset();
 		ahn2morphologyFilterDilation->execute();
 		std::cout << "AHN2 Morphological dilation performed." << std::endl;

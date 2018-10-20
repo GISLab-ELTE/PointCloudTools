@@ -9,18 +9,15 @@ namespace AHN
 {
 namespace Vegetation
 {
-void TreeCrownSegmentation::initialize()
-{
-	this->nodataValue = 0;
-	
+void TreeCrownSegmentation::onExecute()
+{	
 	this->computation = [this](int sizeX, int sizeY)
 	{
-      ClusterMap clusterMap;
-
+	  ClusterMap targetMap;
       // Create initial clusters from seed points
       for (const auto& point : this->seedPoints)
       {
-          clusterMap.createCluster(point.getX(), point.getY());
+          targetMap.createCluster(point.getX(), point.getY());
       }
 
       std::vector<OGRPoint> neighbors;
@@ -29,20 +26,20 @@ void TreeCrownSegmentation::initialize()
       do
       {
         hasChanged = false;
-        for (GUInt32 index : clusterMap.clusterIndexes())
+        for (GUInt32 index : targetMap.clusterIndexes())
         {
-          neighbors = clusterMap.neighbors(index);
-		  OGRPoint center = clusterMap.center(index);
+          neighbors = targetMap.neighbors(index);
+		  OGRPoint center = targetMap.center(index);
 		  for (const OGRPoint& p : neighbors)
 		  {
 			  double horizontalDistance = std::sqrt(std::pow(center.getX() - p.getX(), 2.0)
 			      + std::pow(center.getY() - p.getY(), 2.0));
 			  double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
-			      - sourceData(clusterMap.seedPoint(index).getX(), clusterMap.seedPoint(index).getY()));
+			      - sourceData(targetMap.seedPoint(index).getX(), targetMap.seedPoint(index).getY()));
 			  if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 8.0
                   && verticalDistance <= currentVerticalDistance)
 			  {
-				  clusterMap.addPoint(index, p.getX(), p.getY());
+				  targetMap.addPoint(index, p.getX(), p.getY());
 				  hasChanged = true;
 			  }
 		  }
@@ -52,12 +49,12 @@ void TreeCrownSegmentation::initialize()
       while(hasChanged && currentVerticalDistance <= maxVerticalDistance);
 
       // Write out the clusters as a DEM
-      for (GUInt32 index : clusterMap.clusterIndexes())
+      /*for (GUInt32 index : clusterMap.clusterIndexes())
           for (const OGRPoint& point : clusterMap.points(index))
           {
               this->setTargetData(point.getX(), point.getY(), index);
           }
-
+		  */
       if (this->progress)
           this->progress(1.f, "Target created");
 	};

@@ -3,14 +3,14 @@
 #include <string>
 #include <vector>
 
-#include <CloudTools.DEM/DatasetTransformation.hpp>
+#include <CloudTools.DEM/DatasetCalculation.hpp>
 #include <CloudTools.DEM/Helper.h>
 
 namespace AHN
 {
 namespace Vegetation
 {
-class TreeCrownSegmentation : public CloudTools::DEM::DatasetTransformation<GUInt32, float>
+class TreeCrownSegmentation : public CloudTools::DEM::DatasetCalculation<float>
 {
 public:
 	/// <summary>
@@ -30,13 +30,12 @@ public:
 	/// <param name="seedPoints">The tree crown seed points.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(const std::string& sourcePath,
-			              const std::string& targetPath,
 			              const std::vector<OGRPoint>& seedPoints,
 			              Operation::ProgressType progress = nullptr)
-		: DatasetTransformation<GUInt32, float>({ sourcePath }, targetPath, nullptr, progress),
+		: DatasetCalculation<float>({ sourcePath }, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
-		initialize();
+		onExecute();
 	}
 
 	/// <summary>
@@ -47,13 +46,12 @@ public:
 	/// <param name="seedPoints">The tree crown seed points.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(GDALDataset* sourceDataset,
-			              const std::string& targetPath,
 						  const std::vector<OGRPoint>& seedPoints,
 			              Operation::ProgressType progress = nullptr)
-		: DatasetTransformation<GUInt32, float>({ sourceDataset }, targetPath, nullptr, progress),
+		: DatasetCalculation<float>({ sourceDataset }, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
-		initialize();
+		onExecute();
 	}
 
 	TreeCrownSegmentation(const TreeCrownSegmentation&) = delete;
@@ -63,7 +61,7 @@ private:
 	/// <summary>
 	/// Initializes the new instance of the class.
 	/// </summary>
-	void initialize();
+	void onExecute();
 };
 } // Vegetation
 } // AHN
