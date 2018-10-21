@@ -36,7 +36,7 @@ public:
 		: DatasetCalculation<float>({ sourcePath }, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
-		onExecute();
+		initialize();
 	}
 
 	/// <summary>
@@ -52,7 +52,7 @@ public:
 		: DatasetCalculation<float>({ sourceDataset }, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
-		onExecute();
+		initialize();
 	}
 
 	TreeCrownSegmentation(const TreeCrownSegmentation&) = delete;
@@ -65,7 +65,7 @@ private:
 	/// <summary>
 	/// Initializes the new instance of the class.
 	/// </summary>
-	void onExecute();
+	void initialize();
 };
 } // Vegetation
 } // AHN

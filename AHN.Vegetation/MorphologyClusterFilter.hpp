@@ -2,9 +2,9 @@
 
 #include <string>
 
-#include "CloudTools.Common/Operation.h"
-#include "CloudTools.DEM/Window.hpp"
-#include "CloudTools.DEM/ClusterMap.h"
+#include <CloudTools.Common/Operation.h>
+#include <CloudTools.DEM/Window.hpp>
+#include <CloudTools.DEM/ClusterMap.h>
 
 namespace AHN
 {
