@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 #include <CloudTools.DEM/Helper.h>
 
@@ -57,7 +58,10 @@ public:
 	TreeCrownSegmentation(const TreeCrownSegmentation&) = delete;
 	TreeCrownSegmentation& operator=(const TreeCrownSegmentation&) = delete;
 
+	CloudTools::DEM::ClusterMap& clusterMap();
+
 private:
+	CloudTools::DEM::ClusterMap clusters;
 	/// <summary>
 	/// Initializes the new instance of the class.
 	/// </summary>
