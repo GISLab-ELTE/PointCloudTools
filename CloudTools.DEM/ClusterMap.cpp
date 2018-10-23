@@ -42,6 +42,31 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
 	_clusterPoints.insert(std::make_pair(point, clusterIndex));
 }
 
+void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
+{
+	if(_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
+		throw std::out_of_range("Cluster is out of range.");
+
+	const OGRPoint point(x, y);
+	std::vector<OGRPoint>::iterator iter = 
+		std::find_if(_clusterIndexes[clusterIndex].begin(),
+		_clusterIndexes[clusterIndex].end(),
+		[&point](OGRPoint& p) { return point.Equals(&p); });
+
+	if(iter == _clusterIndexes[clusterIndex].end())
+		throw std::out_of_range("Point is out of range.");
+
+	_clusterIndexes[clusterIndex].erase(iter);
+	if (!_clusterIndexes[clusterIndex].size)
+		removeCluster(clusterIndex);
+
+	_clusterPoints.erase(point);
+	if (std::find_if(_seedPoints.begin(),
+		_seedPoints.end(), [&point](std::pair<GUInt32, OGRPoint>& pair)
+		{ return point.Equals(&pair.second); }) != _seedPoints.end())
+		_seedPoints.erase(clusterIndex);
+}
+
 std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
 {
   std::unordered_set<OGRPoint, PointHash, PointEqual> neighbors;

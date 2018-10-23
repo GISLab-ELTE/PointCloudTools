@@ -44,46 +44,19 @@ public:
 
 	}
 
-	MorphologyClusterFilter(){}
+	MorphologyClusterFilter() {}
 
 	MorphologyClusterFilter(const MorphologyClusterFilter&) = delete;
 	MorphologyClusterFilter& operator=(const MorphologyClusterFilter&) = delete;
 
-	void onPrepare(){}
+	void onPrepare() override {}
 
-	void onExecute()
-	{
-		if (this->method == Method::Dilation && this->threshold == -1)
-			this->threshold = 0;
-		if (this->method == Method::Erosion && this->threshold == -1)
-			this->threshold = 9;
+	void onExecute() override;
 
-		int counter;
-		for (GUInt32 index : clusterMap.clusterIndexes())
-			for (const OGRPoint& p : clusterMap.points(index))
-			{
-				counter = 0;
-				for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
-					for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-						if (clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
-							++counter;
-
-				if (this->method == Method::Dilation && counter > this->threshold)
-					this->targetMap.addPoint(index, p.getX(), p.getY());
-				if (this->method == Method::Erosion && counter < this->threshold)
-				{ // TODO}
-
-				}
-			}
-	}
-
-	CloudTools::DEM::ClusterMap& target()
-	{
-		return this->targetMap;
-	}
+	CloudTools::DEM::ClusterMap& target();
 
 private:
 	CloudTools::DEM::ClusterMap targetMap;
 };
-} //Vegetation
-} //AHN
+}
+}

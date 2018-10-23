@@ -72,6 +72,8 @@ public:
 	/// <param name="y">The ordinate of the point.</param>
 	void addPoint(GUInt32 clusterIndex, int x, int y);
 
+	void removePoint(GUInt32 clusterIndex, int x, int y);
+
 	/// <summary>
 	/// Retrieves the direct neighbors of the points in a cluster.
 	/// </summary>
