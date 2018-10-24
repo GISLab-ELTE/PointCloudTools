@@ -49,17 +49,19 @@ void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 
 	OGRPoint point(x, y);
 
-	std::vector<OGRPoint>::iterator iter = std::find(_clusterIndexes[clusterIndex].begin(),
-													 _clusterIndexes[clusterIndex].end(), point);
+	std::vector<OGRPoint>::iterator iter =
+	    std::find(_clusterIndexes[clusterIndex].begin(),
+		_clusterIndexes[clusterIndex].end(), point);
 
 	if(iter	== _clusterIndexes[clusterIndex].end())
 		throw std::out_of_range("Point is out of range.");
 
 	_clusterIndexes[clusterIndex].erase(iter);
+    _clusterPoints.erase(point);
+
 	if (!_clusterIndexes[clusterIndex].size())
 		removeCluster(clusterIndex);
 
-	_clusterPoints.erase(point);
 	if(_seedPoints[clusterIndex].Equals(&point))
 		_seedPoints.erase(clusterIndex);
 }

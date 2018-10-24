@@ -18,7 +18,11 @@ void MorphologyClusterFilter::onExecute()
 	int counter;
 
 	if (this->method == Method::Erosion)
+	{
+		std::vector<OGRPoint> pointSet;
 		for (GUInt32 index : clusterMap.clusterIndexes())
+		{
+			pointSet.clear();
 			for (const OGRPoint& p : clusterMap.points(index))
 			{
 				counter = 0;
@@ -27,11 +31,37 @@ void MorphologyClusterFilter::onExecute()
 						if (clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
 							++counter;
 
-				if (counter < this->threshold)
-					clusterMap.removePoint(index, p.getX(), p.getY());
+				if (counter < this->threshold);
+					pointSet.emplace_back(p);
 			}
 
-	if(this->method == Method::Dilation){}
+			for (auto p : pointSet)
+				clusterMap.removePoint(index, p.getX(), p.getY());
+		}
+	}
+
+	if(this->method == Method::Dilation)
+	{
+	  std::vector<OGRPoint> pointSet;
+	  for(GUInt32 index : clusterMap.clusterIndexes())
+      {
+        pointSet.clear();
+        for(OGRPoint& p : clusterMap.neighbors(index))
+        {
+          counter = 0;
+          for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
+            for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
+              if (clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
+                ++counter;
+
+          if (counter > this->threshold);
+            pointSet.emplace_back(p);
+        }
+
+        for (auto& p : pointSet)
+          clusterMap.addPoint(index, p.getX(), p.getY());
+      }
+	}
 }
 
 CloudTools::DEM::ClusterMap& MorphologyClusterFilter::target()
