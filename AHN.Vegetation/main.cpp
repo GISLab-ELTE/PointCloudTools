@@ -14,7 +14,7 @@
 #include "NoiseFilter.h"
 #include "MatrixTransformation.h"
 #include "TreeCrownSegmentation.h"
-#include "MorphologyClusterFilter.hpp"
+#include "MorphologyClusterFilter.h"
 
 namespace po = boost::program_options;
 

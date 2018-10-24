@@ -72,6 +72,12 @@ public:
 	/// <param name="y">The ordinate of the point.</param>
 	void addPoint(GUInt32 clusterIndex, int x, int y);
 
+	/// <summary>
+	/// Eliminates a given grid point from the given cluster.
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <param name="x">The abcissa of the point.</param>
+	/// <param name="y">The ordinate of the point.</param>
+	/// </summary>
 	void removePoint(GUInt32 clusterIndex, int x, int y);
 
 	/// <summary>

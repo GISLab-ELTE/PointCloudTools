@@ -13,7 +13,8 @@ void HausdorffDistance::onExecute()
 	{
 		for (GUInt32 otherIndex : AHN3clusterMap.clusterIndexes())
 		{
-			double distance = AHN2clusterMap.center(index).Distance(&AHN3clusterMap.center(otherIndex));
+			auto c = AHN3clusterMap.center(otherIndex);
+			double distance = AHN2clusterMap.center(index).Distance(&c);
 			if (distance >= maximumDistance)
 				continue;
 
