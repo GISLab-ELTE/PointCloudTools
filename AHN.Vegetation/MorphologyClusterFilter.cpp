@@ -51,7 +51,10 @@ void MorphologyClusterFilter::onExecute()
           counter = 0;
           for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
             for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-              if (clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
+              if (std::find(clusterMap.points(index).begin(), 
+				  clusterMap.points(index).end(), OGRPoint(i, j)) 
+				  != clusterMap.points(index).end()
+				  && clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
                 ++counter;
 
           if (counter > this->threshold);
