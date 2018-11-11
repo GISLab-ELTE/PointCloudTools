@@ -59,5 +59,10 @@ GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 	return closest;
 }
 
+std::unordered_map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances()
+{
+	return hausdorffDistances;
+}
+
 }
 }

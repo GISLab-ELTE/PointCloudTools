@@ -25,6 +25,7 @@ public:
 
 	double clusterDistance(GUInt32, GUInt32);
 	GUInt32 closestCluster(GUInt32);
+	std::unordered_map<std::pair<GUInt32, GUInt32>, double> distances();
 
 private:
 	std::unordered_map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
