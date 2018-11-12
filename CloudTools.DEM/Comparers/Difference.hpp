@@ -45,7 +45,7 @@ public:
 	Difference(const std::vector<GDALDataset*>& sourceDatasets,
 		       const std::string& targetPath,
 		       Operation::ProgressType progress = nullptr)
-		: SweepLineTransformation<DataType>(sourceDatasets, targetPath, nullptr, progress)
+		: SweepLineTransformation<DataType>(sourceDatasets, targetPath, 0, nullptr, progress)
 	{
 		initialize();
 	}

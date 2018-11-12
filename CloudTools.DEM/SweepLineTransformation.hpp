@@ -95,7 +95,7 @@ public:
 	                        int range,
 	                        ComputationType computation,
 	                        ProgressType progress = nullptr)
-		: SweepLineTransformation(sourceDatasets, std::string(), 0, computation, progress)
+		: SweepLineTransformation(sourceDatasets, std::string(), range, computation, progress)
 	{
 		targetFormat = "MEM";
 	}
