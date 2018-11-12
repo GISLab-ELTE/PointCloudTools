@@ -405,9 +405,8 @@ int main(int argc, char* argv[])
 		reporter->reset();
 		ahn2morphologyFilterDilation->execute();
 		std::cout << "AHN2 Morphological dilation performed." << std::endl;
-		/*
-		std::vector<GDALDataset*> paths{ comparison->target(), ahn2comparison->target() };
-		Difference<> *CHMDifference = new Difference<>({ comparison->target(), ahn2comparison->target() }, "CHM_diff.tif");
+
+		Difference<> *CHMDifference = new Difference<>(std::vector<GDALDataset*>({ comparison->target(), ahn2comparison->target() }), "CHM_diff.tif");
 		if (!vm.count("quiet"))
 		{
 			CHMDifference->progress = [&reporter](float complete, const std::string &message)
@@ -418,9 +417,8 @@ int main(int argc, char* argv[])
 		}
 		CHMDifference->execute();
 		std::cout << "CHM difference generated." << std::endl;
-		*/
 
-		HausdorffDistance *distance = new HausdorffDistance(clusterMap, clusters);
+		/*HausdorffDistance *distance = new HausdorffDistance(clusterMap, clusters);
 		distance->execute();
 		int i = 0;
 		auto it = distance->distances().begin();
@@ -430,10 +428,10 @@ int main(int argc, char* argv[])
 			++i;
 			++it;
 		}
-		std::cout << "Hausdorff-distance calculated." << std::endl;
+		std::cout << "Hausdorff-distance calculated." << std::endl;*/
 
-		//delete CHMDifference;
-		delete distance;
+		delete CHMDifference;
+		//delete distance;
 		delete ahn2morphologyFilterDilation;
 		delete ahn2morphologyFilterErosion;
 		delete ahn2crownSegmentation;

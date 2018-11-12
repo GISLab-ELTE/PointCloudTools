@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <algorithm>
 
 #include "MorphologyClusterFilter.h"
 
@@ -51,11 +52,15 @@ void MorphologyClusterFilter::onExecute()
           counter = 0;
           for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
             for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-              if (std::find(clusterMap.points(index).begin(), 
-				  clusterMap.points(index).end(), OGRPoint(i, j)) 
+			{
+              OGRPoint point(i, j);
+              if (std::find_if(clusterMap.points(index).begin(),
+				  clusterMap.points(index).end(),
+				  [&point](const OGRPoint& p) { return p.Equals(&point); })
 				  != clusterMap.points(index).end()
 				  && clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
                 ++counter;
+              }
 
           if (counter > this->threshold);
             pointSet.emplace_back(p);
