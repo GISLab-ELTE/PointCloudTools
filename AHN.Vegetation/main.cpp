@@ -242,6 +242,7 @@ int main(int argc, char* argv[])
 	reporter->reset();
 	crownSegmentation->execute();
 	std::cout << "Tree crown segmentation performed." << std::endl;
+	clusters = crownSegmentation->clusterMap();
 
     MorphologyClusterFilter *morphologyFilterErosion = new MorphologyClusterFilter(
         clusters, "erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
@@ -363,7 +364,7 @@ int main(int argc, char* argv[])
 		ClusterMap clusterMap;
 		// Tree crown segmentation
 		TreeCrownSegmentation *ahn2crownSegmentation = new TreeCrownSegmentation(
-			{ ahn2eliminateNonTrees->target() }, seedPoints, nullptr);
+			{ ahn2eliminateNonTrees->target() }, ahn2seedPoints, nullptr);
 		if (!vm.count("quiet"))
 		{
 			ahn2crownSegmentation->progress = [&reporter](float complete, const std::string &message)
@@ -375,6 +376,7 @@ int main(int argc, char* argv[])
 		reporter->reset();
 		ahn2crownSegmentation->execute();
 		std::cout << "AHN2 Tree crown segmentation performed." << std::endl;
+		clusterMap = ahn2crownSegmentation->clusterMap();
 
 		// Morphological opening
 		MorphologyClusterFilter *ahn2morphologyFilterErosion = new MorphologyClusterFilter(
@@ -417,21 +419,17 @@ int main(int argc, char* argv[])
 		}
 		CHMDifference->execute();
 		std::cout << "CHM difference generated." << std::endl;
-
-		/*HausdorffDistance *distance = new HausdorffDistance(clusterMap, clusters);
+		
+		HausdorffDistance *distance = new HausdorffDistance(ahn2morphologyFilterDilation->clusterMap, morphologyFilterDilation->clusterMap);
 		distance->execute();
-		int i = 0;
-		auto it = distance->distances().begin();
-		while (i < 5)
+		for (auto elem : distance->distances())
 		{
-			std::cout << it->first.first << "   " << it->first.second << "   " << it->second << std::endl;
-			++i;
-			++it;
+			std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
 		}
-		std::cout << "Hausdorff-distance calculated." << std::endl;*/
+		std::cout << "Hausdorff-distance calculated." << std::endl;
 
+		delete distance;
 		delete CHMDifference;
-		//delete distance;
 		delete ahn2morphologyFilterDilation;
 		delete ahn2morphologyFilterErosion;
 		delete ahn2crownSegmentation;

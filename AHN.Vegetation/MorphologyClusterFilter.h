@@ -44,7 +44,7 @@ public:
 
 	}
 
-	MorphologyClusterFilter() {}
+	//MorphologyClusterFilter() {}
 
 	MorphologyClusterFilter(const MorphologyClusterFilter&) = delete;
 	MorphologyClusterFilter& operator=(const MorphologyClusterFilter&) = delete;

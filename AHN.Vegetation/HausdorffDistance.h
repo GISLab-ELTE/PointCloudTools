@@ -12,15 +12,15 @@ class HausdorffDistance : public CloudTools::Operation
 {
 public:
 	double maximumDistance = 8.0;
-	CloudTools::DEM::ClusterMap& AHN2clusterMap;
-	CloudTools::DEM::ClusterMap& AHN3clusterMap;
+	CloudTools::DEM::ClusterMap AHN2clusterMap;
+	CloudTools::DEM::ClusterMap AHN3clusterMap;
 
 	HausdorffDistance(CloudTools::DEM::ClusterMap& AHN2clusterMap,
 		              CloudTools::DEM::ClusterMap& AHN3clusterMap,
 					  Operation::ProgressType progress = nullptr)
 		: AHN2clusterMap(AHN2clusterMap), AHN3clusterMap(AHN3clusterMap)
 	{
-		onExecute();
+		
 	}
 
 	double clusterDistance(GUInt32, GUInt32);
