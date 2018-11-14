@@ -40,7 +40,7 @@ void MorphologyClusterFilter::onExecute()
                         ++counter;
                     }
 
-				if (counter < this->threshold);
+				if (counter < this->threshold)
 					pointSet.emplace_back(p);
 			}
 
@@ -65,8 +65,8 @@ void MorphologyClusterFilter::onExecute()
               if (std::find_if(clusterMap.points(index).begin(),
 				  clusterMap.points(index).end(),
 				  [&point](const OGRPoint& p) { return p.Equals(&point); })
-				  != clusterMap.points(index).end()
-				  && clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
+				  != clusterMap.points(index).end())
+				  //&& clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
                 ++counter;
               }
 
