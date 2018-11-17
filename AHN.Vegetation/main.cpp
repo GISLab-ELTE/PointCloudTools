@@ -258,6 +258,8 @@ int main(int argc, char* argv[])
     reporter->reset();
     morphologyFilterErosion->execute();
     std::cout << "Morphological erosion performed." << std::endl;
+	clusters = morphologyFilterErosion->clusterMap;
+	std::cout << clusters.clusterIndexes().size() << std::endl;
 
     MorphologyClusterFilter *morphologyFilterDilation = new MorphologyClusterFilter(
         morphologyFilterErosion->clusterMap, outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
@@ -272,6 +274,8 @@ int main(int argc, char* argv[])
     reporter->reset();
     morphologyFilterDilation->execute();
     std::cout << "Morphological dilation performed." << std::endl;
+	clusters = morphologyFilterDilation->clusterMap;
+	std::cout << clusters.clusterIndexes().size() << std::endl;
 
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
@@ -377,38 +381,25 @@ int main(int argc, char* argv[])
 		ahn2crownSegmentation->execute();
 		std::cout << "AHN2 Tree crown segmentation performed." << std::endl;
 		clusterMap = ahn2crownSegmentation->clusterMap();
+		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		// Morphological opening
 		MorphologyClusterFilter *ahn2morphologyFilterErosion = new MorphologyClusterFilter(
-            ahn2crownSegmentation->clusterMap(), "ahn2_erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
+            clusterMap, "ahn2_erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
 		ahn2morphologyFilterErosion->threshold = 6;
-		/*if (!vm.count("quiet"))
-		{
-			ahn2morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-		}*/
-		reporter->reset();
 		ahn2morphologyFilterErosion->execute();
 		std::cout << "AHN2 Morphological erosion performed." << std::endl;
 		clusterMap = ahn2morphologyFilterErosion->clusterMap;
+		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
+		std::cout << "step 1" << std::endl;
 		MorphologyClusterFilter *ahn2morphologyFilterDilation = new MorphologyClusterFilter(
-            ahn2morphologyFilterErosion->clusterMap, AHN2outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
-		/*if (!vm.count("quiet"))
-		{
-			ahn2morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-		}*/
-		reporter->reset();
+			ahn2morphologyFilterErosion->clusterMap, "temp.tif", MorphologyClusterFilter::Method::Dilation, nullptr);
+		std::cout << "step 2" << std::endl;
 		ahn2morphologyFilterDilation->execute();
 		std::cout << "AHN2 Morphological dilation performed." << std::endl;
         clusterMap = ahn2morphologyFilterDilation->clusterMap;
+		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		Difference<> *CHMDifference = new Difference<>(std::vector<GDALDataset*>({ comparison->target(), ahn2comparison->target() }), "CHM_diff.tif");
 		if (!vm.count("quiet"))
@@ -423,11 +414,11 @@ int main(int argc, char* argv[])
 		std::cout << "CHM difference generated." << std::endl;
 
 		HausdorffDistance *distance = new HausdorffDistance(ahn2morphologyFilterDilation->clusterMap, morphologyFilterDilation->clusterMap);
-		distance->execute();/*
+		distance->execute();
 		for (auto& elem : distance->distances())
 		{
 			std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-		}*/
+		}
 		std::cout << "Hausdorff-distance calculated." << std::endl;
 
 		delete distance;
