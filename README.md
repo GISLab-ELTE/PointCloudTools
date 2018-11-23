@@ -8,15 +8,16 @@ Contains the **AHN Building Change Detector**, a toolset for change detection of
 Dependencies
 ------------
 - [Boost Library](https://www.boost.org/), >=1.60 *(mandatory)*
-- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/), >=2.1 *(mandatory)*
-- MPI - Message Passing Interface *(optional)*
+- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.1 *(mandatory)*
+- MPI - Message Passing Interface<sup>2</sup> *(optional)*
   - Windows: [MS-MPI](https://msdn.microsoft.com/en-us/library/bb524831), >=7.1
   - Linux: [Open MPI](https://www.open-mpi.org/), >=1.10
 
 For Windows operating systems binary releases are available to simply install the above defined libraries.  
 For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements. Otherwise building the dependencies from source is recommended.
 
-The MPI dependency is required for the `AHN.Buildings.MPI` project to evaluate in a HPC environment.
+<sup>1</sup> GDAL must be compiled with [GEOS](https://trac.osgeo.org/geos/) support enabled.  
+<sup>2</sup> MPI dependency is required only for the `AHN.Buildings.MPI` project to evaluate in a HPC environment.
 
 
 Structure

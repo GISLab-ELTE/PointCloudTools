@@ -382,33 +382,18 @@ int main(int argc, char* argv[])
 		MorphologyClusterFilter *ahn2morphologyFilterErosion = new MorphologyClusterFilter(
             ahn2crownSegmentation->clusterMap(), "ahn2_erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
 		ahn2morphologyFilterErosion->threshold = 6;
-		/*if (!vm.count("quiet"))
-		{
-			ahn2morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-		}*/
-		reporter->reset();
 		ahn2morphologyFilterErosion->execute();
 		std::cout << "AHN2 Morphological erosion performed." << std::endl;
 		clusterMap = ahn2morphologyFilterErosion->clusterMap;
+		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		MorphologyClusterFilter *ahn2morphologyFilterDilation = new MorphologyClusterFilter(
-            ahn2morphologyFilterErosion->clusterMap, AHN2outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
-		/*if (!vm.count("quiet"))
-		{
-			ahn2morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
-			{
-				reporter->report(complete, message);
-				return true;
-			};
-		}*/
-		reporter->reset();
+			ahn2morphologyFilterErosion->clusterMap, "temp.tif", MorphologyClusterFilter::Method::Dilation, nullptr);
+		std::cout << "step 2" << std::endl;
 		ahn2morphologyFilterDilation->execute();
 		std::cout << "AHN2 Morphological dilation performed." << std::endl;
         clusterMap = ahn2morphologyFilterDilation->clusterMap;
+		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		Difference<> *CHMDifference = new Difference<>(std::vector<GDALDataset*>({ comparison->target(), ahn2comparison->target() }), "CHM_diff.tif");
 		if (!vm.count("quiet"))
@@ -427,7 +412,7 @@ int main(int argc, char* argv[])
 		for (auto elem : distance->closest())
 		{
 			std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-		}
+		}*/
 		std::cout << "Hausdorff-distance calculated." << std::endl;
 
 		delete distance;
