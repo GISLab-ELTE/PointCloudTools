@@ -423,11 +423,11 @@ int main(int argc, char* argv[])
 		std::cout << "CHM difference generated." << std::endl;
 
 		HausdorffDistance *distance = new HausdorffDistance(ahn2morphologyFilterDilation->clusterMap, morphologyFilterDilation->clusterMap);
-		distance->execute();/*
-		for (auto& elem : distance->distances())
+		distance->execute();
+		for (auto elem : distance->closest())
 		{
 			std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-		}*/
+		}
 		std::cout << "Hausdorff-distance calculated." << std::endl;
 
 		delete distance;

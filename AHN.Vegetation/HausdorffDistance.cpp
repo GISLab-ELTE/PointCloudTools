@@ -12,7 +12,7 @@ void HausdorffDistance::onExecute()
 
 	for (GUInt32 index : AHN2clusterMap.clusterIndexes())
 	{
-	for (GUInt32 otherIndex : AHN3clusterMap.clusterIndexes())
+		for (GUInt32 otherIndex : AHN3clusterMap.clusterIndexes())
 		{
 			auto c = AHN3clusterMap.center(otherIndex);
 			double distance = AHN2clusterMap.center(index).Distance(&c);
@@ -20,11 +20,11 @@ void HausdorffDistance::onExecute()
 				continue;
 
 			distances.clear();
-			for (const OGRPoint& point : AHN2clusterMap.points(index))
+			for (const OGRPoint &point : AHN2clusterMap.points(index))
 			{
 				std::vector<OGRPoint> ahn3Points = AHN3clusterMap.points(otherIndex);
 				minDistance = point.Distance(&ahn3Points[0]);
-				for (const OGRPoint& otherPoint : ahn3Points)
+				for (const OGRPoint &otherPoint : ahn3Points)
 				{
 					double dist = point.Distance(&otherPoint);
 					if (dist < minDistance)
@@ -34,9 +34,17 @@ void HausdorffDistance::onExecute()
 				}
 				distances.push_back(minDistance);
 			}
-			hausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex), *std::max_element(distances.begin(), distances.end())));
+			hausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex),
+													  *std::max_element(distances.begin(), distances.end())));
 		}
 	}
+
+	for (std::map<std::pair<GUInt32, GUInt32>, double>::iterator iter
+			= hausdorffDistances.begin(); iter != hausdorffDistances.end(); iter++)
+		if (std::find_if(closestClusters.begin(), closestClusters.end(),
+						 [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double> &item)
+						 { return iter->first.first == item.first.first; }) == closestClusters.end())
+			closestClusters.emplace(*iter);
 }
 
 double HausdorffDistance::clusterDistance(GUInt32 index1, GUInt32 index2)
@@ -58,9 +66,14 @@ GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 	return closest;
 }
 
-std::unordered_map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances()
+std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances()
 {
 	return hausdorffDistances;
+}
+
+const std::map<std::pair<GUInt32, GUInt32>, double>& HausdorffDistance::closest()
+{
+	return closestClusters;
 }
 
 }
