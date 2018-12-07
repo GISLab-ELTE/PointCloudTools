@@ -35,7 +35,7 @@ void HausdorffDistance::onExecute()
 				distances.push_back(minDistance);
 			}
 			hausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex),
-													  *std::max_element(distances.begin(), distances.end())));
+                              *std::max_element(distances.begin(), distances.end())));
 		}
 	}
 
@@ -45,6 +45,24 @@ void HausdorffDistance::onExecute()
 						 [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double> &item)
 						 { return iter->first.first == item.first.first; }) == closestClusters.end())
 			closestClusters.emplace(*iter);
+
+	for(GUInt32 index : AHN2clusterMap.clusterIndexes())
+		if(std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
+		[&index](const std::pair<std::pair<GUInt32, GUInt32>, double> &item)
+		{ return item.first.first == index; }) == hausdorffDistances.end())
+			lonelyClustersAHN2.push_back(index);
+
+	for(GUInt32 index : AHN3clusterMap.clusterIndexes())
+		if(std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
+		[&index](const std::pair<std::pair<GUInt32, GUInt32>, double> &item)
+		{ return item.first.second == index; }) == hausdorffDistances.end())
+			lonelyClustersAHN3.push_back(index);
+
+    /*for (GUInt32 index : lonelyClustersAHN2.clusterIndexes())
+      for (const OGRPoint& point : clusterMap.points(index))
+      {
+        this->setTargetData(point.getX(), point.getY(), index);
+      }*/
 }
 
 double HausdorffDistance::clusterDistance(GUInt32 index1, GUInt32 index2)
@@ -76,5 +94,14 @@ const std::map<std::pair<GUInt32, GUInt32>, double>& HausdorffDistance::closest(
 	return closestClusters;
 }
 
+const std::vector<GUInt32>& HausdorffDistance::lonelyAHN2()
+{
+	return lonelyClustersAHN2;
+}
+
+const std::vector<GUInt32>& HausdorffDistance::lonelyAHN3()
+{
+	return lonelyClustersAHN3;
+}
 }
 }

@@ -409,11 +409,92 @@ int main(int argc, char* argv[])
 
 		HausdorffDistance *distance = new HausdorffDistance(ahn2morphologyFilterDilation->clusterMap, morphologyFilterDilation->clusterMap);
 		distance->execute();
-		for (auto elem : distance->closest())
+		/*for (auto elem : distance->lonelyAHN2())
 		{
-			std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+			std::cout << elem << std::endl;
+		}
+		std::cout << "AHN3 LONELY INDEXES" << std::endl;
+		for (auto elem : distance->lonelyAHN3())
+		{
+			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+			std::cout << elem << std::endl;
 		}*/
 		std::cout << "Hausdorff-distance calculated." << std::endl;
+
+		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+		if (driver == nullptr)
+			throw std::invalid_argument("Target output format unrecognized.");
+
+		if (fs::exists(AHN2outputPath) &&
+				driver->Delete(AHN2outputPath.c_str()) == CE_Failure &&
+				!fs::remove(AHN2outputPath))
+			throw std::runtime_error("Cannot overwrite previously created target file.");
+
+		GDALDataset* target = driver->Create(AHN2outputPath.c_str(),
+										ahn2crownSegmentation->targetMetadata().rasterSizeX(), ahn2crownSegmentation->targetMetadata().rasterSizeY(), 1,
+										gdalType<int>(), nullptr);
+		if (target == nullptr)
+			throw std::runtime_error("Target file creation failed.");
+
+        target->SetGeoTransform(&ahn2crownSegmentation->targetMetadata().geoTransform()[0]);
+
+		GDALRasterBand* targetBand = target->GetRasterBand(1);
+		targetBand->SetNoDataValue(-1);
+
+		int commonId;
+		for (auto elem : distance->closest())
+		{
+			commonId = 1;
+			auto center = clusterMap.center(elem.first.first);
+			CPLErr ioResult = targetBand->RasterIO(GF_Write,
+												   center.getX(), center.getY(),
+												   1, 1,
+												   &commonId,
+												   1, 1,
+												   gdalType<int>(),
+												   0, 0);
+
+			center = clusters.center(elem.first.second);
+			ioResult = targetBand->RasterIO(GF_Write,
+												   center.getX(), center.getY(),
+												   1, 1,
+												   &commonId,
+												   1, 1,
+												   gdalType<int>(),
+												   0, 0);
+
+			if (ioResult != CE_None)
+				throw std::runtime_error("Target write error occured.");
+		}
+
+		for(auto elem : distance->lonelyAHN2())
+		{
+			commonId = 2;
+			auto center = clusterMap.center(elem);
+			CPLErr ioResult = targetBand->RasterIO(GF_Write,
+												   center.getX(), center.getY(),
+												   1, 1,
+												   &commonId,
+												   1, 1,
+												   gdalType<int>(),
+												   0, 0);
+		}
+
+		for(auto elem : distance->lonelyAHN3())
+		{
+			commonId = 3;
+			auto center = clusters.center(elem);
+			CPLErr ioResult = targetBand->RasterIO(GF_Write,
+												   center.getX(), center.getY(),
+												   1, 1,
+												   &commonId,
+												   1, 1,
+												   gdalType<int>(),
+												   0, 0);
+		}
+
+		GDALClose(target);
 
 		delete distance;
 		delete CHMDifference;
