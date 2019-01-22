@@ -1,5 +1,4 @@
 #include "HausdorffDistance.h"
-#include <iostream>
 
 namespace AHN
 {

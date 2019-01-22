@@ -41,9 +41,11 @@ private:
 	{
 		bool operator() (const OGRPoint& a, const OGRPoint& b) const
 		{
-			return a.Equals(&const_cast<OGRPoint&>(b));
+			//return a.Equals(&const_cast<OGRPoint&>(b));
+			a.getX() == b.getX() && a.getY() == b.getY();
 		}
 	};
+
 public:
 	/// <summary>
 	/// Initializes a new, empty instance of the class.
@@ -70,36 +72,38 @@ public:
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <param name="x">The abcissa of the point.</param>
 	/// <param name="y">The ordinate of the point.</param>
-	void addPoint(GUInt32 clusterIndex, int x, int y);
+  /// <param name="z">The height of the inital point.</param>
+  /// </summary>
+	void addPoint(GUInt32 clusterIndex, int x, int y, double z = 0.0);
 
 	/// <summary>
 	/// Eliminates a given grid point from the given cluster.
-	/// <param name="clusterIndex">The index of the cluster.</param>
+  /// </summary>
+  /// <param name="clusterIndex">The index of the cluster.</param>
 	/// <param name="x">The abcissa of the point.</param>
 	/// <param name="y">The ordinate of the point.</param>
-	/// </summary>
 	void removePoint(GUInt32 clusterIndex, int x, int y);
 
 	/// <summary>
 	/// Retrieves the direct neighbors of the points in a cluster.
 	/// </summary>
-    /// <param name="clusterIndex">The index of the cluster.</param>
-    /// <returns>The neighboring points contained by the cluster.</returns>
+  /// <param name="clusterIndex">The index of the cluster.</param>
+  /// <returns>The neighboring points contained by the cluster.</returns>
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
 
-    /// <summary>
-    /// Calculates the center of gravity (?) of a cluster by
-    /// taking the average of the coordinates of its points.
-    /// </summary>
-    /// <param name="clusterIndex">The index of the cluster.</param>
-    /// <returns>The center of gravity of the cluster.</returns>
+  /// <summary>
+  /// Calculates the center of gravity (?) of a cluster by
+  /// taking the average of the coordinates of its points.
+  /// </summary>
+  /// <param name="clusterIndex">The index of the cluster.</param>
+  /// <returns>The center of gravity of the cluster.</returns>
 	OGRPoint center(GUInt32 clusterIndex);
 
 	/// <summary>
-    /// Retrieves the seed point of a cluster.
-    /// </summary>
-    /// <param name="clusterIndex">The index of the cluster.</param>
-    /// <returns>The seed point of the cluster.</returns>
+  /// Retrieves the seed point of a cluster.
+  /// </summary>
+  /// <param name="clusterIndex">The index of the cluster.</param>
+  /// <returns>The seed point of the cluster.</returns>
 	OGRPoint seedPoint(GUInt32 clusterIndex);
 
 	/// <summary>
@@ -114,7 +118,8 @@ public:
 	/// </summary>
 	/// <param name="x">The abcissa of the initial point.</param>
 	/// <param name="y">The ordinate of the inital point.</param>
-	void createCluster(int x, int y);
+  /// <param name="z">The height of the inital point.</param>
+	void createCluster(int x, int y, double z = 0.0);
 
 	/// <summary>
 	/// Merges 2 clusters.

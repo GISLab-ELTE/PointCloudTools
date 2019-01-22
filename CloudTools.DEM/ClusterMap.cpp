@@ -25,16 +25,17 @@ std::vector<GUInt32> ClusterMap::clusterIndexes() const
 	return indexes;
 }
 
-void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y)
+void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y, double z)
 {
-	OGRPoint point(x, y);
+	OGRPoint point(x, y, z);
 
 	if (_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
 		throw std::out_of_range("Cluster is out of range.");
 
 	if (std::find_if(_clusterIndexes[clusterIndex].begin(),
 		_clusterIndexes[clusterIndex].end(),
-		[&point](OGRPoint& p) { return point.Equals(&p); })
+		[&point](OGRPoint& p) { return point.getX() == p.getX() &&
+                                   point.getY() == p.getY(); })
 		!= _clusterIndexes[clusterIndex].end())
 		throw std::logic_error("Point is already in cluster.");
 
@@ -50,9 +51,10 @@ void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 	OGRPoint point(x, y);
 
 	std::vector<OGRPoint>::iterator iter =
-	    std::find_if(_clusterIndexes[clusterIndex].begin(),
+	  std::find_if(_clusterIndexes[clusterIndex].begin(),
 		_clusterIndexes[clusterIndex].end(),
-		[&point](OGRPoint& p) { return point.Equals(&p); });
+		[&point](OGRPoint& p) { return point.getX() == p.getX() &&
+		                               point.getY() == p.getY(); });
 
 	if(iter	== _clusterIndexes[clusterIndex].end())
 		throw std::out_of_range("Point is out of range.");
@@ -63,7 +65,8 @@ void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 	if (!_clusterIndexes[clusterIndex].size())
 		removeCluster(clusterIndex);
 
-	if(_seedPoints[clusterIndex].Equals(&point))
+	if(_seedPoints[clusterIndex].getX() == point.getX() &&
+	   _seedPoints[clusterIndex].getY() == point.getY())
 		_seedPoints.erase(clusterIndex);
 }
 
@@ -76,7 +79,7 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
       for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
         if (i != p.getX() || j != p.getY())
         {
-          OGRPoint point(i, j);
+          OGRPoint point(i, j, p.getZ());
           if (_clusterPoints.find(point) == _clusterPoints.end())
             neighbors.insert(point);
         }
@@ -92,7 +95,9 @@ OGRPoint ClusterMap::center(GUInt32 clusterIndex)
 			[](int value, OGRPoint& p) { return value + p.getX(); }) / clusterPoints.size();
 	int avgY = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
 			[](int value, OGRPoint& p) { return value + p.getY(); }) / clusterPoints.size();
-	return OGRPoint(avgX, avgY);
+	double avgZ = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
+      [](double value, OGRPoint& p) { return value + p.getZ(); }) / clusterPoints.size();
+	return OGRPoint(avgX, avgY, avgZ);
 }
 
 OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
@@ -105,9 +110,10 @@ const std::vector<OGRPoint>& ClusterMap::points(GUInt32 clusterIndex) const
 	return _clusterIndexes.at(clusterIndex);
 }
 
-void ClusterMap::createCluster(int x, int y)
+void ClusterMap::createCluster(int x, int y, double z)
 {
-	OGRPoint point(x, y);
+	OGRPoint point(x, y, z);
+
 	if (_clusterPoints.find(point) != _clusterPoints.end())
 		throw std::logic_error("Point already in cluster map.");
 

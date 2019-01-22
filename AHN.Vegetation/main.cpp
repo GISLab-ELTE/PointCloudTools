@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 				if (source.data(i, j) > source.data(0, 0))
 					return;
 		++counter;
-		seedPoints.emplace_back(x, y);
+		seedPoints.emplace_back(x, y, source.data());
 	};
 
 	if (!vm.count("quiet"))
@@ -385,15 +385,12 @@ int main(int argc, char* argv[])
 		ahn2morphologyFilterErosion->execute();
 		std::cout << "AHN2 Morphological erosion performed." << std::endl;
 		clusterMap = ahn2morphologyFilterErosion->clusterMap;
-		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		MorphologyClusterFilter *ahn2morphologyFilterDilation = new MorphologyClusterFilter(
 			ahn2morphologyFilterErosion->clusterMap, "temp.tif", MorphologyClusterFilter::Method::Dilation, nullptr);
-		std::cout << "step 2" << std::endl;
 		ahn2morphologyFilterDilation->execute();
 		std::cout << "AHN2 Morphological dilation performed." << std::endl;
         clusterMap = ahn2morphologyFilterDilation->clusterMap;
-		std::cout << clusterMap.clusterIndexes().size() << std::endl;
 
 		Difference<> *CHMDifference = new Difference<>(std::vector<GDALDataset*>({ comparison->target(), ahn2comparison->target() }), "CHM_diff.tif");
 		if (!vm.count("quiet"))
@@ -468,7 +465,7 @@ int main(int argc, char* argv[])
 				throw std::runtime_error("Target write error occured.");
 		}
 
-		for(auto elem : distance->lonelyAHN2())
+		for (auto elem : distance->lonelyAHN2())
 		{
 			commonId = 2;
 			auto center = clusterMap.center(elem);
@@ -481,7 +478,7 @@ int main(int argc, char* argv[])
 												   0, 0);
 		}
 
-		for(auto elem : distance->lonelyAHN3())
+		for (auto elem : distance->lonelyAHN3())
 		{
 			commonId = 3;
 			auto center = clusters.center(elem);
@@ -496,6 +493,23 @@ int main(int argc, char* argv[])
 
 		GDALClose(target);
 
+		// Calculate differences between dimensions
+    std::map<std::pair<GUInt32, GUInt32>, std::pair<double, double>> diff;
+    for (const auto& elem : distance->closest())
+    {
+      auto centerAHN2 = clusterMap.center(elem.first.first);
+      auto centerAHN3 = clusters.center(elem.first.second);
+      double vertical = centerAHN3.getZ() - centerAHN2.getZ();
+      diff.insert(std::make_pair(elem.first, std::make_pair(elem.second, vertical)));
+      std::cout << elem.first.first << "; " << elem.first.second << " horizontal distance: " << elem.second << ", vertical distance: " << vertical << std::endl;
+      /*if(vertical == 23) {
+        std::cout << "centerAHN2 X: " << centerAHN2.getX() << std::endl;
+        std::cout << "centerAHN2 Y: " << centerAHN2.getY() << std::endl;
+        std::cout << "centerAHN3 X: " << centerAHN3.getX() << std::endl;
+        std::cout << "centerAHN3 Y: " << centerAHN3.getY() << std::endl;
+      }*/
+    }
+
 		delete distance;
 		delete CHMDifference;
 		delete ahn2morphologyFilterDilation;
@@ -507,9 +521,9 @@ int main(int argc, char* argv[])
 		delete ahn2comparison;
 	}
 
-    delete morphologyFilterDilation;
+  delete morphologyFilterDilation;
 	delete morphologyFilterErosion;
-    delete crownSegmentation;
+	delete crownSegmentation;
 	delete countLocalMax;
 	delete comparison;
 	delete filter;
