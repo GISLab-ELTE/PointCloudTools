@@ -23,6 +23,23 @@ using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
 using namespace AHN::Vegetation;
 
+GDALDataset* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
+                               CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+int countLocalMaximums(GDALDataset* target, CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+GDALDataset* antialias(GDALDataset* target, const std::string& outpath, CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+GDALDataset* eliminateNonTrees(GDALDataset* target, double threshold, CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+std::vector<OGRPoint> collectSeedPoints(GDALDataset* target, CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+ClusterMap treeCrownSegmentation(std::vector<OGRPoint>& seedPoints, CloudTools::IO::Reporter *reporter, po::variables_map& vm);
+
+void morphologyFiltering(const MorphologyClusterFilter::Method method, ClusterMap& clusterMap, const std::string& outpath);
+
+void calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap);
+
 int main(int argc, char* argv[])
 {
 	std::string DTMinputPath;
@@ -244,34 +261,34 @@ int main(int argc, char* argv[])
 	std::cout << "Tree crown segmentation performed." << std::endl;
 	clusters = crownSegmentation->clusterMap();
 
-    MorphologyClusterFilter *morphologyFilterErosion = new MorphologyClusterFilter(
-        clusters, "erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
-    morphologyFilterErosion->threshold = 6;
-    /*if (!vm.count("quiet"))
+  MorphologyClusterFilter *morphologyFilterErosion = new MorphologyClusterFilter(
+      clusters, "erosion.tif", MorphologyClusterFilter::Method::Erosion, nullptr);
+  morphologyFilterErosion->threshold = 6;
+  /*if (!vm.count("quiet"))
+  {
+    morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
     {
-      morphologyFilterErosion->progress = [&reporter](float complete, const std::string &message)
-      {
-        reporter->report(complete, message);
-        return true;
-      };
-    }*/
-    reporter->reset();
-    morphologyFilterErosion->execute();
-    std::cout << "Morphological erosion performed." << std::endl;
+      reporter->report(complete, message);
+      return true;
+    };
+  }*/
+  reporter->reset();
+  morphologyFilterErosion->execute();
+  std::cout << "Morphological erosion performed." << std::endl;
 
-    MorphologyClusterFilter *morphologyFilterDilation = new MorphologyClusterFilter(
-        morphologyFilterErosion->clusterMap, outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
-    /*if (!vm.count("quiet"))
+  MorphologyClusterFilter *morphologyFilterDilation = new MorphologyClusterFilter(
+      morphologyFilterErosion->clusterMap, outputPath, MorphologyClusterFilter::Method::Dilation, nullptr);
+  /*if (!vm.count("quiet"))
+  {
+    morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
     {
-      morphologyFilterDilation->progress = [&reporter](float complete, const std::string &message)
-      {
-        reporter->report(complete, message);
-        return true;
-      };
-    }*/
-    reporter->reset();
-    morphologyFilterDilation->execute();
-    std::cout << "Morphological dilation performed." << std::endl;
+      reporter->report(complete, message);
+      return true;
+    };
+  }*/
+  reporter->reset();
+  morphologyFilterDilation->execute();
+  std::cout << "Morphological dilation performed." << std::endl;
 
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
@@ -540,4 +557,161 @@ bool reporter(CloudTools::DEM::SweepLineTransformation<float> *transformation, C
 		return true;
 	};
 	return false;
+}
+
+GDALDataset* generateCanopyHeightModel(const std::string& DTMinput, const std::string& DSMinput, const std::string& outpath,
+                               CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  Difference<float> *comparison = new Difference<float>({ DTMinput, DSMinput }, outpath);
+  if (!vm.count("quiet"))
+  {
+    comparison->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  comparison->execute();
+  reporter->reset();
+  return comparison->target();
+}
+
+int countLocalMaximums(GDALDataset* target, CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  SweepLineCalculation<float> *countLocalMax = new SweepLineCalculation<float>(
+    { target }, 1, nullptr);
+
+  int counter = 0;
+  countLocalMax->computation = [&countLocalMax, &counter](int x, int y, const std::vector<Window<float>> &sources)
+  {
+    const Window<float> &source = sources[0];
+    if (!source.hasData())
+      return;
+
+    for (int i = -countLocalMax->range(); i <= countLocalMax->range(); i++)
+      for (int j = -countLocalMax->range(); j <= countLocalMax->range(); j++)
+        if (source.data(i, j) > source.data(0, 0))
+          return;
+    ++counter;
+  };
+
+  if (!vm.count("quiet"))
+  {
+    countLocalMax->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  reporter->reset();
+  countLocalMax->execute();
+
+  return counter;
+}
+
+GDALDataset* antialias(GDALDataset* target, const std::string& outpath, CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  MatrixTransformation *filter = new MatrixTransformation(target, outpath, 1);
+  if (!vm.count("quiet"))
+  {
+    filter->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  reporter->reset();
+  filter->execute();
+  return filter->target();
+}
+
+GDALDataset* eliminateNonTrees(GDALDataset* target, double threshold, CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  SweepLineTransformation<float> *eliminateNonTrees = new SweepLineTransformation<float>(
+    { target }, "ahn2_nosmall.tif", 0, nullptr);
+
+  eliminateNonTrees->computation = [&eliminateNonTrees, &threshold](int x, int y, const std::vector<Window<float>> &sources)
+  {
+    const Window<float> &source = sources[0];
+    if (!source.hasData() || source.data() < threshold)
+      return static_cast<float>(eliminateNonTrees->nodataValue);
+    else
+      return source.data();
+  };
+
+  if (!vm.count("quiet"))
+  {
+    eliminateNonTrees->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  reporter->reset();
+  eliminateNonTrees->execute();
+  return eliminateNonTrees->target();
+}
+
+std::vector<OGRPoint> collectSeedPoints(GDALDataset* target, CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  SweepLineCalculation<float> *collectSeeds = new SweepLineCalculation<float>(
+    { target }, 4, nullptr);
+
+  std::vector<OGRPoint> seedPoints;
+  collectSeeds->computation = [&collectSeeds, &seedPoints](int x, int y, const std::vector<Window<float>> &sources)
+  {
+    const Window<float> &source = sources[0];
+    if (!source.hasData())
+      return;
+
+    for (int i = -collectSeeds->range(); i <= collectSeeds->range(); i++)
+      for (int j = -collectSeeds->range(); j <= collectSeeds->range(); j++)
+        if (source.data(i, j) > source.data(0, 0))
+          return;
+    seedPoints.emplace_back(x, y);
+  };
+
+  if (!vm.count("quiet"))
+  {
+    collectSeeds->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  reporter->reset();
+  collectSeeds->execute();
+  return seedPoints;
+}
+
+ClusterMap treeCrownSegmentation(GDALDataset* target, std::vector<OGRPoint>& seedPoints,
+                           CloudTools::IO::Reporter *reporter, po::variables_map& vm)
+{
+  TreeCrownSegmentation *crownSegmentation = new TreeCrownSegmentation(
+    { target }, seedPoints, nullptr);
+  if (!vm.count("quiet"))
+  {
+    crownSegmentation->progress = [&reporter](float complete, const std::string &message)
+    {
+      reporter->report(complete, message);
+      return true;
+    };
+  }
+  reporter->reset();
+  crownSegmentation->execute();
+  return crownSegmentation->clusterMap();
+}
+
+void morphologyFiltering(const MorphologyClusterFilter::Method method, ClusterMap& clusterMap, const std::string& outpath)
+{
+  MorphologyClusterFilter *morphologyFilterErosion = new MorphologyClusterFilter(
+    clusterMap, outpath, method, nullptr);
+  morphologyFilterErosion->threshold = 6;
+  morphologyFilterErosion->execute();
+}
+
+void calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
+{
+  HausdorffDistance *distance = new HausdorffDistance(ahn2ClusterMap, ahn3ClusterMap);
+  distance->execute();
 }
