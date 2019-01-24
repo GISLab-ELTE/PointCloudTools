@@ -9,10 +9,13 @@ namespace AHN
 namespace Vegetation
 {
 void TreeCrownSegmentation::initialize()
-{	
+{
 	this->computation = [this](int sizeX, int sizeY)
 	{
-		// Create initial clusters from seed points
+	  clusters.setSizeX(sizeX);
+    clusters.setSizeY(sizeY);
+
+    // Create initial clusters from seed points
 		for (const auto& point : this->seedPoints)
 		{
 			clusters.createCluster(point.getX(), point.getY(), point.getZ());
@@ -42,9 +45,9 @@ void TreeCrownSegmentation::initialize()
           }
         }
       }
-      currentVerticalDistance += increaseVerticalDistance;
+      currentVerticalDistance += increaseHorizontalDistance;
 		}
-		while(hasChanged && currentVerticalDistance <= maxVerticalDistance);
+		while(hasChanged && currentVerticalDistance <= maxHorizontalDistance);
 
 		// Write out the clusters as a DEM
 		/*for (GUInt32 index : clusterMap.clusterIndexes())

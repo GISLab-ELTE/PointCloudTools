@@ -47,6 +47,9 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
                             const std::string&, HausdorffDistance*);
 
+void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+                             const std::string& ahn2Outpath, HausdorffDistance* distance);
+
 int main(int argc, char* argv[])
 {
 	std::string DTMinputPath;
@@ -142,6 +145,7 @@ int main(int argc, char* argv[])
 		 */
 		std::cout << "Hausdorff-distance calculated." << std::endl;
     writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
+    writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
 
     delete ahn3Pair.second;
     delete ahn3Pair.first;
@@ -389,6 +393,9 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   std::vector<OGRPoint> seedPoints = collectSeedPoints(onlyTrees, reporter, vm);
 
   ClusterMap cluster;
+  cluster.setSizeX(onlyTrees->targetMetadata().rasterSizeX());
+  cluster.setSizeY(onlyTrees->targetMetadata().rasterSizeY());
+
   TreeCrownSegmentation* crownSegmentation = treeCrownSegmentation(onlyTrees, seedPoints, reporter, vm);
   std::cout << "Tree crown segmentation performed." << std::endl;
   cluster = crownSegmentation->clusterMap();
@@ -482,6 +489,100 @@ void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownS
                                            1, 1,
                                            gdalType<int>(),
                                            0, 0);
+  }
+
+  GDALClose(target);
+}
+
+void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+                             const std::string& ahn2Outpath, HausdorffDistance* distance)
+{
+  GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+  if (driver == nullptr)
+    throw std::invalid_argument("Target output format unrecognized.");
+
+  if (fs::exists(ahn2Outpath) &&
+      driver->Delete(ahn2Outpath.c_str()) == CE_Failure &&
+      !fs::remove(ahn2Outpath))
+    throw std::runtime_error("Cannot overwrite previously created target file.");
+
+  GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
+                                       segmentation->targetMetadata().rasterSizeX(), segmentation->targetMetadata().rasterSizeY(), 1,
+                                       gdalType<int>(), nullptr);
+  if (target == nullptr)
+    throw std::runtime_error("Target file creation failed.");
+
+  target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+
+  GDALRasterBand* targetBand = target->GetRasterBand(1);
+  targetBand->SetNoDataValue(-1);
+
+  int commonId = 1;
+  std::vector<OGRPoint> points;
+  for (auto elem : distance->closest())
+  {
+    points = ahn2Map.points(elem.first.first);
+    CPLErr ioResult;
+    for (const auto& point : points)
+    {
+      ioResult = targetBand->RasterIO(GF_Write,
+                                       point.getX(), point.getY(),
+                                       1, 1,
+                                       &commonId,
+                                       1, 1,
+                                       gdalType<int>(),
+                                       0, 0);
+
+    }
+
+    points = ahn3Map.points(elem.first.second);
+    for (const auto& point : points)
+    {
+      ioResult = targetBand->RasterIO(GF_Write,
+                                      point.getX(), point.getY(),
+                                      1, 1,
+                                      &commonId,
+                                      1, 1,
+                                      gdalType<int>(),
+                                      0, 0);
+   }
+
+    ++commonId;
+
+    if (ioResult != CE_None)
+      throw std::runtime_error("Target write error occured.");
+  }
+
+  commonId = -2;
+  for (auto elem : distance->lonelyAHN2())
+  {
+    points = ahn2Map.points(elem);
+    for (const auto& point : points)
+    {
+      CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                             point.getX(), point.getY(),
+                                             1, 1,
+                                             &commonId,
+                                             1, 1,
+                                             gdalType<int>(),
+                                             0, 0);
+    }
+  }
+
+  commonId = -1;
+  for (auto elem : distance->lonelyAHN3())
+  {
+    points = ahn3Map.points(elem);
+    for (const auto& point : points)
+    {
+      CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                             point.getX(), point.getY(),
+                                             1, 1,
+                                             &commonId,
+                                             1, 1,
+                                             gdalType<int>(),
+                                             0, 0);
+    }
   }
 
   GDALClose(target);

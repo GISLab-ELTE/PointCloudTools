@@ -8,6 +8,17 @@ namespace CloudTools
 {
 namespace DEM
 {
+void ClusterMap::setSizeX(int x)
+{
+	_sizeX = x;
+}
+
+void ClusterMap::setSizeY(int y)
+{
+	_sizeY = y;
+}
+
+void setSizeY(int y);
 GUInt32 ClusterMap::clusterIndex(int x, int y) const
 {
 	return _clusterPoints.at(OGRPoint(x, y));
@@ -77,7 +88,9 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
   {
     for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
       for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-        if (i != p.getX() || j != p.getY())
+        if (i >= 0 && i < _sizeX &&
+        		j >= 0 && j < _sizeY &&
+					 (i != p.getX() || j != p.getY()))
         {
           OGRPoint point(i, j, p.getZ());
           if (_clusterPoints.find(point) == _clusterPoints.end())

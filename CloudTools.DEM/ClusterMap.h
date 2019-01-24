@@ -52,6 +52,17 @@ public:
 	/// </summary>
 	ClusterMap() = default;
 
+  /// <summary>
+  /// Initializes a new instance of the class with maximum width and height.
+  /// </summary>
+  /// <param name="x">The height of the cluster map.</param>
+  /// <param name="y">The width of the cluster map.</param>
+	ClusterMap(int sizeX, int sizeY) : _sizeX(sizeX), _sizeY(sizeY) {}
+
+	void setSizeX(int x);
+
+	void setSizeY(int y);
+
 	/// <summary>
 	/// Retrieves the cluster index for a given grid point.
 	/// </summary>
@@ -149,6 +160,7 @@ private:
 	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
 	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
+	int _sizeX, _sizeY;
 };
 } // DEM
 } // CloudTools

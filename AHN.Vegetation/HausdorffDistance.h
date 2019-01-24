@@ -11,7 +11,7 @@ namespace Vegetation
 class HausdorffDistance : public CloudTools::Operation
 {
 public:
-	double maximumDistance = 3.0;
+	double maximumDistance = 7.0;
 	CloudTools::DEM::ClusterMap AHN2clusterMap;
 	CloudTools::DEM::ClusterMap AHN3clusterMap;
 
