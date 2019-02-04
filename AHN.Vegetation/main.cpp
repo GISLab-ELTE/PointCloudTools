@@ -517,10 +517,20 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
   GDALRasterBand* targetBand = target->GetRasterBand(1);
   targetBand->SetNoDataValue(-1);
 
-  int commonId = 1;
+  srand (time(NULL));
+  int commonId;
   std::vector<OGRPoint> points;
+  int numberOfClusters = distance->closest().size();
+  std::vector<int> usedNums;
   for (auto elem : distance->closest())
   {
+    do
+    {
+      commonId = rand() % numberOfClusters + 1;
+    }
+    while(std::find(usedNums.begin(), usedNums.end(), commonId)
+          != usedNums.end());
+
     points = ahn2Map.points(elem.first.first);
     CPLErr ioResult;
     for (const auto& point : points)
@@ -547,7 +557,7 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
                                       0, 0);
    }
 
-    ++commonId;
+    usedNums.push_back(commonId);
 
     if (ioResult != CE_None)
       throw std::runtime_error("Target write error occured.");
