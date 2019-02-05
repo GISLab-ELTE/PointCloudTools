@@ -74,7 +74,7 @@ void MorphologyClusterFilter::onExecute()
           pointSet.emplace_back(p);
       }
       for (auto& p : pointSet)
-        clusterMap.addPoint(index, p.getX(), p.getY(), p.getZ());
+				clusterMap.addPoint(index, p.getX(), p.getY(), p.getZ());
     }
 	}
 }

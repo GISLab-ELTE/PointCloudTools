@@ -113,6 +113,17 @@ OGRPoint ClusterMap::center(GUInt32 clusterIndex)
 	return OGRPoint(avgX, avgY, avgZ);
 }
 
+OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex)
+{
+  auto clusterPoints = points(clusterIndex);
+  OGRPoint highest = clusterPoints.at(0);
+  for (const auto& p : clusterPoints)
+     if (p.getZ() > highest.getZ())
+      highest = p;
+
+   return highest;
+}
+
 OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
 {
 	return _seedPoints.at(clusterIndex);

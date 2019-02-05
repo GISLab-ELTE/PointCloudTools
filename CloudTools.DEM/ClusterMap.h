@@ -110,6 +110,8 @@ public:
   /// <returns>The center of gravity of the cluster.</returns>
 	OGRPoint center(GUInt32 clusterIndex);
 
+	OGRPoint highestPoint(GUInt32 clusterIndex);
+
 	/// <summary>
   /// Retrieves the seed point of a cluster.
   /// </summary>
