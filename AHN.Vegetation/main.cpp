@@ -44,6 +44,8 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
 std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(int, const std::string&, const std::string&,
                                                  CloudTools::IO::Reporter*, po::variables_map&);
 
+void calculateHeightDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
+
 void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
                             const std::string&, HausdorffDistance*);
 
@@ -131,6 +133,7 @@ int main(int argc, char* argv[])
 
 		HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
 		distance->execute();
+		std::cout << ahn3Pair.first->clusterMap.center(15).getZ();
 		/*for (auto elem : distance->lonelyAHN2())
 		{
 			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
@@ -146,6 +149,7 @@ int main(int argc, char* argv[])
 		std::cout << "Hausdorff-distance calculated." << std::endl;
     writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
     writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
+    calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 
     delete ahn3Pair.second;
     delete ahn3Pair.first;
@@ -300,7 +304,7 @@ std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float>* target, 
       for (int j = -collectSeeds->range(); j <= collectSeeds->range(); j++)
         if (source.data(i, j) > source.data(0, 0))
           return;
-    seedPoints.emplace_back(x, y);
+    seedPoints.emplace_back(x, y, source.data(0, 0));
   };
 
   if (!vm.count("quiet"))
@@ -492,6 +496,23 @@ void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownS
   }
 
   GDALClose(target);
+}
+
+void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDistance* distance)
+{
+  std::map<std::pair<GUInt32, GUInt32>, double> differences;
+  OGRPoint ahn2Highest, ahn3Highest;
+  double diff;
+  for (const auto& elem : distance->closest())
+  {
+    ahn2Highest = ahn2.highestPoint(elem.first.first);
+    std::cout << ahn2Highest.getX() << std::endl;
+    ahn3Highest = ahn3.highestPoint(elem.first.second);
+    std::cout << ahn3Highest.getX() << std::endl;
+    diff = ahn3Highest.getZ() - ahn2Highest.getZ();
+    differences.insert(std::make_pair(elem.first, diff));
+    std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
+  }
 }
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
