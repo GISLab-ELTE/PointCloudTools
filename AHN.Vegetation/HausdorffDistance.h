@@ -34,7 +34,7 @@ private:
 	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
 	std::map<std::pair<GUInt32, GUInt32>, double> closestClusters;
 	std::vector<GUInt32> lonelyClustersAHN2;
-    std::vector<GUInt32> lonelyClustersAHN3;
+	std::vector<GUInt32> lonelyClustersAHN3;
 
 	void onPrepare() {}
 	void onExecute();

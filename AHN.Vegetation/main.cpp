@@ -36,7 +36,7 @@ std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float> *target, 
 
 TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>*, std::vector<OGRPoint>&, CloudTools::IO::Reporter*, po::variables_map&);
 
-MorphologyClusterFilter* morphologyFiltering(const MorphologyClusterFilter::Method, ClusterMap&,
+MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>*, const MorphologyClusterFilter::Method, ClusterMap&,
                                              const std::string&, int threshold = -1);
 
 HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
@@ -45,6 +45,8 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
                                                  CloudTools::IO::Reporter*, po::variables_map&);
 
 void calculateHeightDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
+
+void calculateVolumeDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
 
 void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
                             const std::string&, HausdorffDistance*);
@@ -130,9 +132,10 @@ int main(int argc, char* argv[])
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 	  std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
-
+    std::cout << "step 2";
 		HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
 		distance->execute();
+		std::cout << "step 3";
 		std::cout << ahn3Pair.first->clusterMap.center(15).getZ();
 		/*for (auto elem : distance->lonelyAHN2())
 		{
@@ -150,6 +153,7 @@ int main(int argc, char* argv[])
     writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
     writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
     calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+    calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 
     delete ahn3Pair.second;
     delete ahn3Pair.first;
@@ -340,12 +344,12 @@ TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>* tar
   return crownSegmentation;
 }
 
-// Perform morphological filtering (erosion or dilation) on a previously build cluster map.
-MorphologyClusterFilter* morphologyFiltering(const MorphologyClusterFilter::Method method, ClusterMap& clusterMap,
-                                             const std::string& outpath, int threshold)
+// Perform morphological filtering (erosion or dilation) on a previously built cluster map.
+MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>* target, const MorphologyClusterFilter::Method method,
+                                             ClusterMap& clusterMap, const std::string& outpath, int threshold)
 {
   MorphologyClusterFilter *morphologyFilter = new MorphologyClusterFilter(
-    clusterMap, outpath, method, nullptr);
+    clusterMap, { target->target() }, nullptr, method, nullptr);
   morphologyFilter->threshold = threshold;
   morphologyFilter->execute();
   return morphologyFilter;
@@ -404,18 +408,20 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   std::cout << "Tree crown segmentation performed." << std::endl;
   cluster = crownSegmentation->clusterMap();
 
-  delete onlyTrees;
-
   // Perform morphological erosion on the cluster map
   int erosionThreshold = 6;
-  MorphologyClusterFilter *erosion = morphologyFiltering(MorphologyClusterFilter::Method::Erosion, cluster, std::string(), erosionThreshold);
+  MorphologyClusterFilter *erosion = morphologyFiltering(onlyTrees,
+    MorphologyClusterFilter::Method::Erosion, cluster, std::string(), erosionThreshold);
   std::cout << "Morphological erosion performed." << std::endl;
 
-  MorphologyClusterFilter *dilation = morphologyFiltering(MorphologyClusterFilter::Method::Dilation, erosion->clusterMap, std::string());
+  MorphologyClusterFilter *dilation = morphologyFiltering(onlyTrees,
+    MorphologyClusterFilter::Method::Dilation, erosion->clusterMap, std::string());
   std::cout << "Morphological dilation performed." << std::endl;
 
+  delete onlyTrees;
+  std::cout << "step 0" << std::endl;
   delete erosion;
-
+  std::cout << "step 1" << std::endl;
   return std::make_pair(dilation, crownSegmentation);
 }
 
@@ -506,12 +512,49 @@ void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
   for (const auto& elem : distance->closest())
   {
     ahn2Highest = ahn2.highestPoint(elem.first.first);
-    std::cout << ahn2Highest.getX() << std::endl;
     ahn3Highest = ahn3.highestPoint(elem.first.second);
-    std::cout << ahn3Highest.getX() << std::endl;
+
     diff = ahn3Highest.getZ() - ahn2Highest.getZ();
     differences.insert(std::make_pair(elem.first, diff));
-    std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
+    //std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
+  }
+}
+
+void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDistance* distance)
+{
+  /*
+  std::map<GUInt32, double> ahn2LonelyVolume, ahn3LonelyVolume;
+  double volume = 0;
+  for (const auto& elem : distance->lonelyAHN2())
+  {
+    volume += std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(), volume);
+  }
+
+  for (const auto& elem : distance->lonelyAHN3())
+  {
+    volume += std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(), volume);
+  }*/
+
+  double ahn2ClusterVolume = 0, ahn3ClusterVolume = 0;
+  std::map<std::pair<GUInt32, GUInt32>, double> diffs;
+  for (const auto& elem : distance->closest())
+  {
+    ahn2ClusterVolume = std::accumulate(ahn2.points(elem.first.first).begin(),
+      ahn2.points(elem.first.first).end(), 0, [](double sum, const OGRPoint& point)
+      {
+        return sum + point.getZ();
+      });
+    ahn2ClusterVolume *= 0.25;
+
+    ahn3ClusterVolume = std::accumulate(ahn3.points(elem.first.second).begin(),
+      ahn3.points(elem.first.second).end(), 0, [](double sum, const OGRPoint& point)
+      {
+        return sum + point.getZ();
+      });
+    ahn3ClusterVolume *= 0.25;
+
+    diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
+    std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume << std::endl;
   }
 }
 

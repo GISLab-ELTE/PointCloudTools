@@ -20,7 +20,7 @@ public:
 	std::vector<OGRPoint> seedPoints;
 
 public:
-  	double maxHorizontalDistance = 10.0;
+  	double maxHorizontalDistance = 14.0;
   	double increaseHorizontalDistance = 1.0;
 
 	/// <summary>
