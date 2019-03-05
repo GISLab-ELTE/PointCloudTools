@@ -295,7 +295,7 @@ SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation* target, 
 std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float>* target, CloudTools::IO::Reporter *reporter, po::variables_map& vm)
 {
   SweepLineCalculation<float> *collectSeeds = new SweepLineCalculation<float>(
-    { target->target() }, 4, nullptr);
+    { target->target() }, 7, nullptr);
 
   std::vector<OGRPoint> seedPoints;
   collectSeeds->computation = [&collectSeeds, &seedPoints](int x, int y, const std::vector<Window<float>> &sources)
@@ -419,9 +419,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   std::cout << "Morphological dilation performed." << std::endl;
 
   delete onlyTrees;
-  std::cout << "step 0" << std::endl;
   delete erosion;
-  std::cout << "step 1" << std::endl;
   return std::make_pair(dilation, crownSegmentation);
 }
 
@@ -522,18 +520,31 @@ void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 
 void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDistance* distance)
 {
-  /*
   std::map<GUInt32, double> ahn2LonelyVolume, ahn3LonelyVolume;
-  double volume = 0;
+  double volume = 0, ahn2FullVolume = 0, ahn3FullVolume = 0;
   for (const auto& elem : distance->lonelyAHN2())
   {
-    volume += std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(), volume);
+    volume = std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(),
+      0, [](double sum, const OGRPoint& point)
+      {
+        return sum + point.getZ();
+      });
+    volume *= 0.25;
+    ahn2LonelyVolume.insert(std::make_pair(elem, volume));
+    ahn2FullVolume += std::abs(volume);
   }
 
   for (const auto& elem : distance->lonelyAHN3())
   {
-    volume += std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(), volume);
-  }*/
+    volume += std::accumulate(ahn3.points(elem).begin(), ahn3.points(elem).end(),
+      0, [](double sum, const OGRPoint& point)
+      {
+        return sum + point.getZ();
+      });
+    volume *= 0.25;
+    ahn3LonelyVolume.insert(std::make_pair(elem, volume));
+    ahn3FullVolume += std::abs(volume);
+  }
 
   double ahn2ClusterVolume = 0, ahn3ClusterVolume = 0;
   std::map<std::pair<GUInt32, GUInt32>, double> diffs;
@@ -545,6 +556,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
         return sum + point.getZ();
       });
     ahn2ClusterVolume *= 0.25;
+    ahn2FullVolume += std::abs(ahn2ClusterVolume);
 
     ahn3ClusterVolume = std::accumulate(ahn3.points(elem.first.second).begin(),
       ahn3.points(elem.first.second).end(), 0, [](double sum, const OGRPoint& point)
@@ -552,10 +564,14 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
         return sum + point.getZ();
       });
     ahn3ClusterVolume *= 0.25;
+    ahn3FullVolume += std::abs(ahn3ClusterVolume);
 
     diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
     std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume << std::endl;
   }
+  std::cout << "ahn2 full volume: " << ahn2FullVolume << std::endl;
+  std::cout << "ahn3 full volume: " << ahn3FullVolume << std::endl;
+
 }
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
