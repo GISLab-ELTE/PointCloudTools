@@ -124,6 +124,14 @@ OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex)
    return highest;
 }
 
+std::vector<GUInt32> ClusterMap::pointInNeighbors(OGRPoint& point)
+{
+  for (const auto& elem : _clusterIndexes)
+  {
+
+  }
+}
+
 OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
 {
 	return _seedPoints.at(clusterIndex);

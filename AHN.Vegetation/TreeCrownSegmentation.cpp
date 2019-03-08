@@ -21,33 +21,76 @@ void TreeCrownSegmentation::initialize()
 			clusters.createCluster(point.getX(), point.getY(), point.getZ());
 		}
 
-		std::vector<OGRPoint> neighbors;
 		bool hasChanged;
 		double currentVerticalDistance = 0.5;
 		do
 		{
-      hasChanged = false;
-      for (GUInt32 index : clusters.clusterIndexes())
-      {
-        neighbors = clusters.neighbors(index);
-        OGRPoint center = clusters.center(index);
-        for (const OGRPoint& p : neighbors)
-        {
-          double horizontalDistance = std::sqrt(std::pow(center.getX() - p.getX(), 2.0)
-            + std::pow(center.getY() - p.getY(), 2.0));
-          double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
-            - sourceData(clusters.seedPoint(index).getX(), clusters.seedPoint(index).getY()));
-          if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 12.0
-            && verticalDistance <= currentVerticalDistance)
+			std::unordered_map<GUInt32, std::set<OGRPoint, PointComparator>> expandPoints;
+			for (GUInt32 index : clusters.clusterIndexes())
+				expandPoints.insert(std::make_pair(index, expandCluster(index, currentVerticalDistance)));
+
+			hasChanged = false;
+			std::vector<GUInt32> indexes = clusters.clusterIndexes();
+			std::map<GUInt32, GUInt32> mergePairs;
+			for (int i = 0; i < indexes.size(); ++i)
+			{
+				for (int j = i + 1; j < indexes.size(); ++j)
+				{
+					GUInt32 index_i = indexes[i];
+					GUInt32 index_j = indexes[j];
+
+					std::vector<OGRPoint> intersection;
+					std::set_intersection(expandPoints[index_i].begin(), expandPoints[index_i].end(),
+					  expandPoints[index_j].begin(), expandPoints[index_j].end(),
+					  std::back_inserter(intersection), TreeCrownSegmentation::PointComparator());
+
+					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
+          double otherSeedHeight = clusters.seedPoint(index_j).getZ();
+          for (const OGRPoint& point : intersection)
           {
-            clusters.addPoint(index, p.getX(), p.getY(), p.getZ());
-            hasChanged = true;
+            double pointHeight = point.getZ();
+            double diff = oneSeedHeight - pointHeight + otherSeedHeight - pointHeight;
+            double normalizedDiff = diff / std::min(oneSeedHeight, otherSeedHeight);
+
+            if (normalizedDiff < 1.0
+              && mergePairs.count(index_j) == 0 && mergePairs.count(index_i) == 0)
+            {
+              mergePairs[index_i] = index_j;
+              mergePairs[index_j] = index_i;
+            }
           }
+				}
+			}
+
+			for (const auto& pair : mergePairs)
+			{
+			  if (pair.first < pair.second)
+          clusters.mergeClusters(pair.first, pair.second);
+      }
+
+			for (const auto& pair : expandPoints)
+      {
+			  GUInt32 index = pair.first;
+			  if (std::find(clusters.clusterIndexes().begin(),
+                      clusters.clusterIndexes().end(),
+                      index) == clusters.clusterIndexes().end())
+        {
+			    index = mergePairs[index];
+        }
+
+        for (const auto& point : pair.second)
+        {
+          try
+          {
+            clusters.addPoint(index, point.getX(), point.getX(), point.getZ());
+          }
+          catch (std::logic_error) {};
         }
       }
-      currentVerticalDistance += increaseHorizontalDistance;
+
+      currentVerticalDistance += increaseVerticalDistance;
 		}
-		while(hasChanged && currentVerticalDistance <= maxHorizontalDistance);
+		while(hasChanged && currentVerticalDistance <= maxVerticalDistance);
 
 		// Write out the clusters as a DEM
 		/*for (GUInt32 index : clusterMap.clusterIndexes())
@@ -59,6 +102,26 @@ void TreeCrownSegmentation::initialize()
 		if (this->progress)
 			this->progress(1.f, "Target created");
 	};
+}
+
+std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation::expandCluster(GUInt32 index, double vertical)
+{
+	std::set<OGRPoint, PointComparator> expand;
+	OGRPoint center = clusters.center(index);
+
+	for (const OGRPoint& p : clusters.neighbors(index))
+	{
+		double horizontalDistance = std::sqrt(std::pow(center.getX() - p.getX(), 2.0)
+			+ std::pow(center.getY() - p.getY(), 2.0));
+		double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
+			- sourceData(clusters.seedPoint(index).getX(), clusters.seedPoint(index).getY()));
+
+		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 12.0
+				&& verticalDistance <= vertical)
+			expand.insert(p);
+	}
+
+	return expand;
 }
 
 ClusterMap& TreeCrownSegmentation::clusterMap()

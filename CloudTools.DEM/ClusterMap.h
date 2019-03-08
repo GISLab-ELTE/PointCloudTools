@@ -110,7 +110,15 @@ public:
   /// <returns>The center of gravity of the cluster.</returns>
 	OGRPoint center(GUInt32 clusterIndex);
 
+	/// <summary>
+	/// Retrieves the point with the biggest Z coordinate
+	/// in the cluster.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <returns>The highest point of the cluster.</returns>
 	OGRPoint highestPoint(GUInt32 clusterIndex);
+
+	std::vector<GUInt32> pointInNeighbors(OGRPoint& point);
 
 	/// <summary>
   /// Retrieves the seed point of a cluster.
