@@ -63,6 +63,10 @@ public:
 
 	void setSizeY(int y);
 
+	int sizeX();
+
+	int sizeY();
+
 	/// <summary>
 	/// Retrieves the cluster index for a given grid point.
 	/// </summary>
@@ -117,8 +121,6 @@ public:
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The highest point of the cluster.</returns>
 	OGRPoint highestPoint(GUInt32 clusterIndex);
-
-	std::vector<GUInt32> pointInNeighbors(OGRPoint& point);
 
 	/// <summary>
   /// Retrieves the seed point of a cluster.

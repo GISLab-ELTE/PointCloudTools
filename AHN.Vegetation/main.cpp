@@ -132,11 +132,8 @@ int main(int argc, char* argv[])
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 	  std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
-    std::cout << "step 2";
 		HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
 		distance->execute();
-		std::cout << "step 3";
-		std::cout << ahn3Pair.first->clusterMap.center(15).getZ();
 		/*for (auto elem : distance->lonelyAHN2())
 		{
 			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
@@ -399,6 +396,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 
   // Count & collect local maximum values
   std::vector<OGRPoint> seedPoints = collectSeedPoints(onlyTrees, reporter, vm);
+  std::cout << "Seed points collected" << std::endl;
 
   ClusterMap cluster;
   cluster.setSizeX(onlyTrees->targetMetadata().rasterSizeX());
@@ -407,6 +405,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   TreeCrownSegmentation* crownSegmentation = treeCrownSegmentation(onlyTrees, seedPoints, reporter, vm);
   std::cout << "Tree crown segmentation performed." << std::endl;
   cluster = crownSegmentation->clusterMap();
+  std::cout << "clusterindex number: " << cluster.clusterIndexes().size() << std::endl;
 
   // Perform morphological erosion on the cluster map
   int erosionThreshold = 6;
@@ -659,7 +658,7 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
     }
   }
 
-  commonId = -1;
+  commonId = -3;
   for (auto elem : distance->lonelyAHN3())
   {
     points = ahn3Map.points(elem);

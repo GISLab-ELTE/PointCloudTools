@@ -18,7 +18,16 @@ void ClusterMap::setSizeY(int y)
 	_sizeY = y;
 }
 
-void setSizeY(int y);
+int ClusterMap::sizeX()
+{
+  return _sizeX;
+}
+
+int ClusterMap::sizeY()
+{
+  return _sizeY;
+}
+
 GUInt32 ClusterMap::clusterIndex(int x, int y) const
 {
 	return _clusterPoints.at(OGRPoint(x, y));
@@ -122,14 +131,6 @@ OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex)
       highest = p;
 
    return highest;
-}
-
-std::vector<GUInt32> ClusterMap::pointInNeighbors(OGRPoint& point)
-{
-  for (const auto& elem : _clusterIndexes)
-  {
-
-  }
 }
 
 OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
