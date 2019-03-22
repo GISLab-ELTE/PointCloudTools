@@ -62,6 +62,9 @@ void MorphologyClusterFilter::initialize()
         pointSet.clear();
         for (OGRPoint &p : clusterMap.neighbors(index))
         {
+          if (!hasSourceData(p.getX(), p.getY()))
+            continue;
+
           counter = 0;
           for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
             for (int j = p.getY() - 1; j <= p.getY() + 1; j++)

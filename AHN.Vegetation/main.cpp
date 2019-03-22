@@ -520,11 +520,11 @@ void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDistance* distance)
 {
   std::map<GUInt32, double> ahn2LonelyVolume, ahn3LonelyVolume;
-  double volume = 0, ahn2FullVolume = 0, ahn3FullVolume = 0;
+  double ahn2FullVolume = 0.0, ahn3FullVolume = 0.0;
   for (const auto& elem : distance->lonelyAHN2())
   {
-    volume = std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(),
-      0, [](double sum, const OGRPoint& point)
+    double volume = std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(),
+      0.0, [](double sum, const OGRPoint& point)
       {
         return sum + point.getZ();
       });
@@ -535,8 +535,8 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 
   for (const auto& elem : distance->lonelyAHN3())
   {
-    volume += std::accumulate(ahn3.points(elem).begin(), ahn3.points(elem).end(),
-      0, [](double sum, const OGRPoint& point)
+    double volume = std::accumulate(ahn3.points(elem).begin(), ahn3.points(elem).end(),
+      0.0, [](double sum, const OGRPoint& point)
       {
         return sum + point.getZ();
       });
@@ -545,12 +545,12 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
     ahn3FullVolume += std::abs(volume);
   }
 
-  double ahn2ClusterVolume = 0, ahn3ClusterVolume = 0;
+  double ahn2ClusterVolume = 0.0, ahn3ClusterVolume = 0.0;
   std::map<std::pair<GUInt32, GUInt32>, double> diffs;
   for (const auto& elem : distance->closest())
   {
     ahn2ClusterVolume = std::accumulate(ahn2.points(elem.first.first).begin(),
-      ahn2.points(elem.first.first).end(), 0, [](double sum, const OGRPoint& point)
+      ahn2.points(elem.first.first).end(), 0.0, [](double sum, const OGRPoint& point)
       {
         return sum + point.getZ();
       });
@@ -558,7 +558,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
     ahn2FullVolume += std::abs(ahn2ClusterVolume);
 
     ahn3ClusterVolume = std::accumulate(ahn3.points(elem.first.second).begin(),
-      ahn3.points(elem.first.second).end(), 0, [](double sum, const OGRPoint& point)
+      ahn3.points(elem.first.second).end(), 0.0, [](double sum, const OGRPoint& point)
       {
         return sum + point.getZ();
       });
@@ -568,9 +568,10 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
     diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
     std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume << std::endl;
   }
+
   std::cout << "ahn2 full volume: " << ahn2FullVolume << std::endl;
   std::cout << "ahn3 full volume: " << ahn3FullVolume << std::endl;
-
+  std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
 }
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,

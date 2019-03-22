@@ -122,6 +122,10 @@ public:
 	/// <returns>The highest point of the cluster.</returns>
 	OGRPoint highestPoint(GUInt32 clusterIndex);
 
+	OGRPoint lowestPoint(GUInt32 clusterIndex);
+
+	std::vector<OGRPoint> borders(GUInt32 clusterIndex);
+
 	/// <summary>
   /// Retrieves the seed point of a cluster.
   /// </summary>

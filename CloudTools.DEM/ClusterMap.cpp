@@ -133,6 +133,53 @@ OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex)
    return highest;
 }
 
+OGRPoint ClusterMap::lowestPoint(GUInt32 clusterIndex)
+{
+  auto clusterPoints = points(clusterIndex);
+  OGRPoint lowest = clusterPoints.at(0);
+  for (const auto& p : clusterPoints)
+    if (p.getZ() < lowest.getZ())
+      lowest = p;
+
+  return lowest;
+}
+
+std::vector<OGRPoint> ClusterMap::borders(GUInt32 clusterIndex)
+{
+	std::vector<OGRPoint> borders;
+
+	auto clusterPoints = points(clusterIndex);
+	OGRPoint upperRight = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getX() > upperRight.getX() && p.getY() > upperRight.getY())
+			upperRight = p;
+
+	borders.push_back(upperRight);
+
+	OGRPoint lowerRight = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getX() < lowerRight.getX() && p.getY() > lowerRight.getY())
+			lowerRight = p;
+
+	borders.push_back(lowerRight);
+
+	OGRPoint lowerLeft = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getX() < lowerLeft.getX() && p.getY() < lowerLeft.getY())
+			lowerLeft = p;
+
+	borders.push_back(lowerLeft);
+
+	OGRPoint upperLeft = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getX() > upperLeft.getX() && p.getY() < upperLeft.getY())
+			upperLeft = p;
+
+	borders.push_back(upperLeft);
+
+	return borders;
+}
+
 OGRPoint ClusterMap::seedPoint(GUInt32 clusterIndex)
 {
 	return _seedPoints.at(clusterIndex);

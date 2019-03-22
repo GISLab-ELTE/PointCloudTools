@@ -126,9 +126,9 @@ std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation
 		double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
 			- sourceData(clusters.seedPoint(index).getX(), clusters.seedPoint(index).getY()));
 
-		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 12.0)
-				//&& verticalDistance <= vertical)
-			expand.insert(p);
+		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 12.0
+				&& verticalDistance <= maxVerticalDistance)
+			expand.insert(OGRPoint(p.getX(),p.getY(),sourceData(p.getX(), p.getY())));
 	}
 
 	return expand;
