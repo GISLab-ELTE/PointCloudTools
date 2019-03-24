@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <numeric>
 
 #include <boost/program_options.hpp>
 #include <gdal_priv.h>
