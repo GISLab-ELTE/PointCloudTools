@@ -346,8 +346,12 @@ TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>* tar
 MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>* target, const MorphologyClusterFilter::Method method,
                                              ClusterMap& clusterMap, const std::string& outpath, int threshold)
 {
+  int dilationLoop = 1;
+  if (method == MorphologyClusterFilter::Method::Dilation)
+    dilationLoop = 3;
+
   MorphologyClusterFilter *morphologyFilter = new MorphologyClusterFilter(
-    clusterMap, { target->target() }, nullptr, method, nullptr);
+    clusterMap, { target->target() }, nullptr, dilationLoop, method, nullptr);
   morphologyFilter->threshold = threshold;
   morphologyFilter->execute();
   return morphologyFilter;
