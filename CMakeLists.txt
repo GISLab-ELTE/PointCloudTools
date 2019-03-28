@@ -16,11 +16,13 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem program_options regex)
 find_package(GDAL 2.1 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
 find_package(MPI)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${GDAL_INCLUDE_DIR})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 if(MSVC)
     link_directories(${Boost_LIBRARY_DIRS})
@@ -28,6 +30,7 @@ else()
     link_libraries(${Boost_LIBRARIES})
 endif()
 link_libraries(${GDAL_LIBRARY})
+link_libraries(${OpenCV_LIBS})
 
 add_subdirectory(CloudTools.Common)
 add_subdirectory(CloudTools.DEM)
