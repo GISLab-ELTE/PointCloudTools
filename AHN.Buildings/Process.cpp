@@ -22,6 +22,8 @@
 #include "Process.h"
 #include "BuildingExtraction.h"
 #include "BuildingFilter.h"
+#include "BuildingTest.h"
+#include "CannyEdgeDetector.hpp"
 #include "Comparison.h"
 
 using namespace CloudTools::DEM;
@@ -70,7 +72,7 @@ void Process::onExecute()
 	// Building filtering / extraction
 	newResult("buildings-ahn2");
 	newResult("buildings-ahn3");
-	if(_ahn2TerrainDataset && _ahn3TerrainDataset)
+	if(_ahn2TerrainDataset && _ahn3TerrainDataset) // TODO: DTM not needed for edge detection
 	{
 		_progressMessage = "Building extraction / AHN-2";
 		{
@@ -100,29 +102,27 @@ void Process::onExecute()
 	}
 	else
 	{
-		_progressMessage = "Building filtering / AHN-2";
+		_progressMessage = "Edge detection / AHN-2";
 		{
-			BuildingFilter filter(_ahn2SurfaceDataset,
-				result("buildings-ahn2").path(), _progress);
-			configure(filter);
+			CannyEdgeDetector<float> edge(_ahn2SurfaceDataset, result("buildings-ahn2").path(), _progress);
+			configure(edge);
 
-			filter.execute();
-			result("buildings-ahn2").dataset = filter.target();
+			edge.execute();
+			result("buildings-ahn2").dataset = edge.target();
 		}
 
-		_progressMessage = "Building filtering / AHN-3";
+		_progressMessage = "Edge detection / AHN-3";
 		{
-			BuildingFilter filter(_ahn3SurfaceDataset,
-				result("buildings-ahn3").path(), _progress);
+			CannyEdgeDetector<float> edge(_ahn3SurfaceDataset, result("buildings-ahn3").path(), _progress);
 			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
-				filter.bands = { 2 };
-			configure(filter);
+				edge.bands = { 2 };
+			configure(edge);
 
-			filter.execute();
-			result("buildings-ahn3").dataset = filter.target();
+			edge.execute();
+			result("buildings-ahn3").dataset = edge.target();
 		}
 	}
-
+	/*
 	// Create basic changeset
 	_progressMessage = "Creating changeset";
 	newResult("changeset");
@@ -230,6 +230,7 @@ void Process::onExecute()
 		CSLDestroy(params);
 	}
 	deleteResult("majority");
+	*/
 }
 
 Result& Process::result(const std::string& name, std::size_t index)

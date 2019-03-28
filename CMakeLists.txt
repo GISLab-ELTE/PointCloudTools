@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem program_options regex)
 find_package(GDAL 2.1 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED) # TODO: specify version
 find_package(Threads REQUIRED)
 find_package(MPI)
 

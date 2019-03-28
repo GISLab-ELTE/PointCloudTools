@@ -3,6 +3,7 @@ include_directories(../)
 add_library(ahn_buildings
 	BuildingExtraction.cpp BuildingExtraction.h
 	BuildingFilter.cpp BuildingFilter.h
+	CannyEdgeDetector.hpp
 	Comparison.cpp Comparison.h
 	IOMode.cpp IOMode.h
 	Process.cpp Process.h
