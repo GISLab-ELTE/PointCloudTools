@@ -1,0 +1,20 @@
+# Default image (https://hub.docker.com/_/php/)
+image: ubuntu:18.04
+
+stages:
+  - build
+
+before_script:
+  - apt-get update -yqq
+  - apt-get install -yqq build-essential cmake
+  - apt-get install -yqq libboost-all-dev libgdal-dev
+  - apt-get install -yqq libopenmpi-dev
+
+# Build
+build:
+  stage: build
+  script:
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make
