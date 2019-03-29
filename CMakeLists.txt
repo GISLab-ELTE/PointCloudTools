@@ -14,6 +14,14 @@ endif()
 
 set(CMAKE_CXX_STANDARD 11)
 
+if(MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # add most warnings
+    add_compile_options(-pedantic -Wall -Wno-unknown-pragmas)
+endif()
+
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem program_options regex)
 find_package(GDAL 2.1 REQUIRED)
 find_package(Threads REQUIRED)
