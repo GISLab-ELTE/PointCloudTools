@@ -1,6 +1,9 @@
 # Default image (https://hub.docker.com/_/php/)
 image: ubuntu:18.04
 
+variables:
+  TZ: "Europe/Budapest"
+
 stages:
   - build
 
@@ -8,8 +11,9 @@ before_script:
   - apt-get update -yqq
   - apt-get install -yqq build-essential cmake
   - apt-get install -yqq libboost-all-dev libgdal-dev
-  - apt-get install -yqq libopencv-dev
   - apt-get install -yqq libopenmpi-dev
+  - ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+  - apt-get install -yqq libopencv-dev
 
 # Build
 build:
