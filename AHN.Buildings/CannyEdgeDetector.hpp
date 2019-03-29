@@ -5,8 +5,6 @@
 
 #include <CloudTools.DEM/DatasetTransformation.hpp>
 
-using namespace CloudTools::DEM;
-
 namespace AHN
 {
 namespace Buildings
@@ -16,7 +14,7 @@ namespace Buildings
 /// https://en.wikipedia.org/wiki/Canny_edge_detector
 /// </summary>
 template <typename DataType = float>
-class CannyEdgeDetector : public DatasetTransformation<GByte, DataType>
+class CannyEdgeDetector : public CloudTools::DEM::DatasetTransformation<GByte, DataType>
 {
 public:
 	/// <summary>
@@ -27,8 +25,8 @@ public:
 	/// <param name="progress">The callback method to report progress.</param>
 	CannyEdgeDetector(GDALDataset* sourceDataset,
 					  const std::string& targetPath,
-					  ProgressType progress = nullptr) // TODO: try to use progress properly
-		: DatasetTransformation<GByte, DataType>({ sourceDataset }, targetPath, nullptr, progress)
+                      CloudTools::Operation::ProgressType progress = nullptr) // TODO: try to use progress properly
+		: CloudTools::DEM::DatasetTransformation<GByte, DataType>({ sourceDataset }, targetPath, nullptr, progress)
 	{
 		initialize();
 	}
@@ -59,9 +57,9 @@ void CannyEdgeDetector<DataType>::initialize()
 		for (int i = 0; i < sizeX; ++i)
 			for (int j = 0; j < sizeY; ++j)
 			{
-				if (hasSourceData(i, j))
+				if (this->hasSourceData(i, j))
 				{
-					float d = sourceData(i, j);
+					float d = this->sourceData(i, j);
 					if (d < min) min = d;
 					if (d > max) max = d;
 				}
@@ -72,9 +70,9 @@ void CannyEdgeDetector<DataType>::initialize()
 		for (int i = 0; i < sizeX; ++i)
 			for (int j = 0; j < sizeY; ++j)
 			{
-				if (hasSourceData(i, j))
+				if (this->hasSourceData(i, j))
 				{
-					float value = sourceData(i, j);
+					float value = this->sourceData(i, j);
 					uchar rounded = std::round((value - min) / interval * 255);
 					edge.at<uchar>(j, i) = rounded;
 				}
@@ -95,7 +93,7 @@ void CannyEdgeDetector<DataType>::initialize()
 			for (int j = 0; j < sizeY; ++j)
 			{
 				uchar isEdge = edge.at<uchar>(j, i);
-				setTargetData(i, j, static_cast<GByte>(isEdge > 0 ? 255 : this->nodataValue));
+				this->setTargetData(i, j, static_cast<GByte>(isEdge > 0 ? 255 : this->nodataValue));
 			}
 	};
 }

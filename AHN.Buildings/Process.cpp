@@ -22,7 +22,6 @@
 #include "Process.h"
 #include "BuildingExtraction.h"
 #include "BuildingFilter.h"
-#include "BuildingTest.h"
 #include "CannyEdgeDetector.hpp"
 #include "Comparison.h"
 
