@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include <cpl_conv.h>
+
 #include "Helper.h"
 
 namespace CloudTools
@@ -44,7 +46,7 @@ std::string SRSDescription(const OGRSpatialReference& reference)
 	char *wkt;
 	reference.exportToPrettyWkt(&wkt);
 	std::string srs = std::string(wkt);
-	OGRFree(wkt);
+	CPLFree(wkt);
 
 	return srs;
 }

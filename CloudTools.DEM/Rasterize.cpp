@@ -296,7 +296,7 @@ void Rasterize::onExecute()
 		char *wkt;
 		_targetMetadata.reference().exportToWkt(&wkt);
 		_targetDataset->SetProjection(wkt);
-		OGRFree(wkt);
+		CPLFree(wkt);
 	}
 }
 
