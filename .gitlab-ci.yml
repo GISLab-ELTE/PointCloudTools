@@ -8,6 +8,7 @@ before_script:
   - apt-get update -yqq
   - apt-get install -yqq build-essential cmake
   - apt-get install -yqq libboost-all-dev libgdal-dev
+  - apt-get install -yqq libopencv-dev
   - apt-get install -yqq libopenmpi-dev
 
 # Build
