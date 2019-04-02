@@ -23,6 +23,7 @@
 #include "BuildingExtraction.h"
 #include "BuildingFilter.h"
 #include "CannyEdgeDetector.hpp"
+#include "BuildingAreaComparer.hpp"
 #include "Comparison.h"
 
 using namespace CloudTools::DEM;
@@ -120,6 +121,16 @@ void Process::onExecute()
 			edge.execute();
 			result("buildings-ahn3").dataset = edge.target();
 		}
+	}
+
+	newResult("changes");
+	{
+		BuildingAreaComparer comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+										 _ahn2SurfaceDataset, _ahn3SurfaceDataset,
+										 result("changes").path(), _progress);
+		configure(comp);
+		comp.execute();
+		result("changes").dataset = comp.target();
 	}
 	/*
 	// Create basic changeset
