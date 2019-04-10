@@ -28,7 +28,6 @@ public:
 	CloudTools::DEM::ClusterMap clusterMap;
 
 	int threshold = -1;
-	int dilationLoop;
 
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
@@ -40,11 +39,10 @@ public:
 	MorphologyClusterFilter(CloudTools::DEM::ClusterMap& source,
 		const std::vector<GDALDataset*>& sourcePaths,
 		ComputationType computation,
-		int dilationLoopNumber = 1,
 		Method method = Method::Dilation,
 		ProgressType progress = nullptr)
 		: DatasetCalculation(sourcePaths, computation, progress),
-			clusterMap(source), method(method), dilationLoop(dilationLoopNumber)
+			clusterMap(source), method(method)
 	{
     initialize();
 	}

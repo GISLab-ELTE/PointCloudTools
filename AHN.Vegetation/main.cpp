@@ -346,12 +346,8 @@ TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>* tar
 MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>* target, const MorphologyClusterFilter::Method method,
                                              ClusterMap& clusterMap, const std::string& outpath, int threshold)
 {
-  int dilationLoop = 1;
-  if (method == MorphologyClusterFilter::Method::Dilation)
-    dilationLoop = 3;
-
   MorphologyClusterFilter *morphologyFilter = new MorphologyClusterFilter(
-    clusterMap, { target->target() }, nullptr, dilationLoop, method, nullptr);
+    clusterMap, { target->target() }, nullptr, method, nullptr);
   morphologyFilter->threshold = threshold;
   morphologyFilter->execute();
   return morphologyFilter;
@@ -413,7 +409,23 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   std::cout << "clusterindex number: " << cluster.clusterIndexes().size() << std::endl;
 
   // Perform morphological erosion on the cluster map
-  int erosionThreshold = 6;
+  int erosionThreshold = 6, filterCounter = 3;
+  for (int i = 0; i < filterCounter - 1; ++i)
+  {
+    MorphologyClusterFilter *erosion = morphologyFiltering(onlyTrees,
+      MorphologyClusterFilter::Method::Erosion, cluster, std::string(), erosionThreshold);
+    std::cout << "Morphological erosion performed." << std::endl;
+
+    MorphologyClusterFilter *dilation = morphologyFiltering(onlyTrees,
+      MorphologyClusterFilter::Method::Dilation, erosion->clusterMap, std::string());
+    std::cout << "Morphological dilation performed." << std::endl;
+
+    cluster = dilation->clusterMap;
+
+    delete erosion;
+    delete dilation;
+  }
+
   MorphologyClusterFilter *erosion = morphologyFiltering(onlyTrees,
     MorphologyClusterFilter::Method::Erosion, cluster, std::string(), erosionThreshold);
   std::cout << "Morphological erosion performed." << std::endl;
@@ -424,6 +436,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 
   delete onlyTrees;
   delete erosion;
+
   return std::make_pair(dilation, crownSegmentation);
 }
 
