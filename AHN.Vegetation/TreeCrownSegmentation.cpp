@@ -46,6 +46,7 @@ void TreeCrownSegmentation::initialize()
 
 					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
           double otherSeedHeight = clusters.seedPoint(index_j).getZ();
+          //OGRPoint& lowestPoint = std::min(intersection.begin(), intersection.end(), PointComparator);
           for (const OGRPoint& point : intersection)
           {
             double pointHeight = point.getZ();
@@ -126,7 +127,7 @@ std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation
 		double verticalDistance = std::abs(sourceData(p.getX(), p.getY())
 			- sourceData(clusters.seedPoint(index).getX(), clusters.seedPoint(index).getY()));
 
-		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= 12.0
+		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= maxHorizontalDistance
 				&& verticalDistance <= maxVerticalDistance)
 			expand.insert(OGRPoint(p.getX(),p.getY(),sourceData(p.getX(), p.getY())));
 	}

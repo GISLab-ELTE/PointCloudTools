@@ -21,6 +21,7 @@ public:
 
 public:
   	double maxVerticalDistance = 14.0;
+  	double maxHorizontalDistance = 12.0;
   	double increaseVerticalDistance = 1.0;
 
 	/// <summary>

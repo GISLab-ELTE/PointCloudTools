@@ -6,7 +6,8 @@ add_executable(ahn_vegetation
 	MatrixTransformation.cpp MatrixTransformation.h
 	TreeCrownSegmentation.cpp TreeCrownSegmentation.h
 	HausdorffDistance.cpp HausdorffDistance.h
-	MorphologyClusterFilter.h MorphologyClusterFilter.cpp)
+	MorphologyClusterFilter.h MorphologyClusterFilter.cpp
+	GravityDistance.cpp GravityDistance.h)
 
 target_link_libraries(ahn_vegetation
 	dem
