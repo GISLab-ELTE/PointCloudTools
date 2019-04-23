@@ -32,7 +32,14 @@ void GravityDistance::onExecute()
         {
           OGRPoint p = AHN3clusterMap.center(otherIndex);
           double newDist = AHN2clusterMap.center(index).Distance(&p);
-          if (newDist < dist)
+          if (newDist < dist &&
+              std::find_if(closestClusters.begin(),
+               closestClusters.end(),
+               [&otherIndex](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
+               {
+                 return p.first.second == otherIndex;
+               })
+               == closestClusters.end())
           {
             dist = newDist;
             i = otherIndex;
