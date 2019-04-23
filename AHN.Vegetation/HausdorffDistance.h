@@ -26,9 +26,9 @@ public:
 	double clusterDistance(GUInt32, GUInt32);
 	GUInt32 closestCluster(GUInt32);
 	std::map<std::pair<GUInt32, GUInt32>, double> distances();
-    const std::map<std::pair<GUInt32, GUInt32>, double>& closest();
-    const std::vector<GUInt32>& lonelyAHN2();
-    const std::vector<GUInt32>& lonelyAHN3();
+  const std::map<std::pair<GUInt32, GUInt32>, double>& closest();
+  const std::vector<GUInt32>& lonelyAHN2();
+  const std::vector<GUInt32>& lonelyAHN3();
 
 private:
 	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;

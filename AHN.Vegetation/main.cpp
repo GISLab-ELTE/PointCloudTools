@@ -17,6 +17,7 @@
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
+#include "GravityDistance.h"
 
 namespace po = boost::program_options;
 
@@ -42,6 +43,8 @@ MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>*, co
 
 HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
 
+GravityDistance* calculateGravityDistance(ClusterMap&, ClusterMap&);
+
 std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(int, const std::string&, const std::string&,
                                                  CloudTools::IO::Reporter*, po::variables_map&);
 
@@ -54,6 +57,17 @@ void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, HausdorffDistance* distance);
+
+
+void calculateHeightDifference(ClusterMap&, ClusterMap&, GravityDistance*);
+
+void calculateVolumeDifference(ClusterMap&, ClusterMap&, GravityDistance*);
+
+void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
+                            const std::string&, GravityDistance*);
+
+void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+                             const std::string& ahn2Outpath, GravityDistance* distance);
 
 int main(int argc, char* argv[])
 {
@@ -133,7 +147,8 @@ int main(int argc, char* argv[])
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 	  std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
-		HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+		//HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+		GravityDistance *distance = calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
 		distance->execute();
 		/*for (auto elem : distance->lonelyAHN2())
 		{
@@ -147,8 +162,9 @@ int main(int argc, char* argv[])
 			std::cout << elem << std::endl;
 		}
 		 */
-		std::cout << "Hausdorff-distance calculated." << std::endl;
-    writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
+		//std::cout << "Hausdorff-distance calculated." << std::endl;
+    std::cout << "Gravity distance calculated." << std::endl;
+		writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
     writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
     calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
     calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
@@ -357,6 +373,14 @@ MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>* tar
 HausdorffDistance* calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
 {
   HausdorffDistance *distance = new HausdorffDistance(ahn2ClusterMap, ahn3ClusterMap);
+  distance->execute();
+  return distance;
+}
+
+// Calculate the Hausdorff-distance of two cluster maps.
+GravityDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
+{
+  GravityDistance *distance = new GravityDistance(ahn2ClusterMap, ahn3ClusterMap);
   distance->execute();
   return distance;
 }
@@ -654,6 +678,265 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
                                       gdalType<int>(),
                                       0, 0);
    }
+
+    usedNums.push_back(commonId);
+
+    if (ioResult != CE_None)
+      throw std::runtime_error("Target write error occured.");
+  }
+
+  commonId = -2;
+  for (auto elem : distance->lonelyAHN2())
+  {
+    points = ahn2Map.points(elem);
+    for (const auto& point : points)
+    {
+      CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                             point.getX(), point.getY(),
+                                             1, 1,
+                                             &commonId,
+                                             1, 1,
+                                             gdalType<int>(),
+                                             0, 0);
+    }
+  }
+
+  commonId = -3;
+  for (auto elem : distance->lonelyAHN3())
+  {
+    points = ahn3Map.points(elem);
+    for (const auto& point : points)
+    {
+      CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                             point.getX(), point.getY(),
+                                             1, 1,
+                                             &commonId,
+                                             1, 1,
+                                             gdalType<int>(),
+                                             0, 0);
+    }
+  }
+
+  GDALClose(target);
+}
+
+
+
+
+// Write the result of Hausdorff-distance calculation to geotiff file.
+void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+                            const std::string& ahn2Outpath, GravityDistance* distance)
+{
+  GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+  if (driver == nullptr)
+    throw std::invalid_argument("Target output format unrecognized.");
+
+  if (fs::exists(ahn2Outpath) &&
+      driver->Delete(ahn2Outpath.c_str()) == CE_Failure &&
+      !fs::remove(ahn2Outpath))
+    throw std::runtime_error("Cannot overwrite previously created target file.");
+
+  GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
+                                       segmentation->targetMetadata().rasterSizeX(), segmentation->targetMetadata().rasterSizeY(), 1,
+                                       gdalType<int>(), nullptr);
+  if (target == nullptr)
+    throw std::runtime_error("Target file creation failed.");
+
+  target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+
+  GDALRasterBand* targetBand = target->GetRasterBand(1);
+  targetBand->SetNoDataValue(-1);
+
+  int commonId;
+  for (auto elem : distance->closest())
+  {
+    commonId = 1;
+    auto center = ahn2Map.center(elem.first.first);
+    CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                           center.getX(), center.getY(),
+                                           1, 1,
+                                           &commonId,
+                                           1, 1,
+                                           gdalType<int>(),
+                                           0, 0);
+
+    center = ahn3Map.center(elem.first.second);
+    ioResult = targetBand->RasterIO(GF_Write,
+                                    center.getX(), center.getY(),
+                                    1, 1,
+                                    &commonId,
+                                    1, 1,
+                                    gdalType<int>(),
+                                    0, 0);
+
+    if (ioResult != CE_None)
+      throw std::runtime_error("Target write error occured.");
+  }
+
+  for (auto elem : distance->lonelyAHN2())
+  {
+    commonId = 2;
+    auto center = ahn2Map.center(elem);
+    CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                           center.getX(), center.getY(),
+                                           1, 1,
+                                           &commonId,
+                                           1, 1,
+                                           gdalType<int>(),
+                                           0, 0);
+  }
+
+  for (auto elem : distance->lonelyAHN3())
+  {
+    commonId = 3;
+    auto center = ahn3Map.center(elem);
+    CPLErr ioResult = targetBand->RasterIO(GF_Write,
+                                           center.getX(), center.getY(),
+                                           1, 1,
+                                           &commonId,
+                                           1, 1,
+                                           gdalType<int>(),
+                                           0, 0);
+  }
+
+  GDALClose(target);
+}
+
+void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistance* distance)
+{
+  std::map<std::pair<GUInt32, GUInt32>, double> differences;
+  OGRPoint ahn2Highest, ahn3Highest;
+  double diff;
+  for (const auto& elem : distance->closest())
+  {
+    ahn2Highest = ahn2.highestPoint(elem.first.first);
+    ahn3Highest = ahn3.highestPoint(elem.first.second);
+
+    diff = ahn3Highest.getZ() - ahn2Highest.getZ();
+    differences.insert(std::make_pair(elem.first, diff));
+    //std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
+  }
+}
+
+void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistance* distance)
+{
+  std::map<GUInt32, double> ahn2LonelyVolume, ahn3LonelyVolume;
+  double ahn2FullVolume = 0.0, ahn3FullVolume = 0.0;
+  for (const auto& elem : distance->lonelyAHN2())
+  {
+    double volume = std::accumulate(ahn2.points(elem).begin(), ahn2.points(elem).end(),
+                                    0.0, [](double sum, const OGRPoint& point)
+                                    {
+                                      return sum + point.getZ();
+                                    });
+    volume *= 0.25;
+    ahn2LonelyVolume.insert(std::make_pair(elem, volume));
+    ahn2FullVolume += std::abs(volume);
+  }
+
+  for (const auto& elem : distance->lonelyAHN3())
+  {
+    double volume = std::accumulate(ahn3.points(elem).begin(), ahn3.points(elem).end(),
+                                    0.0, [](double sum, const OGRPoint& point)
+                                    {
+                                      return sum + point.getZ();
+                                    });
+    volume *= 0.25;
+    ahn3LonelyVolume.insert(std::make_pair(elem, volume));
+    ahn3FullVolume += std::abs(volume);
+  }
+
+  double ahn2ClusterVolume = 0.0, ahn3ClusterVolume = 0.0;
+  std::map<std::pair<GUInt32, GUInt32>, double> diffs;
+  for (const auto& elem : distance->closest())
+  {
+    ahn2ClusterVolume = std::accumulate(ahn2.points(elem.first.first).begin(),
+                                        ahn2.points(elem.first.first).end(), 0.0, [](double sum, const OGRPoint& point)
+                                        {
+                                          return sum + point.getZ();
+                                        });
+    ahn2ClusterVolume *= 0.25;
+    ahn2FullVolume += std::abs(ahn2ClusterVolume);
+
+    ahn3ClusterVolume = std::accumulate(ahn3.points(elem.first.second).begin(),
+                                        ahn3.points(elem.first.second).end(), 0.0, [](double sum, const OGRPoint& point)
+                                        {
+                                          return sum + point.getZ();
+                                        });
+    ahn3ClusterVolume *= 0.25;
+    ahn3FullVolume += std::abs(ahn3ClusterVolume);
+
+    diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
+    std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume << std::endl;
+  }
+
+  std::cout << "ahn2 full volume: " << ahn2FullVolume << std::endl;
+  std::cout << "ahn3 full volume: " << ahn3FullVolume << std::endl;
+  std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
+}
+
+void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+                             const std::string& ahn2Outpath, GravityDistance* distance)
+{
+  GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+  if (driver == nullptr)
+    throw std::invalid_argument("Target output format unrecognized.");
+
+  if (fs::exists(ahn2Outpath) &&
+      driver->Delete(ahn2Outpath.c_str()) == CE_Failure &&
+      !fs::remove(ahn2Outpath))
+    throw std::runtime_error("Cannot overwrite previously created target file.");
+
+  GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
+                                       segmentation->targetMetadata().rasterSizeX(), segmentation->targetMetadata().rasterSizeY(), 1,
+                                       gdalType<int>(), nullptr);
+  if (target == nullptr)
+    throw std::runtime_error("Target file creation failed.");
+
+  target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+
+  GDALRasterBand* targetBand = target->GetRasterBand(1);
+  targetBand->SetNoDataValue(-1);
+
+  srand (time(NULL));
+  int commonId;
+  std::vector<OGRPoint> points;
+  int numberOfClusters = distance->closest().size();
+  std::vector<int> usedNums;
+  for (auto elem : distance->closest())
+  {
+    do
+    {
+      commonId = rand() % numberOfClusters + 1;
+    }
+    while(std::find(usedNums.begin(), usedNums.end(), commonId)
+          != usedNums.end());
+
+    points = ahn2Map.points(elem.first.first);
+    CPLErr ioResult;
+    for (const auto& point : points)
+    {
+      ioResult = targetBand->RasterIO(GF_Write,
+                                      point.getX(), point.getY(),
+                                      1, 1,
+                                      &commonId,
+                                      1, 1,
+                                      gdalType<int>(),
+                                      0, 0);
+
+    }
+
+    points = ahn3Map.points(elem.first.second);
+    for (const auto& point : points)
+    {
+      ioResult = targetBand->RasterIO(GF_Write,
+                                      point.getX(), point.getY(),
+                                      1, 1,
+                                      &commonId,
+                                      1, 1,
+                                      gdalType<int>(),
+                                      0, 0);
+    }
 
     usedNums.push_back(commonId);
 

@@ -8,7 +8,7 @@ namespace AHN
 {
 namespace Vegetation
 {
-class GravityDistance : CloudTools::Operation
+class GravityDistance : public CloudTools::Operation
 {
 public:
   double maximumDistance = 9.0;
@@ -25,6 +25,10 @@ public:
 
   double clusterDistance(GUInt32, GUInt32);
   GUInt32 closestCluster(GUInt32);
+
+  const std::map<std::pair<GUInt32, GUInt32>, double>& closest();
+  const std::vector<GUInt32>& lonelyAHN2();
+  const std::vector<GUInt32>& lonelyAHN3();
 
 private:
   std::map<std::pair<GUInt32, GUInt32>, double> gravityDistances;
