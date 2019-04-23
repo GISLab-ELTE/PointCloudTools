@@ -48,9 +48,6 @@ void GravityDistance::onExecute()
     //std::cout << "step 2" << std::endl;
     //std::cout << "ahn3Key size: " << ahn3Key.size() << std::endl;
 
-    for (auto it = ahn3Key.begin(); it != ahn3Key.end(); it++)
-      std::cout << it->first << ", ";
-
     for (std::multimap<GUInt32, std::pair<GUInt32, double>>::iterator it = ahn3Key.begin(), end = ahn3Key.end();
       it != end; it = ahn3Key.upper_bound(it->first))
     //for (auto it = ahn3Key.begin(); it != ahn3Key.end(); it = ahn3Key.upper_bound(it->first))

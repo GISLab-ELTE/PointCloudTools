@@ -77,6 +77,7 @@ int main(int argc, char* argv[])
 	std::string AHN2DTMinputPath;
 	std::string outputPath = (fs::current_path() / "out.tif").string();
 	std::string AHN2outputPath = (fs::current_path() / "ahn2_out.tif").string();
+	char clusterPairingMethod;
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
@@ -86,6 +87,7 @@ int main(int argc, char* argv[])
 		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-path,o", po::value<std::string>(&outputPath)->default_value(outputPath), "output path")
+    ("hausdorff-distance,d", po::value<char>(&clusterPairingMethod), "use Hausdorff-distance")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
 		("help,h", "produce help message");
@@ -147,51 +149,51 @@ int main(int argc, char* argv[])
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 	  std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
-		//HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
-		GravityDistance *distance = calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
-		distance->execute();
-		/*for (auto elem : distance->lonelyAHN2())
-		{
-			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-			std::cout << elem << std::endl;
-		}
-		std::cout << "AHN3 LONELY INDEXES" << std::endl;
-		for (auto elem : distance->lonelyAHN3())
-		{
-			//std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-			std::cout << elem << std::endl;
-		}
-		 */
-		//std::cout << "Hausdorff-distance calculated." << std::endl;
-    std::cout << "Gravity distance calculated." << std::endl;
-		writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
-    writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
-    calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-    calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+
+	  if (vm.count("hausdorff-distance"))
+    {
+	    std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
+      HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+      std::cout << "Hausdorff distance calculated." << std::endl;
+
+      writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
+      writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
+      calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+      calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+    }
+    else
+    {
+      std::cout << "Using gravity distance to pair up clusters." << std::endl;
+      GravityDistance *distance = calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+      distance->execute();
+      /*for (auto elem : distance->lonelyAHN2())
+      {
+        //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+        std::cout << elem << std::endl;
+      }
+      std::cout << "AHN3 LONELY INDEXES" << std::endl;
+      for (auto elem : distance->lonelyAHN3())
+      {
+        //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+        std::cout << elem << std::endl;
+      }
+       */
+      //std::cout << "Hausdorff-distance calculated." << std::endl;
+      std::cout << "Gravity distance calculated." << std::endl;
+      writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath,
+                             distance);
+      writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+                              "cluster_pairs.tif", distance);
+      calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+      calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+    }
 
     delete ahn3Pair.second;
     delete ahn3Pair.first;
     delete ahn2Pair.second;
     delete ahn2Pair.first;
 
-		// Calculate differences between dimensions
-/*    std::map<std::pair<GUInt32, GUInt32>, std::pair<double, double>> diff;
-    for (const auto& elem : distance->closest())
-    {
-      auto centerAHN2 = clusterMap.center(elem.first.first);
-      auto centerAHN3 = clusters.center(elem.first.second);
-      double vertical = centerAHN3.getZ() - centerAHN2.getZ();
-      diff.insert(std::make_pair(elem.first, std::make_pair(elem.second, vertical)));
-      std::cout << elem.first.first << "; " << elem.first.second << " horizontal distance: " << elem.second << ", vertical distance: " << vertical << std::endl;
-      if(vertical == 23) {
-        std::cout << "centerAHN2 X: " << centerAHN2.getX() << std::endl;
-        std::cout << "centerAHN2 Y: " << centerAHN2.getY() << std::endl;
-        std::cout << "centerAHN3 X: " << centerAHN3.getX() << std::endl;
-        std::cout << "centerAHN3 Y: " << centerAHN3.getY() << std::endl;
-      }
-    }
-*/
-		delete distance;
+		//delete distance;
 	}
 
 	delete reporter;
