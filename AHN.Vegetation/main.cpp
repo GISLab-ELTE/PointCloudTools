@@ -149,12 +149,16 @@ int main(int argc, char* argv[])
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 	  std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
+	  int pairs, lonelyAHN2, lonelyAHN3;
 
 	  if (vm.count("hausdorff-distance"))
     {
 	    std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
       HausdorffDistance *distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
       std::cout << "Hausdorff distance calculated." << std::endl;
+      pairs = distance->closest().size();
+      lonelyAHN2 = distance->lonelyAHN2().size();
+      lonelyAHN3 = distance->lonelyAHN3().size();
 
       writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath, distance);
       writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, "cluster_pairs.tif", distance);
@@ -180,6 +184,9 @@ int main(int argc, char* argv[])
        */
       //std::cout << "Hausdorff-distance calculated." << std::endl;
       std::cout << "Gravity distance calculated." << std::endl;
+      pairs = distance->closest().size();
+      lonelyAHN2 = distance->lonelyAHN2().size();
+      lonelyAHN3 = distance->lonelyAHN3().size();
       writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second, AHN2outputPath,
                              distance);
       writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
@@ -187,6 +194,12 @@ int main(int argc, char* argv[])
       calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
       calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
     }
+
+    std::cout << "Total number of clusters in AHN2: " << ahn2Pair.first->clusterMap.clusterIndexes().size() << std::endl;
+    std::cout << "Total number of clusters in AHN3: " << ahn3Pair.first->clusterMap.clusterIndexes().size() << std::endl;
+    std::cout << "Pairs found: " << pairs << std::endl;
+    std::cout << "Number of unpaired clusters in AHN2: " << lonelyAHN2 << std::endl;
+    std::cout << "Number of unpaired clusters in AHN3: " << lonelyAHN3 << std::endl;
 
     delete ahn3Pair.second;
     delete ahn3Pair.first;
@@ -459,6 +472,8 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
   MorphologyClusterFilter *dilation = morphologyFiltering(onlyTrees,
     MorphologyClusterFilter::Method::Dilation, erosion->clusterMap, std::string());
   std::cout << "Morphological dilation performed." << std::endl;
+
+  dilation->clusterMap.removeSmallClusters(16);
 
   delete onlyTrees;
   delete erosion;
