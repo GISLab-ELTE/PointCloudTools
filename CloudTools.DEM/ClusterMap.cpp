@@ -20,12 +20,12 @@ void ClusterMap::setSizeY(int y)
 
 int ClusterMap::sizeX()
 {
-  return _sizeX;
+	return _sizeX;
 }
 
 int ClusterMap::sizeY()
 {
-  return _sizeY;
+	return _sizeY;
 }
 
 GUInt32 ClusterMap::clusterIndex(int x, int y) const
@@ -53,9 +53,12 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y, double z)
 		throw std::out_of_range("Cluster is out of range.");
 
 	if (std::find_if(_clusterIndexes[clusterIndex].begin(),
-		_clusterIndexes[clusterIndex].end(),
-		[&point](OGRPoint& p) { return point.getX() == p.getX() &&
-                                   point.getY() == p.getY(); })
+	                 _clusterIndexes[clusterIndex].end(),
+	                 [&point](OGRPoint& p)
+	                 {
+		                 return point.getX() == p.getX() &&
+			                 point.getY() == p.getY();
+	                 })
 		!= _clusterIndexes[clusterIndex].end())
 		throw std::logic_error("Point is already in cluster.");
 
@@ -65,83 +68,86 @@ void ClusterMap::addPoint(GUInt32 clusterIndex, int x, int y, double z)
 
 void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 {
-	if(_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
+	if (_clusterIndexes.find(clusterIndex) == _clusterIndexes.end())
 		throw std::out_of_range("Cluster is out of range.");
 
 	OGRPoint point(x, y);
 
 	std::vector<OGRPoint>::iterator iter =
-	  std::find_if(_clusterIndexes[clusterIndex].begin(),
-		_clusterIndexes[clusterIndex].end(),
-		[&point](OGRPoint& p) { return point.getX() == p.getX() &&
-		                               point.getY() == p.getY(); });
+		std::find_if(_clusterIndexes[clusterIndex].begin(),
+		             _clusterIndexes[clusterIndex].end(),
+		             [&point](OGRPoint& p)
+		             {
+			             return point.getX() == p.getX() &&
+				             point.getY() == p.getY();
+		             });
 
-	if(iter	== _clusterIndexes[clusterIndex].end())
+	if (iter == _clusterIndexes[clusterIndex].end())
 		throw std::out_of_range("Point is out of range.");
 
 	_clusterIndexes[clusterIndex].erase(iter);
-    _clusterPoints.erase(point);
+	_clusterPoints.erase(point);
 
 	if (!_clusterIndexes[clusterIndex].size())
 		removeCluster(clusterIndex);
 
-	if(_seedPoints[clusterIndex].getX() == point.getX() &&
-	   _seedPoints[clusterIndex].getY() == point.getY())
+	if (_seedPoints[clusterIndex].getX() == point.getX() &&
+		_seedPoints[clusterIndex].getY() == point.getY())
 		_seedPoints.erase(clusterIndex);
 }
 
 std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex)
 {
-  std::unordered_set<OGRPoint, PointHash, PointEqual> neighbors;
-  for (const OGRPoint& p : points(clusterIndex))
-  {
-    for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
-      for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
-        if (i >= 0 && i < _sizeX &&
-        		j >= 0 && j < _sizeY &&
-					 (i != p.getX() || j != p.getY()))
-        {
-          OGRPoint point(i, j, p.getZ());
-          if (_clusterPoints.find(point) == _clusterPoints.end())
-            neighbors.insert(point);
-        }
-  }
+	std::unordered_set<OGRPoint, PointHash, PointEqual> neighbors;
+	for (const OGRPoint& p : points(clusterIndex))
+	{
+		for (int i = p.getX() - 1; i <= p.getX() + 1; i++)
+			for (int j = p.getY() - 1; j <= p.getY() + 1; j++)
+				if (i >= 0 && i < _sizeX &&
+					j >= 0 && j < _sizeY &&
+					(i != p.getX() || j != p.getY()))
+				{
+					OGRPoint point(i, j, p.getZ());
+					if (_clusterPoints.find(point) == _clusterPoints.end())
+						neighbors.insert(point);
+				}
+	}
 
-  return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
+	return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
 }
 
 OGRPoint ClusterMap::center(GUInt32 clusterIndex)
 {
 	auto clusterPoints = points(clusterIndex);
 	int avgX = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
-			[](int value, OGRPoint& p) { return value + p.getX(); }) / clusterPoints.size();
+	                           [](int value, OGRPoint& p) { return value + p.getX(); }) / clusterPoints.size();
 	int avgY = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
-			[](int value, OGRPoint& p) { return value + p.getY(); }) / clusterPoints.size();
+	                           [](int value, OGRPoint& p) { return value + p.getY(); }) / clusterPoints.size();
 	double avgZ = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
-      [](double value, OGRPoint& p) { return value + p.getZ(); }) / clusterPoints.size();
+	                              [](double value, OGRPoint& p) { return value + p.getZ(); }) / clusterPoints.size();
 	return OGRPoint(avgX, avgY, avgZ);
 }
 
 OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex)
 {
-  auto clusterPoints = points(clusterIndex);
-  OGRPoint highest = clusterPoints.at(0);
-  for (const auto& p : clusterPoints)
-     if (p.getZ() > highest.getZ())
-      highest = p;
+	auto clusterPoints = points(clusterIndex);
+	OGRPoint highest = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getZ() > highest.getZ())
+			highest = p;
 
-   return highest;
+	return highest;
 }
 
 OGRPoint ClusterMap::lowestPoint(GUInt32 clusterIndex)
 {
-  auto clusterPoints = points(clusterIndex);
-  OGRPoint lowest = clusterPoints.at(0);
-  for (const auto& p : clusterPoints)
-    if (p.getZ() < lowest.getZ())
-      lowest = p;
+	auto clusterPoints = points(clusterIndex);
+	OGRPoint lowest = clusterPoints.at(0);
+	for (const auto& p : clusterPoints)
+		if (p.getZ() < lowest.getZ())
+			lowest = p;
 
-  return lowest;
+	return lowest;
 }
 
 std::vector<OGRPoint> ClusterMap::borders(GUInt32 clusterIndex)
@@ -215,7 +221,7 @@ void ClusterMap::mergeClusters(GUInt32 clusterA, GUInt32 clusterB)
 	// Merge the smaller cluster into the larger
 	GUInt32 fromCluster = clusterB;
 	GUInt32 toCluster = clusterA;
-	if(_clusterIndexes[clusterB].size() > _clusterIndexes[clusterA].size())
+	if (_clusterIndexes[clusterB].size() > _clusterIndexes[clusterA].size())
 	{
 		fromCluster = clusterA;
 		toCluster = clusterB;
@@ -230,7 +236,7 @@ void ClusterMap::mergeClusters(GUInt32 clusterA, GUInt32 clusterB)
 		_clusterIndexes[toCluster].end(),
 		std::make_move_iterator(_clusterIndexes[fromCluster].begin()),
 		std::make_move_iterator(_clusterIndexes[fromCluster].end()));
-	
+
 	// Remove merged cluster
 	_clusterIndexes.erase(fromCluster);
 }
@@ -249,12 +255,12 @@ std::size_t ClusterMap::removeSmallClusters(int threshold)
 {
 	std::vector<GUInt32> removedIndexes;
 	for (const auto& item : _clusterIndexes)
-		if(item.second.size() < threshold)
+		if (item.second.size() < threshold)
 		{
 			removedIndexes.push_back(item.first);
 		}
-	
-	for(int index : removedIndexes)
+
+	for (int index : removedIndexes)
 	{
 		removeCluster(index);
 	}

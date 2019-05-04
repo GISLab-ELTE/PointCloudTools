@@ -12,10 +12,10 @@ void TreeCrownSegmentation::initialize()
 {
 	this->computation = [this](int sizeX, int sizeY)
 	{
-	  clusters.setSizeX(sizeX);
-    clusters.setSizeY(sizeY);
+		clusters.setSizeX(sizeX);
+		clusters.setSizeY(sizeY);
 
-    // Create initial clusters from seed points
+		// Create initial clusters from seed points
 		for (const auto& point : this->seedPoints)
 		{
 			clusters.createCluster(point.getX(), point.getY(), point.getZ());
@@ -41,67 +41,68 @@ void TreeCrownSegmentation::initialize()
 
 					std::vector<OGRPoint> intersection;
 					std::set_intersection(expandPoints[index_i].begin(), expandPoints[index_i].end(),
-					  expandPoints[index_j].begin(), expandPoints[index_j].end(),
-					  std::back_inserter(intersection), TreeCrownSegmentation::PointComparator());
+					                      expandPoints[index_j].begin(), expandPoints[index_j].end(),
+					                      std::back_inserter(intersection), TreeCrownSegmentation::PointComparator());
 
 					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
-          double otherSeedHeight = clusters.seedPoint(index_j).getZ();
-          //OGRPoint& lowestPoint = std::min(intersection.begin(), intersection.end(), PointComparator);
-          for (const OGRPoint& point : intersection)
-          {
-            double pointHeight = point.getZ();
-            double diff = oneSeedHeight - pointHeight + otherSeedHeight - pointHeight;
-            double normalizedDiff = diff / std::min(oneSeedHeight, otherSeedHeight);
+					double otherSeedHeight = clusters.seedPoint(index_j).getZ();
+					//OGRPoint& lowestPoint = std::min(intersection.begin(), intersection.end(), PointComparator);
+					for (const OGRPoint& point : intersection)
+					{
+						double pointHeight = point.getZ();
+						double diff = oneSeedHeight - pointHeight + otherSeedHeight - pointHeight;
+						double normalizedDiff = diff / std::min(oneSeedHeight, otherSeedHeight);
 
-            if (normalizedDiff < 1.0
-              && mergePairs.count(index_j) == 0 && mergePairs.count(index_i) == 0)
-            {
-              mergePairs[index_i] = index_j;
-              mergePairs[index_j] = index_i;
-            }
-          }
+						if (normalizedDiff < 1.0
+							&& mergePairs.count(index_j) == 0 && mergePairs.count(index_i) == 0)
+						{
+							mergePairs[index_i] = index_j;
+							mergePairs[index_j] = index_i;
+						}
+					}
 				}
 			}
 
 			for (const auto& pair : mergePairs)
 			{
-			  if (pair.first < pair.second)
-          clusters.mergeClusters(pair.first, pair.second);
-      }
+				if (pair.first < pair.second)
+					clusters.mergeClusters(pair.first, pair.second);
+			}
 
 			for (const auto& pair : expandPoints)
-      {
-			  GUInt32 index = pair.first;
-			  if (std::find(clusters.clusterIndexes().begin(),
-                      clusters.clusterIndexes().end(),
-                      index) == clusters.clusterIndexes().end())
-        {
-			    index = mergePairs[index];
-        }
+			{
+				GUInt32 index = pair.first;
+				if (std::find(clusters.clusterIndexes().begin(),
+				              clusters.clusterIndexes().end(),
+				              index) == clusters.clusterIndexes().end())
+				{
+					index = mergePairs[index];
+				}
 
-        for (const auto& point : pair.second)
-        {
-          try
-          {
-            try
-            {
-              clusters.clusterIndex(point.getX(), point.getY());
-            }
-            catch(std::out_of_range)
-            {
-              //TODO
-              clusters.addPoint(index, point.getX(), point.getY(), point.getZ());
-              hasChanged = true;
-            }
+				for (const auto& point : pair.second)
+				{
+					try
+					{
+						try
+						{
+							clusters.clusterIndex(point.getX(), point.getY());
+						}
+						catch (std::out_of_range)
+						{
+							//TODO
+							clusters.addPoint(index, point.getX(), point.getY(), point.getZ());
+							hasChanged = true;
+						}
+					}
+					catch (std::logic_error)
+					{
+					};
+				}
+			}
 
-          }
-          catch (std::logic_error) {};
-        }
-      }
-
-      currentVerticalDistance += increaseVerticalDistance;
+			currentVerticalDistance += increaseVerticalDistance;
 		}
-		while(hasChanged && currentVerticalDistance <= maxVerticalDistance);
+		while (hasChanged && currentVerticalDistance <= maxVerticalDistance);
 
 		// Write out the clusters as a DEM
 		/*for (GUInt32 index : clusterMap.clusterIndexes())
@@ -115,7 +116,8 @@ void TreeCrownSegmentation::initialize()
 	};
 }
 
-std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation::expandCluster(GUInt32 index, double vertical)
+std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation::expandCluster(
+	GUInt32 index, double vertical)
 {
 	std::set<OGRPoint, PointComparator> expand;
 	OGRPoint center = clusters.center(index);
@@ -128,8 +130,8 @@ std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation
 			- sourceData(clusters.seedPoint(index).getX(), clusters.seedPoint(index).getY()));
 
 		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= maxHorizontalDistance
-				&& verticalDistance <= maxVerticalDistance)
-			expand.insert(OGRPoint(p.getX(),p.getY(),sourceData(p.getX(), p.getY())));
+			&& verticalDistance <= maxVerticalDistance)
+			expand.insert(OGRPoint(p.getX(), p.getY(), sourceData(p.getX(), p.getY())));
 	}
 
 	return expand;
