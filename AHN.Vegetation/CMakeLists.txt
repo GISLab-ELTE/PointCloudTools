@@ -3,7 +3,6 @@ include_directories(../)
 add_executable(ahn_vegetation
 	main.cpp
 	NoiseFilter.cpp NoiseFilter.h
-	MatrixTransformation.cpp MatrixTransformation.h
 	TreeCrownSegmentation.cpp TreeCrownSegmentation.h
 	HausdorffDistance.cpp HausdorffDistance.h
 	MorphologyClusterFilter.h MorphologyClusterFilter.cpp
