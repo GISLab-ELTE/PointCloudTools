@@ -20,9 +20,9 @@ public:
 	std::vector<OGRPoint> seedPoints;
 
 public:
-  	double maxVerticalDistance = 14.0;
-  	double maxHorizontalDistance = 12.0;
-  	double increaseVerticalDistance = 1.0;
+	double maxVerticalDistance = 14.0;
+	double maxHorizontalDistance = 12.0;
+	double increaseVerticalDistance = 1.0;
 
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
@@ -32,9 +32,9 @@ public:
 	/// <param name="seedPoints">The tree crown seed points.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(const std::string& sourcePath,
-			              const std::vector<OGRPoint>& seedPoints,
-			              Operation::ProgressType progress = nullptr)
-		: DatasetCalculation<float>({ sourcePath }, nullptr, progress),
+	                      const std::vector<OGRPoint>& seedPoints,
+	                      Operation::ProgressType progress = nullptr)
+		: DatasetCalculation<float>({sourcePath}, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
 		initialize();
@@ -48,9 +48,9 @@ public:
 	/// <param name="seedPoints">The tree crown seed points.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	TreeCrownSegmentation(GDALDataset* sourceDataset,
-						  const std::vector<OGRPoint>& seedPoints,
-			              Operation::ProgressType progress = nullptr)
-		: DatasetCalculation<float>({ sourceDataset }, nullptr, progress),
+	                      const std::vector<OGRPoint>& seedPoints,
+	                      Operation::ProgressType progress = nullptr)
+		: DatasetCalculation<float>({sourceDataset}, nullptr, progress),
 		  seedPoints(seedPoints)
 	{
 		initialize();
@@ -62,16 +62,18 @@ public:
 	CloudTools::DEM::ClusterMap& clusterMap();
 
 private:
-  struct PointComparator
-  {
-    bool operator() (const OGRPoint& a, const OGRPoint& b) const
-    {
-      if (a.getX() < b.getX())
-        return true;
-      else
-        return a.getY() < b.getY();
-    }
-  };
+	struct PointComparator
+	{
+		bool operator()(const OGRPoint& a, const OGRPoint& b) const
+		{
+			if (a.getX() < b.getX())
+				return true;
+			else if (a.getX() > b.getX())
+				return false;
+			else
+				return a.getY() < b.getY();
+		}
+	};
 
 	CloudTools::DEM::ClusterMap clusters;
 	/// <summary>
