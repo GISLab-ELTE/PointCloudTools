@@ -1,6 +1,7 @@
-#include "GravityDistance.h"
 #include <algorithm>
 #include <iostream>
+
+#include "GravityDistance.h"
 
 namespace AHN
 {

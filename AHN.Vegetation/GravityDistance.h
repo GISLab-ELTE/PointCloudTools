@@ -1,6 +1,8 @@
 #ifndef CLOUDTOOLS_GRAVITYDISTANCE_H
 #define CLOUDTOOLS_GRAVITYDISTANCE_H
 
+#include <map>
+
 #include <CloudTools.Common/Operation.h>
 #include <CloudTools.DEM/ClusterMap.h>
 

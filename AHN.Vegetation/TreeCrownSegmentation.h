@@ -2,10 +2,10 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
-#include <CloudTools.DEM/Helper.h>
 
 namespace AHN
 {
