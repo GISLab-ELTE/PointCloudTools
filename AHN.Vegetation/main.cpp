@@ -4,6 +4,7 @@
 #include <numeric>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
 #include <CloudTools.Common/IO/IO.h>
@@ -13,13 +14,14 @@
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
-#include "NoiseFilter.h"
+
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
 #include "CentroidDistance.h"
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
@@ -50,7 +52,7 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
 CentroidDistance* calculateGravityDistance(ClusterMap&, ClusterMap&);
 
 std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(
-	int, const std::string&, const std::string&,
+	int, const std::string&, const std::string&, const std::string&,
 	CloudTools::IO::Reporter*, po::variables_map&);
 
 void calculateHeightDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
@@ -80,8 +82,7 @@ int main(int argc, char* argv[])
 	std::string DSMinputPath;
 	std::string AHN2DSMinputPath;
 	std::string AHN2DTMinputPath;
-	std::string outputPath = (fs::current_path() / "out.tif").string();
-	std::string AHN2outputPath = (fs::current_path() / "ahn2_out.tif").string();
+	std::string outputDir = fs::current_path().string();
 	char clusterPairingMethod;
 
 	// Read console arguments
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
 		("ahn3-dsm-input-path,s", po::value<std::string>(&DSMinputPath), "DSM input path")
 		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
-		("output-path,o", po::value<std::string>(&outputPath)->default_value(outputPath), "output path")
+		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
 		("hausdorff-distance,d", po::value<char>(&clusterPairingMethod), "use Hausdorff-distance")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
@@ -133,6 +134,17 @@ int main(int argc, char* argv[])
 		argumentError = true;
 	}
 
+	if (fs::exists(outputDir) && !fs::is_directory(outputDir))
+	{
+		std::cerr << "The given output path exists but is not a directory." << std::endl;
+		argumentError = true;
+	}
+	else if (!fs::exists(outputDir) && !fs::create_directory(outputDir))
+	{
+		std::cerr << "Failed to create output directory." << std::endl;
+		argumentError = true;
+	}
+
 	if (argumentError)
 	{
 		std::cerr << "Use the --help option for description." << std::endl;
@@ -150,12 +162,12 @@ int main(int argc, char* argv[])
 	GDALAllRegister();
 
 	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = createRefinedClusterMap(
-		3, DTMinputPath, DSMinputPath, reporter, vm);
+		3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
 
 	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
 	{
 		std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(
-			2, AHN2DTMinputPath, AHN2DSMinputPath, reporter, vm);
+			2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
 		int pairs, lonelyAHN2, lonelyAHN3;
 
 		if (vm.count("hausdorff-distance"))
@@ -169,9 +181,9 @@ int main(int argc, char* argv[])
 			lonelyAHN3 = distance->lonelyAHN3().size();
 
 			writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                       AHN2outputPath, distance);
+			                       (fs::path(outputDir) / "cluster_map.tif").string(), distance);
 			writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                        "cluster_pairs.tif", distance);
+				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 		}
@@ -199,10 +211,9 @@ int main(int argc, char* argv[])
 			lonelyAHN2 = distance->lonelyAHN2().size();
 			lonelyAHN3 = distance->lonelyAHN3().size();
 			writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                       AHN2outputPath,
-			                       distance);
+				                   (fs::path(outputDir) / "cluster_map.tif").string(), distance);
 			writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                        "cluster_pairs.tif", distance);
+				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 		}
@@ -432,21 +443,21 @@ CentroidDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMa
 
 // Perform the algorithm on a DSM and a DTM.
 std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(
-	int ahnVersion, const std::string& DTMinput,
-	const std::string& DSMinput, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+	int ahnVersion, const std::string& DTMinput, const std::string& DSMinput, const std::string& outputDir,
+	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	std::string chmOut, antialiasOut, nosmallOut;
 	if (ahnVersion == 3)
 	{
-		chmOut = "CHM.tif";
-		antialiasOut = "antialias.tif";
-		nosmallOut = "nosmall.tif";
+		chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
+		antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
+		nosmallOut = (fs::path(outputDir) / "ahn3_nosmall.tif").string();
 	}
 	else
 	{
-		chmOut = "ahn2_CHM.tif";
-		antialiasOut = "ahn2_antialias.tif";
-		nosmallOut = "ahn2_nosmall.tif";
+		chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
+		antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
+		nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
 	}
 
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
