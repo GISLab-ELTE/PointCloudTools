@@ -12,8 +12,8 @@
 #include <CloudTools.DEM/SweepLineCalculation.hpp>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
+#include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
 #include "NoiseFilter.h"
-#include "MatrixTransformation.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
@@ -295,6 +295,16 @@ MatrixTransformation* antialias(Difference<float>* target, const std::string& ou
                                 CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	MatrixTransformation* filter = new MatrixTransformation(target->target(), outpath, 1);
+	filter->setMatrix(0, 0, 4); // middle
+	filter->setMatrix(0, -1, 2); // sides
+	filter->setMatrix(0, 1, 2);
+	filter->setMatrix(-1, 0, 2);
+	filter->setMatrix(1, 0, 2);
+	filter->setMatrix(-1, -1, 1); // corners
+	filter->setMatrix(1, -1, 1);
+	filter->setMatrix(-1, 1, 1);
+	filter->setMatrix(1, 1, 1);
+
 	if (!vm.count("quiet"))
 	{
 		filter->progress = [&reporter](float complete, const std::string& message)
