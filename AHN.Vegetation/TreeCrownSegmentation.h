@@ -76,6 +76,7 @@ private:
 	};
 
 	CloudTools::DEM::ClusterMap clusters;
+
 	/// <summary>
 	/// Initializes the new instance of the class.
 	/// </summary>

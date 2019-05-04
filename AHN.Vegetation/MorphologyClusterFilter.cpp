@@ -1,6 +1,3 @@
-#pragma once
-
-#include <string>
 #include <algorithm>
 
 #include "MorphologyClusterFilter.h"

@@ -1,9 +1,6 @@
 #pragma once
 
-#include <string>
-
 #include <CloudTools.Common/Operation.h>
-#include <CloudTools.DEM/Window.hpp>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 
@@ -37,11 +34,11 @@ public:
 	/// <param name="mode">The applied morphology method.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	MorphologyClusterFilter(CloudTools::DEM::ClusterMap& source,
-		const std::vector<GDALDataset*>& sourcePaths,
+		const std::vector<GDALDataset*>& sourceDatasets,
 		ComputationType computation,
 		Method method = Method::Dilation,
 		ProgressType progress = nullptr)
-		: DatasetCalculation(sourcePaths, computation, progress),
+		: DatasetCalculation(sourceDatasets, computation, progress),
 			clusterMap(source), method(method)
 	{
     initialize();

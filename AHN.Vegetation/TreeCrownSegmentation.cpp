@@ -1,5 +1,3 @@
-#pragma once
-
 #include "TreeCrownSegmentation.h"
 
 using namespace CloudTools::DEM;
