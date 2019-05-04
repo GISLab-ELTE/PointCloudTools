@@ -17,7 +17,7 @@
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
-#include "GravityDistance.h"
+#include "CentroidDistance.h"
 
 namespace po = boost::program_options;
 
@@ -47,7 +47,7 @@ MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>*, co
 
 HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
 
-GravityDistance* calculateGravityDistance(ClusterMap&, ClusterMap&);
+CentroidDistance* calculateGravityDistance(ClusterMap&, ClusterMap&);
 
 std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(
 	int, const std::string&, const std::string&,
@@ -64,15 +64,15 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
                              const std::string& ahn2Outpath, HausdorffDistance* distance);
 
 
-void calculateHeightDifference(ClusterMap&, ClusterMap&, GravityDistance*);
+void calculateHeightDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
-void calculateVolumeDifference(ClusterMap&, ClusterMap&, GravityDistance*);
+void calculateVolumeDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
 void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
-                            const std::string&, GravityDistance*);
+                            const std::string&, CentroidDistance*);
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
-                             const std::string& ahn2Outpath, GravityDistance* distance);
+                             const std::string& ahn2Outpath, CentroidDistance* distance);
 
 int main(int argc, char* argv[])
 {
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			std::cout << "Using gravity distance to pair up clusters." << std::endl;
-			GravityDistance* distance =
+			CentroidDistance* distance =
 				calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
 			distance->execute();
 			/*for (auto elem : distance->lonelyAHN2())
@@ -413,9 +413,9 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, Cluste
 }
 
 // Calculate the Hausdorff-distance of two cluster maps.
-GravityDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
+CentroidDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
 {
-	GravityDistance* distance = new GravityDistance(ahn2ClusterMap, ahn3ClusterMap);
+	CentroidDistance* distance = new CentroidDistance(ahn2ClusterMap, ahn3ClusterMap);
 	distance->execute();
 	return distance;
 }
@@ -769,7 +769,7 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 
 // Write the result of Hausdorff-distance calculation to geotiff file.
 void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
-                            const std::string& ahn2Outpath, GravityDistance* distance)
+                            const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 	if (driver == nullptr)
@@ -847,7 +847,7 @@ void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownS
 	GDALClose(target);
 }
 
-void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistance* distance)
+void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDistance* distance)
 {
 	std::map<std::pair<GUInt32, GUInt32>, double> differences;
 	OGRPoint ahn2Highest, ahn3Highest;
@@ -863,7 +863,7 @@ void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistan
 	}
 }
 
-void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistance* distance)
+void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDistance* distance)
 {
 	std::map<GUInt32, double> ahn2LonelyVolume, ahn3LonelyVolume;
 	double ahn2FullVolume = 0.0, ahn3FullVolume = 0.0;
@@ -924,7 +924,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, GravityDistan
 }
 
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
-                             const std::string& ahn2Outpath, GravityDistance* distance)
+                             const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 	if (driver == nullptr)

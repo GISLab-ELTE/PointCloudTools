@@ -1,26 +1,25 @@
 #include <algorithm>
-#include <iostream>
+#include <limits>
 
-#include "GravityDistance.h"
+#include "CentroidDistance.h"
 
 namespace AHN
 {
 namespace Vegetation
 {
-void GravityDistance::onExecute()
+void CentroidDistance::onExecute()
 {
 	bool hasChanged;
 	do
 	{
 		hasChanged = false;
 		std::multimap<GUInt32, std::pair<GUInt32, double>> ahn3Key;
-		//std::cout << "step 1" << std::endl;
-		for (const GUInt32 index : AHN2clusterMap.clusterIndexes())
+
+		for (const GUInt32 index : AHN2ClusterMap.clusterIndexes())
 		{
-			double dist = 1000;
+			double dist = std::numeric_limits<double>::max();
 			GUInt32 i = -1;
-			//if (std::find(AHN2clusterMap.clusterIndexes().begin(),
-			//              AHN2clusterMap.clusterIndexes().end(), index) == AHN2clusterMap.clusterIndexes().end())
+
 			if (std::find_if(closestClusters.begin(),
 			                 closestClusters.end(),
 			                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
@@ -29,10 +28,10 @@ void GravityDistance::onExecute()
 			                 })
 				== closestClusters.end())
 			{
-				for (const GUInt32 otherIndex : AHN3clusterMap.clusterIndexes())
+				for (const GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
 				{
-					OGRPoint p = AHN3clusterMap.center(otherIndex);
-					double newDist = AHN2clusterMap.center(index).Distance(&p);
+					OGRPoint point = AHN3ClusterMap.center(otherIndex);
+					double newDist = AHN2ClusterMap.center(index).Distance(&point);
 					if (newDist < dist &&
 						std::find_if(closestClusters.begin(),
 						             closestClusters.end(),
@@ -53,14 +52,10 @@ void GravityDistance::onExecute()
 				}
 			}
 		}
-		//std::cout << "step 2" << std::endl;
-		//std::cout << "ahn3Key size: " << ahn3Key.size() << std::endl;
 
-		for (std::multimap<GUInt32, std::pair<GUInt32, double>>::iterator it = ahn3Key.begin(), end = ahn3Key.end();
+		for (auto it = ahn3Key.begin(), end = ahn3Key.end();
 		     it != end; it = ahn3Key.upper_bound(it->first))
-			//for (auto it = ahn3Key.begin(); it != ahn3Key.end(); it = ahn3Key.upper_bound(it->first))
 		{
-			//std::cout << "current key: " << it->first << std::endl;
 			GUInt32 ahn3 = it->first;
 			std::pair<GUInt32, std::pair<GUInt32, double>> minPair = *it;
 			if (ahn3Key.count(ahn3) > 1)
@@ -77,12 +72,10 @@ void GravityDistance::onExecute()
 			closestClusters.insert(std::make_pair(std::make_pair(minPair.second.first, minPair.first),
 			                                      minPair.second.second));
 		}
-		//std::cout << "step 3" << std::endl;
-		//std::cout << "closestClusters size: " << closestClusters.size() << std::endl;
 	}
 	while (hasChanged);
 
-	for (GUInt32 index : AHN2clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
@@ -90,9 +83,7 @@ void GravityDistance::onExecute()
 		                 }) == closestClusters.end())
 			lonelyClustersAHN2.push_back(index);
 
-	//std::cout << "step 4" << std::endl;
-
-	for (GUInt32 index : AHN3clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
@@ -101,17 +92,17 @@ void GravityDistance::onExecute()
 			lonelyClustersAHN3.push_back(index);
 }
 
-const std::map<std::pair<GUInt32, GUInt32>, double>& GravityDistance::closest()
+const std::map<std::pair<GUInt32, GUInt32>, double>& CentroidDistance::closest() const
 {
 	return closestClusters;
 }
 
-const std::vector<GUInt32>& GravityDistance::lonelyAHN2()
+const std::vector<GUInt32>& CentroidDistance::lonelyAHN2() const
 {
 	return lonelyClustersAHN2;
 }
 
-const std::vector<GUInt32>& GravityDistance::lonelyAHN3()
+const std::vector<GUInt32>& CentroidDistance::lonelyAHN3() const
 {
 	return lonelyClustersAHN3;
 }

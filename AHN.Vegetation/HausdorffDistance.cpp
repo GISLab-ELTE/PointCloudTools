@@ -9,19 +9,19 @@ void HausdorffDistance::onExecute()
 	std::vector<double> distances;
 	double minDistance;
 
-	for (GUInt32 index : AHN2clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
 	{
-		for (GUInt32 otherIndex : AHN3clusterMap.clusterIndexes())
+		for (GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
 		{
-			auto c = AHN3clusterMap.center(otherIndex);
-			double distance = AHN2clusterMap.center(index).Distance(&c);
+			auto c = AHN3ClusterMap.center(otherIndex);
+			double distance = AHN2ClusterMap.center(index).Distance(&c);
 			if (distance >= maximumDistance)
 				continue;
 
 			distances.clear();
-			for (const OGRPoint& point : AHN2clusterMap.points(index))
+			for (const OGRPoint& point : AHN2ClusterMap.points(index))
 			{
-				std::vector<OGRPoint> ahn3Points = AHN3clusterMap.points(otherIndex);
+				std::vector<OGRPoint> ahn3Points = AHN3ClusterMap.points(otherIndex);
 				minDistance = point.Distance(&ahn3Points[0]);
 				for (const OGRPoint& otherPoint : ahn3Points)
 				{
@@ -38,19 +38,19 @@ void HausdorffDistance::onExecute()
 		}
 	}
 
-	for (GUInt32 index : AHN3clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 	{
-		for (GUInt32 otherIndex : AHN2clusterMap.clusterIndexes())
+		for (GUInt32 otherIndex : AHN2ClusterMap.clusterIndexes())
 		{
-			auto c = AHN2clusterMap.center(otherIndex);
-			double distance = AHN3clusterMap.center(index).Distance(&c);
+			auto c = AHN2ClusterMap.center(otherIndex);
+			double distance = AHN3ClusterMap.center(index).Distance(&c);
 			if (distance >= maximumDistance)
 				continue;
 
 			distances.clear();
-			for (const OGRPoint& point : AHN3clusterMap.points(index))
+			for (const OGRPoint& point : AHN3ClusterMap.points(index))
 			{
-				std::vector<OGRPoint> ahn3Points = AHN2clusterMap.points(otherIndex);
+				std::vector<OGRPoint> ahn3Points = AHN2ClusterMap.points(otherIndex);
 				minDistance = point.Distance(&ahn3Points[0]);
 				for (const OGRPoint& otherPoint : ahn3Points)
 				{
@@ -84,7 +84,7 @@ void HausdorffDistance::onExecute()
 				closestClusters.emplace(*iter);
 	*/
 
-	for (GUInt32 index : AHN2clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
 		if (std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
@@ -92,7 +92,7 @@ void HausdorffDistance::onExecute()
 		                 }) == hausdorffDistances.end())
 			lonelyClustersAHN2.push_back(index);
 
-	for (GUInt32 index : AHN3clusterMap.clusterIndexes())
+	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 		if (std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
@@ -112,6 +112,8 @@ double HausdorffDistance::clusterDistance(GUInt32 index1, GUInt32 index2)
 	std::pair<GUInt32, GUInt32> indexPair = std::make_pair(index1, index2);
 	if (hausdorffDistances.find(indexPair) != hausdorffDistances.end())
 		return hausdorffDistances.at(indexPair);
+
+	// TODO: missing return statement!
 }
 
 GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
@@ -126,22 +128,22 @@ GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 	return closest;
 }
 
-std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances()
+std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances() const
 {
 	return hausdorffDistances;
 }
 
-const std::map<std::pair<GUInt32, GUInt32>, double>& HausdorffDistance::closest()
+const std::map<std::pair<GUInt32, GUInt32>, double>& HausdorffDistance::closest() const
 {
 	return closestClusters;
 }
 
-const std::vector<GUInt32>& HausdorffDistance::lonelyAHN2()
+const std::vector<GUInt32>& HausdorffDistance::lonelyAHN2() const
 {
 	return lonelyClustersAHN2;
 }
 
-const std::vector<GUInt32>& HausdorffDistance::lonelyAHN3()
+const std::vector<GUInt32>& HausdorffDistance::lonelyAHN3() const
 {
 	return lonelyClustersAHN3;
 }
