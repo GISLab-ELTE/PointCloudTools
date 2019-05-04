@@ -28,7 +28,7 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
-int countLocalMaximums(Difference<float>*, CloudTools::IO::Reporter*, po::variables_map&);
+int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
 MatrixTransformation* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
 
@@ -257,10 +257,10 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 }
 
 // Count local maximum points in CHM.
-int countLocalMaximums(Difference<float>* chm, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+int countLocalMaximums(GDALDataset* input, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	SweepLineCalculation<float>* countLocalMax = new SweepLineCalculation<float>(
-		{chm->target()}, 1, nullptr);
+		{input}, 1, nullptr);
 
 	int counter = 0;
 	countLocalMax->computation = [&countLocalMax, &counter](int x, int y, const std::vector<Window<float>>& sources)
@@ -453,7 +453,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	std::cout << "CHM generated." << std::endl;
 
 	// This step is optional.
-	int counter = countLocalMaximums(CHM, reporter, vm);
+	int counter = countLocalMaximums(CHM->target(), reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
 	MatrixTransformation* filter = antialias(CHM, antialiasOut, reporter, vm);
@@ -464,6 +464,10 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	double treeHeightThreshold = 1.5;
 	SweepLineTransformation<float>* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, nosmallOut, reporter, vm);
 	std::cout << "Too small values eliminated." << std::endl;
+
+	// This step is optional.
+	counter = countLocalMaximums(onlyTrees->target(), reporter, vm);
+	std::cout << "Number of local maximums are: " << counter << std::endl;
 
 	delete filter;
 
