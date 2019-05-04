@@ -53,7 +53,8 @@ public:
 		if (j < -_range || j > _range)
 			throw std::out_of_range("j is out of range.");
 
-		return _matrix[(_range + i) * _range + (_range + j)];
+		const int matrixSize = 2 * _range + 1;
+		return _matrix[(_range + i) * matrixSize + (_range + j)];
 	}
 
 	void setMatrix(int i, int j, float value)
@@ -63,7 +64,8 @@ public:
 		if (j < -_range || j > _range)
 			throw std::out_of_range("j is out of range.");
 
-		_matrix[(_range + i) * _range + (_range + j)] = value;
+		const int matrixSize = 2 * _range + 1;
+		_matrix[(_range + i) * matrixSize + (_range + j)] = value;
 	}
 
 private:
