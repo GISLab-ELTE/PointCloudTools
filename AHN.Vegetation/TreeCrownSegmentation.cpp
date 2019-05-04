@@ -71,10 +71,10 @@ void TreeCrownSegmentation::initialize()
 
 			for (const auto& pair : expandPoints)
 			{
+				indexes = clusters.clusterIndexes();
 				GUInt32 index = pair.first;
-				if (std::find(clusters.clusterIndexes().begin(),
-				              clusters.clusterIndexes().end(),
-				              index) == clusters.clusterIndexes().end())
+
+				if (std::find(indexes.begin(), indexes.end(), index) == indexes.end())
 				{
 					index = mergePairs[index];
 				}
