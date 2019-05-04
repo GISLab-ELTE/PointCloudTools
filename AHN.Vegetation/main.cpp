@@ -319,11 +319,11 @@ MatrixTransformation* antialias(Difference<float>* target, const std::string& ou
 }
 
 // Eliminate points that are smaller than a possible tree.
-SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation* target, double threshold,
+SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation* target, double threshold, const std::string& outpath,
                                                   CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	SweepLineTransformation<float>* eliminateNonTrees = new SweepLineTransformation<float>(
-		{target->target()}, "ahn2_nosmall.tif", 0, nullptr);
+		{target->target()}, outpath, 0, nullptr);
 
 	eliminateNonTrees->computation = [&eliminateNonTrees, &threshold](int x, int y,
 	                                                                  const std::vector<Window<float>>& sources)
@@ -435,16 +435,18 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	int ahnVersion, const std::string& DTMinput,
 	const std::string& DSMinput, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	std::string chmOut, antialiasOut;
+	std::string chmOut, antialiasOut, nosmallOut;
 	if (ahnVersion == 3)
 	{
 		chmOut = "CHM.tif";
 		antialiasOut = "antialias.tif";
+		nosmallOut = "nosmall.tif";
 	}
 	else
 	{
 		chmOut = "ahn2_CHM.tif";
 		antialiasOut = "ahn2_antialias.tif";
+		nosmallOut = "ahn2_nosmall.tif";
 	}
 
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
@@ -460,7 +462,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	delete CHM;
 
 	double treeHeightThreshold = 1.5;
-	SweepLineTransformation<float>* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, reporter, vm);
+	SweepLineTransformation<float>* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, nosmallOut, reporter, vm);
 	std::cout << "Too small values eliminated." << std::endl;
 
 	delete filter;
