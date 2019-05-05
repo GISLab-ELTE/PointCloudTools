@@ -59,10 +59,10 @@ void calculateHeightDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
 
 void calculateVolumeDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
 
-void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
+void writeClusterCentersToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
                             const std::string&, HausdorffDistance*);
 
-void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, HausdorffDistance* distance);
 
 
@@ -70,10 +70,10 @@ void calculateHeightDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
 void calculateVolumeDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
-void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
+void writeClusterCentersToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
                             const std::string&, CentroidDistance*);
 
-void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, CentroidDistance* distance);
 
 void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& metadata, const std::string& outpath);
@@ -182,9 +182,9 @@ int main(int argc, char* argv[])
 			lonelyAHN2 = distance->lonelyAHN2().size();
 			lonelyAHN3 = distance->lonelyAHN3().size();
 
-			writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                       (fs::path(outputDir) / "cluster_map.tif").string(), distance);
-			writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			                       (fs::path(outputDir) / "cluster_centers.tif").string(), distance);
+			writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
 				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
@@ -212,9 +212,9 @@ int main(int argc, char* argv[])
 			pairs = distance->closest().size();
 			lonelyAHN2 = distance->lonelyAHN2().size();
 			lonelyAHN3 = distance->lonelyAHN3().size();
-			writeClusterMapsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
 				                   (fs::path(outputDir) / "cluster_map.tif").string(), distance);
-			writeFullClustersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
 				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
@@ -550,7 +550,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 }
 
 // Write the result of Hausdorff-distance calculation to geotiff file.
-void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                             const std::string& ahn2Outpath, HausdorffDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -705,7 +705,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 	std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
 }
 
-void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, HausdorffDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -811,7 +811,7 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 
 
 // Write the result of Hausdorff-distance calculation to geotiff file.
-void writeClusterMapsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                             const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -966,7 +966,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDista
 	std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
 }
 
-void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
