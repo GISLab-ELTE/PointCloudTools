@@ -76,6 +76,8 @@ void writeClusterMapsToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
 void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
                              const std::string& ahn2Outpath, CentroidDistance* distance);
 
+void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& metadata, const std::string& outpath);
+
 int main(int argc, char* argv[])
 {
 	std::string DTMinputPath;
@@ -446,18 +448,22 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	int ahnVersion, const std::string& DTMinput, const std::string& DSMinput, const std::string& outputDir,
 	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	std::string chmOut, antialiasOut, nosmallOut;
+	std::string chmOut, antialiasOut, nosmallOut, segmentationOut, morphologyOut;
 	if (ahnVersion == 3)
 	{
 		chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
 		antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
 		nosmallOut = (fs::path(outputDir) / "ahn3_nosmall.tif").string();
+		segmentationOut = (fs::path(outputDir) / "ahn3_segmentation.tif").string();
+		morphologyOut = (fs::path(outputDir) / "ahn3_morphology.tif").string();
 	}
 	else
 	{
 		chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
 		antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
 		nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
+		segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
+		morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
 	}
 
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
@@ -495,6 +501,11 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	cluster = crownSegmentation->clusterMap();
 	std::cout << "clusterindex number: " << cluster.clusterIndexes().size() << std::endl;
 
+	writeClusterMapToFile(
+		cluster,
+		crownSegmentation->targetMetadata(),
+		segmentationOut);
+
 	// Perform morphological erosion on the cluster map
 	int erosionThreshold = 6, filterCounter = 3;
 	for (int i = 0; i < filterCounter - 1; ++i)
@@ -526,6 +537,11 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	std::cout << "Morphological dilation performed." << std::endl;
 
 	dilation->clusterMap.removeSmallClusters(16);
+
+	writeClusterMapToFile(
+		dilation->clusterMap,
+		dilation->targetMetadata(),
+		morphologyOut);
 
 	delete onlyTrees;
 	delete erosion;
@@ -1049,6 +1065,65 @@ void writeFullClustersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 			                                       gdalType<int>(),
 			                                       0, 0);
 		}
+	}
+
+	GDALClose(target);
+}
+
+void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& metadata, const std::string& outpath)
+{
+	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+	if (driver == nullptr)
+		throw std::invalid_argument("Target output format unrecognized.");
+
+	if (fs::exists(outpath) &&
+		driver->Delete(outpath.c_str()) == CE_Failure &&
+		!fs::remove(outpath))
+		throw std::runtime_error("Cannot overwrite previously created target file.");
+
+	GDALDataset* target = driver->Create(outpath.c_str(),
+		metadata.rasterSizeX(),
+		metadata.rasterSizeY(), 1,
+		gdalType<int>(), nullptr);
+	if (target == nullptr)
+		throw std::runtime_error("Target file creation failed.");
+
+	target->SetGeoTransform(&metadata.geoTransform()[0]);
+
+	GDALRasterBand* targetBand = target->GetRasterBand(1);
+	targetBand->SetNoDataValue(-1);
+
+	srand(time(NULL));
+	int commonId;
+	std::vector<OGRPoint> points;
+	int numberOfClusters = cluster.clusterIndexes().size();
+	std::vector<int> usedNums;
+	for (GUInt32 index : cluster.clusterIndexes())
+	{
+		// TODO: id generation is ineffective
+		do
+		{
+			commonId = rand() % numberOfClusters + 1;
+		} while (std::find(usedNums.begin(), usedNums.end(), commonId)
+			!= usedNums.end());
+
+		points = cluster.points(index);
+		CPLErr ioResult;
+		for (const auto& point : points)
+		{
+			ioResult = targetBand->RasterIO(GF_Write,
+				point.getX(), point.getY(),
+				1, 1,
+				&commonId,
+				1, 1,
+				gdalType<int>(),
+				0, 0);
+		}
+
+		usedNums.push_back(commonId);
+
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 	}
 
 	GDALClose(target);
