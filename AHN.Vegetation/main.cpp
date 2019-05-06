@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <algorithm>
 #include <numeric>
 #include <future>
 
@@ -749,16 +750,16 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 	srand(time(NULL));
 	int commonId;
 	std::vector<OGRPoint> points;
+
 	int numberOfClusters = distance->closest().size();
-	std::vector<int> usedNums;
+	std::vector<int> ids(numberOfClusters);
+	std::iota(ids.begin(), ids.end(), 0);
+	std::random_shuffle(ids.begin(), ids.end());
+
 	for (auto elem : distance->closest())
 	{
-		do
-		{
-			commonId = rand() % numberOfClusters + 1;
-		}
-		while (std::find(usedNums.begin(), usedNums.end(), commonId)
-			!= usedNums.end());
+		commonId = ids.back();
+		ids.pop_back();
 
 		points = ahn2Map.points(elem.first.first);
 		CPLErr ioResult;
@@ -784,8 +785,6 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 			                                gdalType<int>(),
 			                                0, 0);
 		}
-
-		usedNums.push_back(commonId);
 
 		if (ioResult != CE_None)
 			throw std::runtime_error("Target write error occured.");
@@ -1010,16 +1009,16 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 	srand(time(NULL));
 	int commonId;
 	std::vector<OGRPoint> points;
+
 	int numberOfClusters = distance->closest().size();
-	std::vector<int> usedNums;
+	std::vector<int> ids(numberOfClusters);
+	std::iota(ids.begin(), ids.end(), 0);
+	std::random_shuffle(ids.begin(), ids.end());
+
 	for (auto elem : distance->closest())
 	{
-		do
-		{
-			commonId = rand() % numberOfClusters + 1;
-		}
-		while (std::find(usedNums.begin(), usedNums.end(), commonId)
-			!= usedNums.end());
+		commonId = ids.back();
+		ids.pop_back();
 
 		points = ahn2Map.points(elem.first.first);
 		CPLErr ioResult;
@@ -1045,8 +1044,6 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 			                                gdalType<int>(),
 			                                0, 0);
 		}
-
-		usedNums.push_back(commonId);
 
 		if (ioResult != CE_None)
 			throw std::runtime_error("Target write error occured.");
@@ -1113,16 +1110,16 @@ void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& meta
 	srand(time(NULL));
 	int commonId;
 	std::vector<OGRPoint> points;
+
 	int numberOfClusters = cluster.clusterIndexes().size();
-	std::vector<int> usedNums;
+	std::vector<int> ids(numberOfClusters);
+	std::iota(ids.begin(), ids.end(), 0);
+	std::random_shuffle(ids.begin(), ids.end());
+
 	for (GUInt32 index : cluster.clusterIndexes())
 	{
-		// TODO: id generation is ineffective
-		do
-		{
-			commonId = rand() % numberOfClusters + 1;
-		} while (std::find(usedNums.begin(), usedNums.end(), commonId)
-			!= usedNums.end());
+		commonId = ids.back();
+		ids.pop_back();
 
 		points = cluster.points(index);
 		CPLErr ioResult;
@@ -1136,8 +1133,6 @@ void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& meta
 				gdalType<int>(),
 				0, 0);
 		}
-
-		usedNums.push_back(commonId);
 
 		if (ioResult != CE_None)
 			throw std::runtime_error("Target write error occured.");
