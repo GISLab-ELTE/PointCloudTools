@@ -10,7 +10,8 @@ add_executable(ahn_vegetation
 
 target_link_libraries(ahn_vegetation
 	dem
-	common)
+	common
+	Threads::Threads)
 
 install(TARGETS ahn_vegetation
 		DESTINATION ${CMAKE_INSTALL_PREFIX})
