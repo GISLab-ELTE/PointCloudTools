@@ -2,6 +2,7 @@
 #include <string>
 #include <utility>
 #include <numeric>
+#include <future>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -85,7 +86,6 @@ int main(int argc, char* argv[])
 	std::string AHN2DSMinputPath;
 	std::string AHN2DTMinputPath;
 	std::string outputDir = fs::current_path().string();
-	char clusterPairingMethod;
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
@@ -95,7 +95,8 @@ int main(int argc, char* argv[])
 		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
-		("hausdorff-distance,d", po::value<char>(&clusterPairingMethod), "use Hausdorff-distance")
+		("hausdorff-distance,d", "use Hausdorff-distance")
+		("parallel,p", "parallel execution for AHN-2 and AHN-3") // TODO: this will mess up the log output
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
 		("help,h", "produce help message");
@@ -175,11 +176,19 @@ int main(int argc, char* argv[])
 
 	GDALAllRegister();
 
-	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = createRefinedClusterMap(
-		3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
+	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn3Future =
+		std::async(
+			vm.count("parallel") ? std::launch::async : std::launch::deferred,
+			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
 
-	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(
-		2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
+	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn2Future =
+		std::async(
+			vm.count("parallel") ? std::launch::async : std::launch::deferred,
+			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
+
+	// wait for the async results ...
+	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = ahn3Future.get();
+	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = ahn2Future.get();
 
 	int pairs, lonelyAHN2, lonelyAHN3;
 
