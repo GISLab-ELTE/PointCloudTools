@@ -179,12 +179,12 @@ int main(int argc, char* argv[])
 	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn3Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
-			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
+			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, reporter, std::ref(vm));
 
 	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn2Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
-			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
+			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, std::ref(vm));
 
 	// wait for the async results ...
 	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = ahn3Future.get();
