@@ -115,13 +115,25 @@ int main(int argc, char* argv[])
 	bool argumentError = false;
 	if (!vm.count("ahn3-dsm-input-path"))
 	{
-		std::cerr << "Surface input file is mandatory." << std::endl;
+		std::cerr << "AHN-3 surface input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
 	if (!vm.count("ahn3-dtm-input-path"))
 	{
-		std::cerr << "Terrain input file is mandatory." << std::endl;
+		std::cerr << "AHN-3 terrain input file is mandatory." << std::endl;
+		argumentError = true;
+	}
+
+	if (!vm.count("ahn2-dsm-input-path"))
+	{
+		std::cerr << "AHN-2 surface input file is mandatory." << std::endl;
+		argumentError = true;
+	}
+
+	if (!vm.count("ahn2-dtm-input-path"))
+	{
+		std::cerr << "AHN-2 terrain input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
@@ -155,8 +167,8 @@ int main(int argc, char* argv[])
 
 	// Program
 	Reporter* reporter = vm.count("verbose")
-		                     ? static_cast<Reporter*>(new TextReporter())
-		                     : static_cast<Reporter*>(new BarReporter());
+		? static_cast<Reporter*>(new TextReporter())
+		: static_cast<Reporter*>(new BarReporter());
 
 	if (!vm.count("quiet"))
 		std::cout << "=== AHN Vegetation Filter ===" << std::endl;
@@ -166,75 +178,71 @@ int main(int argc, char* argv[])
 	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = createRefinedClusterMap(
 		3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
 
-	if (vm.count("ahn2-dtm-input-path") && vm.count("ahn2-dsm-input-path"))
+	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(
+		2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
+
+	int pairs, lonelyAHN2, lonelyAHN3;
+
+	if (vm.count("hausdorff-distance"))
 	{
-		std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = createRefinedClusterMap(
-			2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, vm);
-		int pairs, lonelyAHN2, lonelyAHN3;
+		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
+		HausdorffDistance* distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap,
+			ahn3Pair.first->clusterMap);
+		std::cout << "Hausdorff distance calculated." << std::endl;
+		pairs = distance->closest().size();
+		lonelyAHN2 = distance->lonelyAHN2().size();
+		lonelyAHN3 = distance->lonelyAHN3().size();
 
-		if (vm.count("hausdorff-distance"))
-		{
-			std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
-			HausdorffDistance* distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap,
-			                                                         ahn3Pair.first->clusterMap);
-			std::cout << "Hausdorff distance calculated." << std::endl;
-			pairs = distance->closest().size();
-			lonelyAHN2 = distance->lonelyAHN2().size();
-			lonelyAHN3 = distance->lonelyAHN3().size();
-
-			writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-			                       (fs::path(outputDir) / "cluster_centers.tif").string(), distance);
-			writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
-			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-		}
-		else
-		{
-			std::cout << "Using gravity distance to pair up clusters." << std::endl;
-			CentroidDistance* distance =
-				calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
-			distance->execute();
-			/*for (auto elem : distance->lonelyAHN2())
-			{
-			  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-			  std::cout << elem << std::endl;
-			}
-			std::cout << "AHN3 LONELY INDEXES" << std::endl;
-			for (auto elem : distance->lonelyAHN3())
-			{
-			  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-			  std::cout << elem << std::endl;
-			}
-			 */
-			//std::cout << "Hausdorff-distance calculated." << std::endl;
-			std::cout << "Gravity distance calculated." << std::endl;
-			pairs = distance->closest().size();
-			lonelyAHN2 = distance->lonelyAHN2().size();
-			lonelyAHN3 = distance->lonelyAHN3().size();
-			writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-				                   (fs::path(outputDir) / "cluster_map.tif").string(), distance);
-			writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
-				                    (fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
-			calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-			calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-		}
-
-		std::cout << "Total number of clusters in AHN2: " << ahn2Pair.first->clusterMap.clusterIndexes().size() << std::
-			endl;
-		std::cout << "Total number of clusters in AHN3: " << ahn3Pair.first->clusterMap.clusterIndexes().size() << std::
-			endl;
-		std::cout << "Pairs found: " << pairs << std::endl;
-		std::cout << "Number of unpaired clusters in AHN2: " << lonelyAHN2 << std::endl;
-		std::cout << "Number of unpaired clusters in AHN3: " << lonelyAHN3 << std::endl;
-
-		delete ahn3Pair.second;
-		delete ahn3Pair.first;
-		delete ahn2Pair.second;
-		delete ahn2Pair.first;
-
-		//delete distance;
+		writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			(fs::path(outputDir) / "cluster_centers.tif").string(), distance);
+		writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
+		calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+		calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 	}
+	else
+	{
+		std::cout << "Using gravity distance to pair up clusters." << std::endl;
+		CentroidDistance* distance =
+			calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+		distance->execute();
+		/*for (auto elem : distance->lonelyAHN2())
+		{
+		  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+		  std::cout << elem << std::endl;
+		}
+		std::cout << "AHN3 LONELY INDEXES" << std::endl;
+		for (auto elem : distance->lonelyAHN3())
+		{
+		  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
+		  std::cout << elem << std::endl;
+		}
+		 */
+		 //std::cout << "Hausdorff-distance calculated." << std::endl;
+		std::cout << "Gravity distance calculated." << std::endl;
+		pairs = distance->closest().size();
+		lonelyAHN2 = distance->lonelyAHN2().size();
+		lonelyAHN3 = distance->lonelyAHN3().size();
+		writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			(fs::path(outputDir) / "cluster_map.tif").string(), distance);
+		writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+			(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
+		calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+		calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+	}
+
+	std::cout << "Total number of clusters in AHN2: " << ahn2Pair.first->clusterMap.clusterIndexes().size() << std::
+		endl;
+	std::cout << "Total number of clusters in AHN3: " << ahn3Pair.first->clusterMap.clusterIndexes().size() << std::
+		endl;
+	std::cout << "Pairs found: " << pairs << std::endl;
+	std::cout << "Number of unpaired clusters in AHN2: " << lonelyAHN2 << std::endl;
+	std::cout << "Number of unpaired clusters in AHN3: " << lonelyAHN3 << std::endl;
+
+	delete ahn3Pair.second;
+	delete ahn3Pair.first;
+	delete ahn2Pair.second;
+	delete ahn2Pair.first;
 
 	delete reporter;
 	return Success;
