@@ -29,31 +29,18 @@ void TreeCrownSegmentation::initialize()
 
 			hasChanged = false;
 			std::vector<GUInt32> indexes = clusters.clusterIndexes();
-			std::vector<OGRPoint> centers(indexes.size());
-
-			for (int i = 0; i < indexes.size(); ++i)
-			{
-				centers[i] = clusters.center(indexes[i]);
-			}
-
 			std::map<GUInt32, GUInt32> mergePairs;
-			std::vector<OGRPoint> intersection;
-
 			for (int i = 0; i < indexes.size(); ++i)
 			{
-				GUInt32 index_i = indexes[i];
-
 				for (int j = i + 1; j < indexes.size(); ++j)
 				{
+					GUInt32 index_i = indexes[i];
 					GUInt32 index_j = indexes[j];
 
-					if (centers[i].Distance(&centers[j]) > 2 * maxHorizontalDistance)
-						continue;
-
-					intersection.clear();
+					std::vector<OGRPoint> intersection;
 					std::set_intersection(expandPoints[index_i].begin(), expandPoints[index_i].end(),
 					                      expandPoints[index_j].begin(), expandPoints[index_j].end(),
-					                      std::back_inserter(intersection), PointComparator());
+					                      std::back_inserter(intersection), TreeCrownSegmentation::PointComparator());
 
 					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
 					double otherSeedHeight = clusters.seedPoint(index_j).getZ();
