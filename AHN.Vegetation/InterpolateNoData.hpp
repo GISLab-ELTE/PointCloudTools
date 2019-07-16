@@ -9,8 +9,7 @@ namespace AHN
 {
 namespace Vegetation
 {
-template <typename DataType = float>
-class InterpolateNoData : public CloudTools::DEM::SweepLineTransformation<DataType>
+class InterpolateNoData : public CloudTools::DEM::SweepLineTransformation<float>
 {
 public:
   float threshold = 0.5;
@@ -22,8 +21,10 @@ public:
   /// <param name="progress">The callback method to report progress.</param>
   InterpolateNoData(const std::vector<std::string>& sourcePaths,
              const std::string& targetPath,
-             CloudTools::Operation::ProgressType progress = nullptr)
-    : CloudTools::DEM::SweepLineTransformation<DataType>(sourcePaths, targetPath, nullptr, progress)
+             CloudTools::Operation::ProgressType progress = nullptr,
+             float ratio = 0.5)
+    : CloudTools::DEM::SweepLineTransformation<float>(sourcePaths, targetPath, nullptr, progress),
+      threshold(ratio)
   {
     initialize();
   }
@@ -38,7 +39,8 @@ public:
                     const std::string& targetPath,
                     CloudTools::Operation::ProgressType progress = nullptr,
                     float ratio = 0.5)
-    : CloudTools::DEM::SweepLineTransformation<DataType>(sourceDatasets, targetPath, 0, nullptr, progress)
+    : CloudTools::DEM::SweepLineTransformation<float>(sourceDatasets, targetPath, 0, nullptr, progress),
+      threshold(ratio)
   {
     initialize();
   }
@@ -50,12 +52,11 @@ private:
   void initialize();
 };
 
-<DataType>
-void InterpolateNoData<DataType> initialize()
+void InterpolateNoData::initialize()
 {
-  this->computation = [this](int x, int y, const std::vector<Window<float>>& sources)
+  this->computation = [this](int x, int y, const std::vector<CloudTools::DEM::Window<float>>& sources)
   {
-    const Window<float>& source = sources[0];
+    const CloudTools::DEM::Window<float>& source = sources[0];
     if (source.hasData())
       return source.data();
 
@@ -70,8 +71,8 @@ void InterpolateNoData<DataType> initialize()
           data += source.data(i, j);
         }
 
-    if (ratio <= 1.0 && ratio >= 0.0)
-      this->threshold = ratio;
+    if (this->threshold > 1.0 || this->threshold < 0.0)
+      this->threshold = 0.5;
 
     if (counter < (std::pow((this->range() * 2 + 1), 2) - 1) * this->threshold)
       return static_cast<float>(this->nodataValue);

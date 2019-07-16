@@ -17,6 +17,7 @@
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
 
+#include "InterpolateNoData.hpp"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
@@ -33,12 +34,12 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
-SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&, const float&,
+InterpolateNoData* interpolateNoData(Difference<float>&, const std::string&, const float&,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
-MatrixTransformation* antialias(SweepLineTransformation<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
+MatrixTransformation* antialias(InterpolateNoData*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
 
 SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation*, double, CloudTools::IO::Reporter*,
                                                   po::variables_map&);
@@ -294,10 +295,10 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 }
 
 // Fill nodata points with data interpolated from neighboring points.
-SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold,
+InterpolateNoData* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-  SweepLineTransformation<float>* interpolation = new SweepLineTransformation<float>({chm->target()}, outpath, 1, nullptr);
+	InterpolateNoData* interpolation = new InterpolateNoData({chm->target()}, outpath);
 
   if (!vm.count("quiet"))
 	{
@@ -348,7 +349,7 @@ int countLocalMaximums(GDALDataset* input, CloudTools::IO::Reporter* reporter, p
 }
 
 // Perform anti-aliasing on CHM using a convolution matrix.
-MatrixTransformation* antialias(SweepLineTransformation<float>* target, const std::string& outpath,
+MatrixTransformation* antialias(InterpolateNoData* target, const std::string& outpath,
                                 CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	MatrixTransformation* filter = new MatrixTransformation(target->target(), outpath, 1);
@@ -513,7 +514,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
 	std::cout << "CHM generated." << std::endl;
 
-	SweepLineTransformation<float>* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
+	InterpolateNoData* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
 	std::cout << "Nodata points filled with interpolated data." << std::endl;
 
 	// This step is optional.
