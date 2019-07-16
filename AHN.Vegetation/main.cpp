@@ -21,6 +21,7 @@
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
 #include "CentroidDistance.h"
+#include <ogr_geometry.h>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -81,6 +82,12 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
                              const std::string& ahn2Outpath, CentroidDistance* distance);
 
 void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& metadata, const std::string& outpath);
+
+void writeClustesHeightsToFile(
+	ClusterMap& ahn2Map, ClusterMap& ahn3Map,
+	const std::string& ahn2DSM, const std::string& ahn3DSM,
+	const std::string& outpath, CentroidDistance* distance,
+	CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
 int main(int argc, char* argv[])
 {
@@ -201,6 +208,7 @@ int main(int argc, char* argv[])
 		HausdorffDistance* distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap,
 			ahn3Pair.first->clusterMap);
 		std::cout << "Hausdorff distance calculated." << std::endl;
+
 		pairs = distance->closest().size();
 		lonelyAHN2 = distance->lonelyAHN2().size();
 		lonelyAHN3 = distance->lonelyAHN3().size();
@@ -217,30 +225,25 @@ int main(int argc, char* argv[])
 		std::cout << "Using gravity distance to pair up clusters." << std::endl;
 		CentroidDistance* distance =
 			calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
-		distance->execute();
-		/*for (auto elem : distance->lonelyAHN2())
-		{
-		  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-		  std::cout << elem << std::endl;
-		}
-		std::cout << "AHN3 LONELY INDEXES" << std::endl;
-		for (auto elem : distance->lonelyAHN3())
-		{
-		  //std::cout << elem.first.first << "    " << elem.first.second << "    " << elem.second << std::endl;
-		  std::cout << elem << std::endl;
-		}
-		 */
-		 //std::cout << "Hausdorff-distance calculated." << std::endl;
 		std::cout << "Gravity distance calculated." << std::endl;
+
 		pairs = distance->closest().size();
 		lonelyAHN2 = distance->lonelyAHN2().size();
 		lonelyAHN3 = distance->lonelyAHN3().size();
+
 		writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
 			(fs::path(outputDir) / "cluster_map.tif").string(), distance);
 		writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
 			(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 		calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
 		calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+
+		writeClustesHeightsToFile(
+			ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap,
+			AHN2DSMinputPath, DSMinputPath,
+			(fs::path(outputDir) / "cluster_height.tif").string(),
+			distance,
+			reporter, vm);
 	}
 
 	std::cout << "Total number of clusters in AHN2: " << ahn2Pair.first->clusterMap.clusterIndexes().size() << std::
@@ -630,56 +633,61 @@ void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCro
 	targetBand->SetNoDataValue(-1);
 
 	int commonId;
+	CPLErr ioResult = CE_None;
 	for (auto elem : distance->closest())
 	{
 		commonId = 1;
 		auto center = ahn2Map.center(elem.first.first);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult |
+			targetBand->RasterIO(GF_Write,
+			                     center.getX(), center.getY(),
+			                     1, 1,
+			                     &commonId,
+			                     1, 1,
+			                     gdalType<int>(),
+			                     0, 0));
 
 		center = ahn3Map.center(elem.first.second);
-		ioResult = targetBand->RasterIO(GF_Write,
-		                                center.getX(), center.getY(),
-		                                1, 1,
-		                                &commonId,
-		                                1, 1,
-		                                gdalType<int>(),
-		                                0, 0);
-
-		if (ioResult != CE_None)
-			throw std::runtime_error("Target write error occured.");
+		ioResult = static_cast<CPLErr>(ioResult |
+			targetBand->RasterIO(GF_Write,
+			                     center.getX(), center.getY(),
+			                     1, 1,
+			                     &commonId,
+			                     1, 1,
+			                     gdalType<int>(),
+			                     0, 0));
 	}
 
 	for (auto elem : distance->lonelyAHN2())
 	{
 		commonId = 2;
 		auto center = ahn2Map.center(elem);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult |
+			targetBand->RasterIO(GF_Write,
+			                     center.getX(), center.getY(),
+			                     1, 1,
+			                     &commonId,
+			                     1, 1,
+			                     gdalType<int>(),
+			                     0, 0));
 	}
 
 	for (auto elem : distance->lonelyAHN3())
 	{
 		commonId = 3;
 		auto center = ahn3Map.center(elem);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult |
+			targetBand->RasterIO(GF_Write,
+			                     center.getX(), center.getY(),
+			                     1, 1,
+			                     &commonId,
+			                     1, 1,
+			                     gdalType<int>(),
+			                     0, 0));
 	}
+
+	if (ioResult != CE_None)
+		throw std::runtime_error("Target write error occured.");
 
 	GDALClose(target);
 }
@@ -799,28 +807,30 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 		ids.pop_back();
 
 		points = ahn2Map.points(elem.first.first);
-		CPLErr ioResult;
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			ioResult = targetBand->RasterIO(GF_Write,
-			                                point.getX(), point.getY(),
-			                                1, 1,
-			                                &commonId,
-			                                1, 1,
-			                                gdalType<int>(),
-			                                0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
 
 		points = ahn3Map.points(elem.first.second);
 		for (const auto& point : points)
 		{
-			ioResult = targetBand->RasterIO(GF_Write,
-			                                point.getX(), point.getY(),
-			                                1, 1,
-			                                &commonId,
-			                                1, 1,
-			                                gdalType<int>(),
-			                                0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -831,32 +841,42 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 	for (auto elem : distance->lonelyAHN2())
 	{
 		points = ahn2Map.points(elem);
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			CPLErr ioResult = targetBand->RasterIO(GF_Write,
-			                                       point.getX(), point.getY(),
-			                                       1, 1,
-			                                       &commonId,
-			                                       1, 1,
-			                                       gdalType<int>(),
-			                                       0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
+
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 	}
 
 	commonId = -3;
 	for (auto elem : distance->lonelyAHN3())
 	{
 		points = ahn3Map.points(elem);
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			CPLErr ioResult = targetBand->RasterIO(GF_Write,
-			                                       point.getX(), point.getY(),
-			                                       1, 1,
-			                                       &commonId,
-			                                       1, 1,
-			                                       gdalType<int>(),
-			                                       0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
+
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 	}
 
 	GDALClose(target);
@@ -889,56 +909,58 @@ void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCro
 	targetBand->SetNoDataValue(-1);
 
 	int commonId;
+	CPLErr ioResult = CE_None;
 	for (auto elem : distance->closest())
 	{
 		commonId = 1;
 		auto center = ahn2Map.center(elem.first.first);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult |
+			targetBand->RasterIO(GF_Write,
+			                     center.getX(), center.getY(),
+			                     1, 1,
+			                     &commonId,
+			                     1, 1,
+			                     gdalType<int>(),
+			                     0, 0));
 
 		center = ahn3Map.center(elem.first.second);
-		ioResult = targetBand->RasterIO(GF_Write,
-		                                center.getX(), center.getY(),
-		                                1, 1,
-		                                &commonId,
-		                                1, 1,
-		                                gdalType<int>(),
-		                                0, 0);
-
-		if (ioResult != CE_None)
-			throw std::runtime_error("Target write error occured.");
+		ioResult = static_cast<CPLErr>(ioResult | targetBand->RasterIO(GF_Write,
+		                                                               center.getX(), center.getY(),
+		                                                               1, 1,
+		                                                               &commonId,
+		                                                               1, 1,
+		                                                               gdalType<int>(),
+		                                                               0, 0));
 	}
 
 	for (auto elem : distance->lonelyAHN2())
 	{
 		commonId = 2;
 		auto center = ahn2Map.center(elem);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult | targetBand->RasterIO(GF_Write,
+		                                                               center.getX(), center.getY(),
+		                                                               1, 1,
+		                                                               &commonId,
+		                                                               1, 1,
+		                                                               gdalType<int>(),
+		                                                               0, 0));
 	}
 
 	for (auto elem : distance->lonelyAHN3())
 	{
 		commonId = 3;
 		auto center = ahn3Map.center(elem);
-		CPLErr ioResult = targetBand->RasterIO(GF_Write,
-		                                       center.getX(), center.getY(),
-		                                       1, 1,
-		                                       &commonId,
-		                                       1, 1,
-		                                       gdalType<int>(),
-		                                       0, 0);
+		ioResult = static_cast<CPLErr>(ioResult | targetBand->RasterIO(GF_Write,
+		                                                               center.getX(), center.getY(),
+		                                                               1, 1,
+		                                                               &commonId,
+		                                                               1, 1,
+		                                                               gdalType<int>(),
+		                                                               0, 0));
 	}
+
+	if (ioResult != CE_None)
+		throw std::runtime_error("Target write error occured.");
 
 	GDALClose(target);
 }
@@ -1058,28 +1080,30 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 		ids.pop_back();
 
 		points = ahn2Map.points(elem.first.first);
-		CPLErr ioResult;
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			ioResult = targetBand->RasterIO(GF_Write,
-			                                point.getX(), point.getY(),
-			                                1, 1,
-			                                &commonId,
-			                                1, 1,
-			                                gdalType<int>(),
-			                                0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
 
 		points = ahn3Map.points(elem.first.second);
 		for (const auto& point : points)
 		{
-			ioResult = targetBand->RasterIO(GF_Write,
-			                                point.getX(), point.getY(),
-			                                1, 1,
-			                                &commonId,
-			                                1, 1,
-			                                gdalType<int>(),
-			                                0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -1090,32 +1114,41 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 	for (auto elem : distance->lonelyAHN2())
 	{
 		points = ahn2Map.points(elem);
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			CPLErr ioResult = targetBand->RasterIO(GF_Write,
-			                                       point.getX(), point.getY(),
-			                                       1, 1,
-			                                       &commonId,
-			                                       1, 1,
-			                                       gdalType<int>(),
-			                                       0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+				                     point.getX(), point.getY(),
+				                     1, 1,
+				                     &commonId,
+				                     1, 1,
+				                     gdalType<int>(),
+				                     0, 0));
 		}
+
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 	}
 
 	commonId = -3;
 	for (auto elem : distance->lonelyAHN3())
 	{
 		points = ahn3Map.points(elem);
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			CPLErr ioResult = targetBand->RasterIO(GF_Write,
-			                                       point.getX(), point.getY(),
-			                                       1, 1,
-			                                       &commonId,
-			                                       1, 1,
-			                                       gdalType<int>(),
-			                                       0, 0);
+			ioResult = static_cast<CPLErr>(ioResult | targetBand->RasterIO(GF_Write,
+			                                                               point.getX(), point.getY(),
+			                                                               1, 1,
+			                                                               &commonId,
+			                                                               1, 1,
+			                                                               gdalType<int>(),
+			                                                               0, 0));
 		}
+
+		if (ioResult != CE_None)
+			throw std::runtime_error("Target write error occured.");
 	}
 
 	GDALClose(target);
@@ -1159,16 +1192,17 @@ void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& meta
 		ids.pop_back();
 
 		points = cluster.points(index);
-		CPLErr ioResult;
+		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
-			ioResult = targetBand->RasterIO(GF_Write,
-				point.getX(), point.getY(),
-				1, 1,
-				&commonId,
-				1, 1,
-				gdalType<int>(),
-				0, 0);
+			ioResult = static_cast<CPLErr>(ioResult |
+				targetBand->RasterIO(GF_Write,
+					point.getX(), point.getY(),
+					1, 1,
+					&commonId,
+					1, 1,
+					gdalType<int>(),
+					0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -1176,4 +1210,75 @@ void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& meta
 	}
 
 	GDALClose(target);
+}
+
+void writeClustesHeightsToFile(
+	ClusterMap& ahn2Map, ClusterMap& ahn3Map,
+	const std::string& ahn2DSM, const std::string& ahn3DSM,
+	const std::string& outpath, CentroidDistance* distance,
+	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+{
+	std::map<std::pair<int, int>, float> heightMap;
+	for (const auto& elem : distance->closest())
+	{
+		float ahn2ClusterHeight = std::accumulate(ahn2Map.points(elem.first.first).begin(),
+			ahn2Map.points(elem.first.first).end(), 0.0,
+			[](float sum, const OGRPoint& point)
+		{
+			return sum + point.getZ();
+		});
+
+		float ahn3ClusterHeight = std::accumulate(ahn3Map.points(elem.first.second).begin(),
+			ahn3Map.points(elem.first.second).end(), 0.0,
+			[](float sum, const OGRPoint& point)
+		{
+			return sum + point.getZ();
+		});
+
+		float heightDiff = ahn3ClusterHeight - ahn2ClusterHeight;
+		float avgHeightDiff = heightDiff / 
+			std::max(ahn2Map.points(elem.first.first).size(), ahn3Map.points(elem.first.second).size());
+
+		for(const OGRPoint& point : ahn2Map.points(elem.first.first))
+		{
+			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
+		}
+
+		for (const OGRPoint& point : ahn3Map.points(elem.first.second))
+		{
+			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
+		}
+	}
+
+	SweepLineTransformation<float>* heightWriter = new SweepLineTransformation<float>(
+		{ ahn2DSM, ahn3DSM }, outpath, 0, nullptr);
+
+	heightWriter->computation = [&heightWriter, &heightMap](int x, int y,
+		const std::vector<Window<float>>& sources)
+	{
+		const Window<float>& ahn2 = sources[0];
+		const Window<float>& ahn3 = sources[1];
+
+		if (!ahn2.hasData() || !ahn3.hasData())
+			return static_cast<float>(heightWriter->nodataValue);
+
+		auto index = std::make_pair(x, y);
+		if (!heightMap.count(index))
+			return static_cast<float>(heightWriter->nodataValue);
+		else
+			return heightMap[index];
+	};
+
+	if (!vm.count("quiet"))
+	{
+		heightWriter->progress = [&reporter](float complete, const std::string& message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+	reporter->reset();
+	heightWriter->execute();
+
+	std::cout << "Height map written." << std::endl;
 }
