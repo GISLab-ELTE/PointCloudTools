@@ -33,11 +33,11 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
-SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&);
+SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&, const float&);
 
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
-MatrixTransformation* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
+MatrixTransformation* antialias(SweepLineTransformation<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
 
 SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation*, double, CloudTools::IO::Reporter*,
                                                   po::variables_map&);
@@ -292,27 +292,20 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 	return comparison;
 }
 
-SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath)
+// Fill nodata points with data interpolated from neighboring points.
+SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold)
 {
   SweepLineTransformation<float>* interpolation = new SweepLineTransformation<float>({chm->target()}, outpath, 1, nullptr);
 
-  int counter = 0;
-  interpolation->computation = [&interpolation, &counter](int x, int y, const std::vector<Window<float>>& sources)
+  interpolation->computation = [&interpolation, &threshold](int x, int y, const std::vector<Window<float>>& sources)
   {
     const Window<float>& source = sources[0];
     if (source.hasData())
       return source.data();
 
-    for (int i = -interpolation->range(); i <= interpolation->range(); i++)
-      for (int j = -interpolation->range(); j <= interpolation->range(); j++)
-        if (!source.hasData())
-          counter++;
-
-    if (counter <= std::pow((interpolation->range() * 2 + 1), 2) / 2)
-      return static_cast<float>(interpolation->nodataValue);
-
-    counter = 0;
+    int counter = 0;
     float data = 0;
+
     for (int i = -interpolation->range(); i <= interpolation->range(); i++)
       for (int j = -interpolation->range(); j <= interpolation->range(); j++)
         if (source.hasData())
@@ -320,6 +313,9 @@ SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const 
           counter++;
           data += source.data(i, j);
         }
+
+    if (counter < (std::pow((interpolation->range() * 2 + 1), 2) - 1) * threshold)
+      return static_cast<float>(interpolation->nodataValue);
 
     return static_cast<float>(data / counter);
   };
@@ -362,7 +358,7 @@ int countLocalMaximums(GDALDataset* input, CloudTools::IO::Reporter* reporter, p
 }
 
 // Perform anti-aliasing on CHM using a convolution matrix.
-MatrixTransformation* antialias(Difference<float>* target, const std::string& outpath,
+MatrixTransformation* antialias(SweepLineTransformation<float>* target, const std::string& outpath,
                                 CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	MatrixTransformation* filter = new MatrixTransformation(target->target(), outpath, 1);
@@ -527,11 +523,14 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
 	std::cout << "CHM generated." << std::endl;
 
+	SweepLineTransformation<float>* interpolatedCHM = interpolateNoData(CHM, "", 0.5);
+	std::cout << "Nodata points filled with interpolated data." << std::endl;
+
 	// This step is optional.
-	int counter = countLocalMaximums(CHM->target(), reporter, vm);
+	int counter = countLocalMaximums(interpolatedCHM->target(), reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
-	MatrixTransformation* filter = antialias(CHM, antialiasOut, reporter, vm);
+	MatrixTransformation* filter = antialias(interpolatedCHM, antialiasOut, reporter, vm);
 	std::cout << "Matrix transformation performed." << std::endl;
 
 	delete CHM;
