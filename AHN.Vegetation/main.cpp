@@ -32,6 +32,8 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
+SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&);
+
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
 MatrixTransformation* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
@@ -285,6 +287,41 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 	comparison->execute();
 	reporter->reset();
 	return comparison;
+}
+
+SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath)
+{
+  SweepLineTransformation<float>* interpolation = new SweepLineTransformation<float>({chm->target()}, outpath, 1, nullptr);
+
+  int counter = 0;
+  interpolation->computation = [&interpolation, &counter](int x, int y, const std::vector<Window<float>>& sources)
+  {
+    const Window<float>& source = sources[0];
+    if (source.hasData())
+      return source.data();
+
+    for (int i = -interpolation->range(); i <= interpolation->range(); i++)
+      for (int j = -interpolation->range(); j <= interpolation->range(); j++)
+        if (!source.hasData())
+          counter++;
+
+    if (counter <= std::pow((interpolation->range() * 2 + 1), 2) / 2)
+      return static_cast<float>(interpolation->nodataValue);
+
+    counter = 0;
+    float data = 0;
+    for (int i = -interpolation->range(); i <= interpolation->range(); i++)
+      for (int j = -interpolation->range(); j <= interpolation->range(); j++)
+        if (source.hasData())
+        {
+          counter++;
+          data += source.data(i, j);
+        }
+
+    return static_cast<float>(data / counter);
+  };
+
+  return interpolation;
 }
 
 // Count local maximum points in CHM.
@@ -714,8 +751,8 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 		ahn3FullVolume += std::abs(ahn3ClusterVolume);
 
 		diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
-		std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume <<
-			std::endl;
+		//std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume <<
+			//std::endl;
 	}
 
 	std::cout << "ahn2 full volume: " << ahn2FullVolume << std::endl;
@@ -918,7 +955,7 @@ void calculateHeightDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDista
 
 		diff = ahn3Highest.getZ() - ahn2Highest.getZ();
 		differences.insert(std::make_pair(elem.first, diff));
-		//std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
+		std::cout << elem.first.first << ", " << elem.first.second << ": " << diff << std::endl;
 	}
 }
 
@@ -973,8 +1010,8 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDista
 		ahn3FullVolume += std::abs(ahn3ClusterVolume);
 
 		diffs.insert(std::make_pair(elem.first, ahn3ClusterVolume - ahn2ClusterVolume));
-		std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume <<
-			std::endl;
+		//std::cout << elem.first.first << ", " << elem.first.second << ": " << ahn3ClusterVolume - ahn2ClusterVolume <<
+			//std::endl;
 	}
 
 	std::cout << "ahn2 full volume: " << ahn2FullVolume << std::endl;
