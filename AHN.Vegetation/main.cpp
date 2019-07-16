@@ -33,7 +33,8 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
-SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&, const float&);
+SweepLineTransformation<float>* interpolateNoData(Difference<float>&, const std::string&, const float&,
+																									CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
@@ -293,32 +294,21 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 }
 
 // Fill nodata points with data interpolated from neighboring points.
-SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold)
+SweepLineTransformation<float>* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold,
+																									CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
   SweepLineTransformation<float>* interpolation = new SweepLineTransformation<float>({chm->target()}, outpath, 1, nullptr);
 
-  interpolation->computation = [&interpolation, &threshold](int x, int y, const std::vector<Window<float>>& sources)
-  {
-    const Window<float>& source = sources[0];
-    if (source.hasData())
-      return source.data();
-
-    int counter = 0;
-    float data = 0;
-
-    for (int i = -interpolation->range(); i <= interpolation->range(); i++)
-      for (int j = -interpolation->range(); j <= interpolation->range(); j++)
-        if (source.hasData())
-        {
-          counter++;
-          data += source.data(i, j);
-        }
-
-    if (counter < (std::pow((interpolation->range() * 2 + 1), 2) - 1) * threshold)
-      return static_cast<float>(interpolation->nodataValue);
-
-    return static_cast<float>(data / counter);
-  };
+  if (!vm.count("quiet"))
+	{
+		interpolation->progress = [&reporter](float complete, const std::string& message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+  reporter->reset();
+  interpolation->execute();
 
   return interpolation;
 }
@@ -523,7 +513,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
 	std::cout << "CHM generated." << std::endl;
 
-	SweepLineTransformation<float>* interpolatedCHM = interpolateNoData(CHM, "", 0.5);
+	SweepLineTransformation<float>* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
 	std::cout << "Nodata points filled with interpolated data." << std::endl;
 
 	// This step is optional.

@@ -6,7 +6,8 @@ add_executable(ahn_vegetation
 	TreeCrownSegmentation.cpp TreeCrownSegmentation.h
 	HausdorffDistance.cpp HausdorffDistance.h
 	MorphologyClusterFilter.h MorphologyClusterFilter.cpp
-	CentroidDistance.cpp CentroidDistance.h)
+	CentroidDistance.cpp CentroidDistance.h
+	InterpolateNoData.hpp)
 
 target_link_libraries(ahn_vegetation
 	dem
