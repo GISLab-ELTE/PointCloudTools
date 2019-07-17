@@ -3,6 +3,7 @@
 
 #include "CloudTools.Common/Operation.h"
 #include "CloudTools.DEM/SweepLineTransformation.hpp"
+#include <iostream>
 
 
 namespace AHN
@@ -23,7 +24,7 @@ public:
              const std::string& targetPath,
              CloudTools::Operation::ProgressType progress = nullptr,
              float ratio = 0.5)
-    : CloudTools::DEM::SweepLineTransformation<float>(sourcePaths, targetPath, nullptr, progress),
+    : CloudTools::DEM::SweepLineTransformation<float>(sourcePaths, targetPath, 1, nullptr, progress),
       threshold(ratio)
   {
     initialize();
@@ -39,7 +40,7 @@ public:
                     const std::string& targetPath,
                     CloudTools::Operation::ProgressType progress = nullptr,
                     float ratio = 0.5)
-    : CloudTools::DEM::SweepLineTransformation<float>(sourceDatasets, targetPath, 0, nullptr, progress),
+    : CloudTools::DEM::SweepLineTransformation<float>(sourceDatasets, targetPath, 1, nullptr, progress),
       threshold(ratio)
   {
     initialize();
@@ -65,18 +66,24 @@ void InterpolateNoData::initialize()
 
     for (int i = -this->range(); i <= this->range(); i++)
       for (int j = -this->range(); j <= this->range(); j++)
-        if (source.hasData())
+        if (source.hasData(i, j))
         {
           counter++;
           data += source.data(i, j);
+          std::cout << "counter: " << counter << std::endl;
         }
 
     if (this->threshold > 1.0 || this->threshold < 0.0)
       this->threshold = 0.5;
 
-    if (counter < (std::pow((this->range() * 2 + 1), 2) - 1) * this->threshold)
+    std::cout << data << ", " << counter << ", " << this->threshold << std::endl;
+    if (counter < ((std::pow((this->range() * 2 + 1), 2.0) - 1) * this->threshold))
+    {
+      std::cout << "Returning nodata-" << std::endl;
       return static_cast<float>(this->nodataValue);
+    }
 
+    std::cout << "Returning " << (data / counter) << std::endl;
     return static_cast<float>(data / counter);
   };
 }

@@ -34,12 +34,12 @@ using namespace AHN::Vegetation;
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
-InterpolateNoData* interpolateNoData(Difference<float>&, const std::string&, const float&,
+InterpolateNoData* interpolateNoData(SweepLineTransformation<float>&, const std::string&, const float&,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
-MatrixTransformation* antialias(InterpolateNoData*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
+MatrixTransformation* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
 
 SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation*, double, CloudTools::IO::Reporter*,
                                                   po::variables_map&);
@@ -295,7 +295,7 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 }
 
 // Fill nodata points with data interpolated from neighboring points.
-InterpolateNoData* interpolateNoData(Difference<float>* chm, const std::string& outpath, const float& threshold,
+InterpolateNoData* interpolateNoData(SweepLineTransformation<float>* chm, const std::string& outpath, const float& threshold,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	InterpolateNoData* interpolation = new InterpolateNoData({chm->target()}, outpath);
@@ -349,7 +349,7 @@ int countLocalMaximums(GDALDataset* input, CloudTools::IO::Reporter* reporter, p
 }
 
 // Perform anti-aliasing on CHM using a convolution matrix.
-MatrixTransformation* antialias(InterpolateNoData* target, const std::string& outpath,
+MatrixTransformation* antialias(Difference<float>* target, const std::string& outpath,
                                 CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	MatrixTransformation* filter = new MatrixTransformation(target->target(), outpath, 1);
@@ -493,12 +493,13 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	int ahnVersion, const std::string& DTMinput, const std::string& DSMinput, const std::string& outputDir,
 	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	std::string chmOut, antialiasOut, nosmallOut, segmentationOut, morphologyOut;
+	std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
 	if (ahnVersion == 3)
 	{
 		chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
 		antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
 		nosmallOut = (fs::path(outputDir) / "ahn3_nosmall.tif").string();
+		interpolOut = (fs::path(outputDir) / "ahn3_interpol.tif").string();
 		segmentationOut = (fs::path(outputDir) / "ahn3_segmentation.tif").string();
 		morphologyOut = (fs::path(outputDir) / "ahn3_morphology.tif").string();
 	}
@@ -507,6 +508,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 		chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
 		antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
 		nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
+    interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
 		segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
 		morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
 	}
@@ -514,37 +516,42 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
 	std::cout << "CHM generated." << std::endl;
 
-	InterpolateNoData* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
-	std::cout << "Nodata points filled with interpolated data." << std::endl;
+	//InterpolateNoData* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
+	//std::cout << "Nodata points filled with interpolated data." << std::endl;
 
 	// This step is optional.
-	int counter = countLocalMaximums(interpolatedCHM->target(), reporter, vm);
+	int counter = countLocalMaximums(CHM->target(), reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
-	MatrixTransformation* filter = antialias(interpolatedCHM, antialiasOut, reporter, vm);
+	MatrixTransformation* filter = antialias(CHM, antialiasOut, reporter, vm);
 	std::cout << "Matrix transformation performed." << std::endl;
 
 	delete CHM;
+
 
 	double treeHeightThreshold = 1.5;
 	SweepLineTransformation<float>* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, nosmallOut, reporter, vm);
 	std::cout << "Too small values eliminated." << std::endl;
 
+  InterpolateNoData* interpolatedCHM = interpolateNoData(onlyTrees, interpolOut, 0.5, reporter, vm);
+  std::cout << "Nodata points filled with interpolated data." << std::endl;
+
 	// This step is optional.
-	counter = countLocalMaximums(onlyTrees->target(), reporter, vm);
+	counter = countLocalMaximums(interpolatedCHM->target(), reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
 	delete filter;
+  //delete interpolatedCHM;
 
 	// Count & collect local maximum values
-	std::vector<OGRPoint> seedPoints = collectSeedPoints(onlyTrees, reporter, vm);
+	std::vector<OGRPoint> seedPoints = collectSeedPoints(interpolatedCHM, reporter, vm);
 	std::cout << "Seed points collected" << std::endl;
 
 	ClusterMap cluster;
-	cluster.setSizeX(onlyTrees->targetMetadata().rasterSizeX());
-	cluster.setSizeY(onlyTrees->targetMetadata().rasterSizeY());
+	cluster.setSizeX(interpolatedCHM->targetMetadata().rasterSizeX());
+	cluster.setSizeY(interpolatedCHM->targetMetadata().rasterSizeY());
 
-	TreeCrownSegmentation* crownSegmentation = treeCrownSegmentation(onlyTrees, seedPoints, reporter, vm);
+	TreeCrownSegmentation* crownSegmentation = treeCrownSegmentation(interpolatedCHM, seedPoints, reporter, vm);
 	std::cout << "Tree crown segmentation performed." << std::endl;
 	cluster = crownSegmentation->clusterMap();
 	std::cout << "clusterindex number: " << cluster.clusterIndexes().size() << std::endl;
@@ -558,12 +565,12 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	int erosionThreshold = 6, filterCounter = 3;
 	for (int i = 0; i < filterCounter - 1; ++i)
 	{
-		MorphologyClusterFilter* erosion = morphologyFiltering(onlyTrees,
+		MorphologyClusterFilter* erosion = morphologyFiltering(interpolatedCHM,
 		                                                       MorphologyClusterFilter::Method::Erosion, cluster,
 		                                                       std::string(), erosionThreshold);
 		std::cout << "Morphological erosion performed." << std::endl;
 
-		MorphologyClusterFilter* dilation = morphologyFiltering(onlyTrees,
+		MorphologyClusterFilter* dilation = morphologyFiltering(interpolatedCHM,
 		                                                        MorphologyClusterFilter::Method::Dilation,
 		                                                        erosion->clusterMap, std::string());
 		std::cout << "Morphological dilation performed." << std::endl;
@@ -574,12 +581,12 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 		delete dilation;
 	}
 
-	MorphologyClusterFilter* erosion = morphologyFiltering(onlyTrees,
+	MorphologyClusterFilter* erosion = morphologyFiltering(interpolatedCHM,
 	                                                       MorphologyClusterFilter::Method::Erosion, cluster,
 	                                                       std::string(), erosionThreshold);
 	std::cout << "Morphological erosion performed." << std::endl;
 
-	MorphologyClusterFilter* dilation = morphologyFiltering(onlyTrees,
+	MorphologyClusterFilter* dilation = morphologyFiltering(interpolatedCHM,
 	                                                        MorphologyClusterFilter::Method::Dilation,
 	                                                        erosion->clusterMap, std::string());
 	std::cout << "Morphological dilation performed." << std::endl;
@@ -592,6 +599,7 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 		morphologyOut);
 
 	delete onlyTrees;
+	delete interpolatedCHM;
 	delete erosion;
 
 	return std::make_pair(dilation, crownSegmentation);
