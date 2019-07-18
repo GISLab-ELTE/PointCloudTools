@@ -32,25 +32,26 @@ using namespace CloudTools::DEM;
 using namespace AHN::Vegetation;
 
 Difference<float>* generateCanopyHeightModel(const std::string&, const std::string&, const std::string&,
-                                             CloudTools::IO::Reporter* reporter, po::variables_map& vm);
+                                             CloudTools::IO::Reporter* reporter, po::variables_map& vm,
+                                             RasterMetadata&);
 
-InterpolateNoData* interpolateNoData(SweepLineTransformation<float>&, const std::string&, const float&,
+GDALDataset* interpolateNoData(GDALDataset*, const std::string&, const float&,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
 int countLocalMaximums(GDALDataset*, CloudTools::IO::Reporter*, po::variables_map&);
 
-MatrixTransformation* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
+GDALDataset* antialias(Difference<float>*, const std::string&, CloudTools::IO::Reporter*, po::variables_map&);
 
-SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation*, double, CloudTools::IO::Reporter*,
+GDALDataset* eliminateNonTrees(GDALDataset*, double, CloudTools::IO::Reporter*,
                                                   po::variables_map&);
 
-std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float>* target, CloudTools::IO::Reporter*,
+std::vector<OGRPoint> collectSeedPoints(GDALDataset* target, CloudTools::IO::Reporter*,
                                         po::variables_map&);
 
-TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>*, std::vector<OGRPoint>&,
+ClusterMap treeCrownSegmentation(GDALDataset*, std::vector<OGRPoint>&,
                                              CloudTools::IO::Reporter*, po::variables_map&);
 
-MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>*, const MorphologyClusterFilter::Method,
+ClusterMap morphologyFiltering(GDALDataset*, const MorphologyClusterFilter::Method,
                                              ClusterMap&,
                                              const std::string&, int threshold = -1);
 
@@ -58,18 +59,18 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap&, ClusterMap&);
 
 CentroidDistance* calculateGravityDistance(ClusterMap&, ClusterMap&);
 
-std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(
-	int, const std::string&, const std::string&, const std::string&,
+ClusterMap createRefinedClusterMap(
+	int, const std::string&, const std::string&, const std::string&, RasterMetadata& targetMetadata,
 	CloudTools::IO::Reporter*, po::variables_map&);
 
 void calculateHeightDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
 
 void calculateVolumeDifference(ClusterMap&, ClusterMap&, HausdorffDistance*);
 
-void writeClusterCentersToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
+void writeClusterCentersToFile(ClusterMap&, ClusterMap&, RasterMetadata& targetMetadata,
                             const std::string&, HausdorffDistance*);
 
-void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
                              const std::string& ahn2Outpath, HausdorffDistance* distance);
 
 
@@ -77,10 +78,10 @@ void calculateHeightDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
 void calculateVolumeDifference(ClusterMap&, ClusterMap&, CentroidDistance*);
 
-void writeClusterCentersToFile(ClusterMap&, ClusterMap&, TreeCrownSegmentation*,
+void writeClusterCentersToFile(ClusterMap&, ClusterMap&, RasterMetadata& targetMetadata,
                             const std::string&, CentroidDistance*);
 
-void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
                              const std::string& ahn2Outpath, CentroidDistance* distance);
 
 void writeClusterMapToFile(const ClusterMap& cluster, const RasterMetadata& metadata, const std::string& outpath);
@@ -188,78 +189,74 @@ int main(int argc, char* argv[])
 
 	GDALAllRegister();
 
-	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn3Future =
-		std::async(
-			vm.count("parallel") ? std::launch::async : std::launch::deferred,
-			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, reporter, std::ref(vm));
+	RasterMetadata targetMetadata, targetMetadata_dummy;
 
-	std::future<std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*>> ahn2Future =
+	std::future<ClusterMap> ahn3Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
-			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, reporter, std::ref(vm));
+			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, std::ref(targetMetadata), reporter, std::ref(vm));
+
+	std::future<ClusterMap> ahn2Future =
+		std::async(
+			vm.count("parallel") ? std::launch::async : std::launch::deferred,
+			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
 
 	// wait for the async results ...
-	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn3Pair = ahn3Future.get();
-	std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> ahn2Pair = ahn2Future.get();
+	ClusterMap ahn3Pair = ahn3Future.get();
+	ClusterMap ahn2Pair = ahn2Future.get();
 
 	int pairs, lonelyAHN2, lonelyAHN3;
 
 	if (vm.count("hausdorff-distance"))
 	{
 		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
-		HausdorffDistance* distance = calculateHausdorffDistance(ahn2Pair.first->clusterMap,
-			ahn3Pair.first->clusterMap);
+		HausdorffDistance* distance = calculateHausdorffDistance(ahn2Pair, ahn3Pair);
 		std::cout << "Hausdorff distance calculated." << std::endl;
 
 		pairs = distance->closest().size();
 		lonelyAHN2 = distance->lonelyAHN2().size();
 		lonelyAHN3 = distance->lonelyAHN3().size();
 
-		writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+		writeClusterCentersToFile(ahn2Pair, ahn3Pair, targetMetadata,
 			(fs::path(outputDir) / "cluster_centers.tif").string(), distance);
-		writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+		writeClusterPairsToFile(ahn2Pair, ahn3Pair, targetMetadata,
 			(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
-		calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-		calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+		calculateHeightDifference(ahn2Pair, ahn3Pair, distance);
+		calculateVolumeDifference(ahn2Pair, ahn3Pair, distance);
 	}
 	else
 	{
 		std::cout << "Using gravity distance to pair up clusters." << std::endl;
 		CentroidDistance* distance =
-			calculateGravityDistance(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap);
+			calculateGravityDistance(ahn2Pair, ahn3Pair);
 		std::cout << "Gravity distance calculated." << std::endl;
 
 		pairs = distance->closest().size();
 		lonelyAHN2 = distance->lonelyAHN2().size();
 		lonelyAHN3 = distance->lonelyAHN3().size();
 
-		writeClusterCentersToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+		writeClusterCentersToFile(ahn2Pair, ahn3Pair, targetMetadata,
 			(fs::path(outputDir) / "cluster_map.tif").string(), distance);
-		writeClusterPairsToFile(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, ahn2Pair.second,
+		writeClusterPairsToFile(ahn2Pair, ahn3Pair, targetMetadata,
 			(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
-		calculateHeightDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
-		calculateVolumeDifference(ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap, distance);
+		calculateHeightDifference(ahn2Pair, ahn3Pair, distance);
+		calculateVolumeDifference(ahn2Pair, ahn3Pair, distance);
 
 		writeClustesHeightsToFile(
-			ahn2Pair.first->clusterMap, ahn3Pair.first->clusterMap,
+			ahn2Pair, ahn3Pair,
 			AHN2DSMinputPath, DSMinputPath,
 			(fs::path(outputDir) / "cluster_height.tif").string(),
 			distance,
 			reporter, vm);
 	}
 
-	std::cout << "Total number of clusters in AHN2: " << ahn2Pair.first->clusterMap.clusterIndexes().size() << std::
+	std::cout << "Total number of clusters in AHN2: " << ahn2Pair.clusterIndexes().size() << std::
 		endl;
-	std::cout << "Total number of clusters in AHN3: " << ahn3Pair.first->clusterMap.clusterIndexes().size() << std::
+	std::cout << "Total number of clusters in AHN3: " << ahn3Pair.clusterIndexes().size() << std::
 		endl;
 	std::cout << "Pairs found: " << pairs << std::endl;
 	std::cout << "Number of unpaired clusters in AHN2: " << lonelyAHN2 << std::endl;
 	std::cout << "Number of unpaired clusters in AHN3: " << lonelyAHN3 << std::endl;
-
-	delete ahn3Pair.second;
-	delete ahn3Pair.first;
-	delete ahn2Pair.second;
-	delete ahn2Pair.first;
 
 	delete reporter;
 	return Success;
@@ -278,7 +275,8 @@ bool reporter(CloudTools::DEM::SweepLineTransformation<float>* transformation, C
 // Generate canopy height model of given DSM and DTM.
 Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const std::string& DSMinput,
                                              const std::string& outpath,
-                                             CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+                                             CloudTools::IO::Reporter* reporter, po::variables_map& vm,
+                                             RasterMetadata& metadata)
 {
 	Difference<float>* comparison = new Difference<float>({DTMinput, DSMinput}, outpath);
 	if (!vm.count("quiet"))
@@ -291,27 +289,29 @@ Difference<float>* generateCanopyHeightModel(const std::string& DTMinput, const 
 	}
 	comparison->execute();
 	reporter->reset();
+
+	metadata = comparison->targetMetadata();
 	return comparison;
 }
 
 // Fill nodata points with data interpolated from neighboring points.
-InterpolateNoData* interpolateNoData(SweepLineTransformation<float>* chm, const std::string& outpath, const float& threshold,
+GDALDataset* interpolateNoData(GDALDataset* chm, const std::string& outpath, const float& threshold,
 																									CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	InterpolateNoData* interpolation = new InterpolateNoData({chm->target()}, outpath);
+	InterpolateNoData interpolation({chm}, outpath);
 
   if (!vm.count("quiet"))
 	{
-		interpolation->progress = [&reporter](float complete, const std::string& message)
+		interpolation.progress = [&reporter](float complete, const std::string& message)
 		{
 			reporter->report(complete, message);
 			return true;
 		};
 	}
   reporter->reset();
-  interpolation->execute();
+  interpolation.execute();
 
-  return interpolation;
+  return interpolation.target();
 }
 
 // Count local maximum points in CHM.
@@ -344,74 +344,74 @@ int countLocalMaximums(GDALDataset* input, CloudTools::IO::Reporter* reporter, p
 	}
 	reporter->reset();
 	countLocalMax->execute();
+	delete countLocalMax;
 
 	return counter;
 }
 
 // Perform anti-aliasing on CHM using a convolution matrix.
-MatrixTransformation* antialias(Difference<float>* target, const std::string& outpath,
+GDALDataset* antialias(Difference<float>* target, const std::string& outpath,
                                 CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	MatrixTransformation* filter = new MatrixTransformation(target->target(), outpath, 1);
-	filter->setMatrix(0, 0, 4); // middle
-	filter->setMatrix(0, -1, 2); // sides
-	filter->setMatrix(0, 1, 2);
-	filter->setMatrix(-1, 0, 2);
-	filter->setMatrix(1, 0, 2);
-	filter->setMatrix(-1, -1, 1); // corners
-	filter->setMatrix(1, -1, 1);
-	filter->setMatrix(-1, 1, 1);
-	filter->setMatrix(1, 1, 1);
+	MatrixTransformation filter(target->target(), outpath, 1);
+	filter.setMatrix(0, 0, 4); // middle
+	filter.setMatrix(0, -1, 2); // sides
+	filter.setMatrix(0, 1, 2);
+	filter.setMatrix(-1, 0, 2);
+	filter.setMatrix(1, 0, 2);
+	filter.setMatrix(-1, -1, 1); // corners
+	filter.setMatrix(1, -1, 1);
+	filter.setMatrix(-1, 1, 1);
+	filter.setMatrix(1, 1, 1);
 
 	if (!vm.count("quiet"))
 	{
-		filter->progress = [&reporter](float complete, const std::string& message)
+		filter.progress = [&reporter](float complete, const std::string& message)
 		{
 			reporter->report(complete, message);
 			return true;
 		};
 	}
 	reporter->reset();
-	filter->execute();
-	return filter;
+	filter.execute();
+	return filter.target();
 }
 
 // Eliminate points that are smaller than a possible tree.
-SweepLineTransformation<float>* eliminateNonTrees(MatrixTransformation* target, double threshold, const std::string& outpath,
+GDALDataset* eliminateNonTrees(GDALDataset* target, double threshold, const std::string& outpath,
                                                   CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	SweepLineTransformation<float>* eliminateNonTrees = new SweepLineTransformation<float>(
-		{target->target()}, outpath, 0, nullptr);
+	SweepLineTransformation<float> eliminateNonTrees({target}, outpath, 0, nullptr);
 
-	eliminateNonTrees->computation = [&eliminateNonTrees, &threshold](int x, int y,
+	eliminateNonTrees.computation = [&eliminateNonTrees, &threshold](int x, int y,
 	                                                                  const std::vector<Window<float>>& sources)
 	{
 		const Window<float>& source = sources[0];
 		if (!source.hasData() || source.data() < threshold)
-			return static_cast<float>(eliminateNonTrees->nodataValue);
+			return static_cast<float>(eliminateNonTrees.nodataValue);
 		else
 			return source.data();
 	};
 
 	if (!vm.count("quiet"))
 	{
-		eliminateNonTrees->progress = [&reporter](float complete, const std::string& message)
+		eliminateNonTrees.progress = [&reporter](float complete, const std::string& message)
 		{
 			reporter->report(complete, message);
 			return true;
 		};
 	}
 	reporter->reset();
-	eliminateNonTrees->execute();
-	return eliminateNonTrees;
+	eliminateNonTrees.execute();
+	return eliminateNonTrees.target();
 }
 
 // Collect remaining local maximum points
-std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float>* target, CloudTools::IO::Reporter* reporter,
+std::vector<OGRPoint> collectSeedPoints(GDALDataset* target, CloudTools::IO::Reporter* reporter,
                                         po::variables_map& vm)
 {
 	SweepLineCalculation<float>* collectSeeds = new SweepLineCalculation<float>(
-		{target->target()}, 7, nullptr);
+		{target}, 7, nullptr);
 
 	std::vector<OGRPoint> seedPoints;
 	collectSeeds->computation = [&collectSeeds, &seedPoints](int x, int y, const std::vector<Window<float>>& sources)
@@ -442,11 +442,10 @@ std::vector<OGRPoint> collectSeedPoints(SweepLineTransformation<float>* target, 
 }
 
 // Create a cluster map of the remaining points using the collected seed points.
-TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>* target, std::vector<OGRPoint>& seedPoints,
+ClusterMap treeCrownSegmentation(GDALDataset* target, std::vector<OGRPoint>& seedPoints,
                                              CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
-	TreeCrownSegmentation* crownSegmentation = new TreeCrownSegmentation(
-		{target->target()}, seedPoints, nullptr);
+	TreeCrownSegmentation* crownSegmentation = new TreeCrownSegmentation({target}, seedPoints, nullptr);
 	if (!vm.count("quiet"))
 	{
 		crownSegmentation->progress = [&reporter](float complete, const std::string& message)
@@ -457,19 +456,19 @@ TreeCrownSegmentation* treeCrownSegmentation(SweepLineTransformation<float>* tar
 	}
 	reporter->reset();
 	crownSegmentation->execute();
-	return crownSegmentation;
+
+	return crownSegmentation->clusterMap();
 }
 
 // Perform morphological filtering (erosion or dilation) on a previously built cluster map.
-MorphologyClusterFilter* morphologyFiltering(SweepLineTransformation<float>* target,
-                                             const MorphologyClusterFilter::Method method,
-                                             ClusterMap& clusterMap, const std::string& outpath, int threshold)
+ClusterMap morphologyFiltering(GDALDataset* target, const MorphologyClusterFilter::Method method,
+																ClusterMap& clusterMap, const std::string& outpath, int threshold)
 {
-	MorphologyClusterFilter* morphologyFilter = new MorphologyClusterFilter(
-		clusterMap, {target->target()}, nullptr, method, nullptr);
-	morphologyFilter->threshold = threshold;
-	morphologyFilter->execute();
-	return morphologyFilter;
+	MorphologyClusterFilter morphologyFilter(clusterMap, {target}, nullptr, method, nullptr);
+	morphologyFilter.threshold = threshold;
+	morphologyFilter.execute();
+
+	return morphologyFilter.clusterMap;
 }
 
 // Calculate the Hausdorff-distance of two cluster maps.
@@ -489,9 +488,8 @@ CentroidDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMa
 }
 
 // Perform the algorithm on a DSM and a DTM.
-std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedClusterMap(
-	int ahnVersion, const std::string& DTMinput, const std::string& DSMinput, const std::string& outputDir,
-	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+ClusterMap createRefinedClusterMap(int ahnVersion, const std::string& DTMinput, const std::string& DSMinput,
+	const std::string& outputDir, RasterMetadata& targetMetadata, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
 {
 	std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
 	if (ahnVersion == 3)
@@ -513,31 +511,27 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 		morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
 	}
 
-	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm);
+	Difference<float>* CHM = generateCanopyHeightModel(DTMinput, DSMinput, chmOut, reporter, vm, targetMetadata);
 	std::cout << "CHM generated." << std::endl;
-
-	//InterpolateNoData* interpolatedCHM = interpolateNoData(CHM, chmOut, 0.5, reporter, vm);
-	//std::cout << "Nodata points filled with interpolated data." << std::endl;
 
 	// This step is optional.
 	int counter = countLocalMaximums(CHM->target(), reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
-	MatrixTransformation* filter = antialias(CHM, antialiasOut, reporter, vm);
+	GDALDataset* filter = antialias(CHM, antialiasOut, reporter, vm);
 	std::cout << "Matrix transformation performed." << std::endl;
 
 	delete CHM;
 
-
 	double treeHeightThreshold = 1.5;
-	SweepLineTransformation<float>* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, nosmallOut, reporter, vm);
+	GDALDataset* onlyTrees = eliminateNonTrees(filter, treeHeightThreshold, nosmallOut, reporter, vm);
 	std::cout << "Too small values eliminated." << std::endl;
 
-  InterpolateNoData* interpolatedCHM = interpolateNoData(onlyTrees, interpolOut, 0.5, reporter, vm);
+  GDALDataset* interpolatedCHM = interpolateNoData(onlyTrees, interpolOut, 0.5, reporter, vm);
   std::cout << "Nodata points filled with interpolated data." << std::endl;
 
 	// This step is optional.
-	counter = countLocalMaximums(interpolatedCHM->target(), reporter, vm);
+	counter = countLocalMaximums(interpolatedCHM, reporter, vm);
 	std::cout << "Number of local maximums are: " << counter << std::endl;
 
 	delete filter;
@@ -548,65 +542,46 @@ std::pair<MorphologyClusterFilter*, TreeCrownSegmentation*> createRefinedCluster
 	std::cout << "Seed points collected" << std::endl;
 
 	ClusterMap cluster;
-	cluster.setSizeX(interpolatedCHM->targetMetadata().rasterSizeX());
-	cluster.setSizeY(interpolatedCHM->targetMetadata().rasterSizeY());
+	cluster.setSizeX(targetMetadata.rasterSizeX());
+	cluster.setSizeY(targetMetadata.rasterSizeY());
 
-	TreeCrownSegmentation* crownSegmentation = treeCrownSegmentation(interpolatedCHM, seedPoints, reporter, vm);
+	cluster = treeCrownSegmentation(interpolatedCHM, seedPoints, reporter, vm);
 	std::cout << "Tree crown segmentation performed." << std::endl;
-	cluster = crownSegmentation->clusterMap();
 	std::cout << "clusterindex number: " << cluster.clusterIndexes().size() << std::endl;
 
 	writeClusterMapToFile(
 		cluster,
-		crownSegmentation->targetMetadata(),
+		targetMetadata,
 		segmentationOut);
 
 	// Perform morphological erosion on the cluster map
 	int erosionThreshold = 6, filterCounter = 3;
-	for (int i = 0; i < filterCounter - 1; ++i)
+
+	for (int i = 0; i < filterCounter; ++i)
 	{
-		MorphologyClusterFilter* erosion = morphologyFiltering(interpolatedCHM,
-		                                                       MorphologyClusterFilter::Method::Erosion, cluster,
-		                                                       std::string(), erosionThreshold);
+		cluster = morphologyFiltering(interpolatedCHM, MorphologyClusterFilter::Method::Erosion, cluster,
+			                            std::string(), erosionThreshold);
 		std::cout << "Morphological erosion performed." << std::endl;
 
-		MorphologyClusterFilter* dilation = morphologyFiltering(interpolatedCHM,
-		                                                        MorphologyClusterFilter::Method::Dilation,
-		                                                        erosion->clusterMap, std::string());
+		cluster = morphologyFiltering(interpolatedCHM, MorphologyClusterFilter::Method::Dilation, cluster, std::string());
 		std::cout << "Morphological dilation performed." << std::endl;
-
-		cluster = dilation->clusterMap;
-
-		delete erosion;
-		delete dilation;
 	}
 
-	MorphologyClusterFilter* erosion = morphologyFiltering(interpolatedCHM,
-	                                                       MorphologyClusterFilter::Method::Erosion, cluster,
-	                                                       std::string(), erosionThreshold);
-	std::cout << "Morphological erosion performed." << std::endl;
-
-	MorphologyClusterFilter* dilation = morphologyFiltering(interpolatedCHM,
-	                                                        MorphologyClusterFilter::Method::Dilation,
-	                                                        erosion->clusterMap, std::string());
-	std::cout << "Morphological dilation performed." << std::endl;
-
-	dilation->clusterMap.removeSmallClusters(16);
+	cluster.removeSmallClusters(16);
 
 	writeClusterMapToFile(
-		dilation->clusterMap,
-		dilation->targetMetadata(),
+		cluster,
+		targetMetadata,
 		morphologyOut);
 
 	delete onlyTrees;
 	delete interpolatedCHM;
-	delete erosion;
 
-	return std::make_pair(dilation, crownSegmentation);
+	return cluster;
 }
 
 // Write the result of Hausdorff-distance calculation to geotiff file.
-void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
                             const std::string& ahn2Outpath, HausdorffDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -619,13 +594,13 @@ void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCro
 		throw std::runtime_error("Cannot overwrite previously created target file.");
 
 	GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
-	                                     segmentation->targetMetadata().rasterSizeX(),
-	                                     segmentation->targetMetadata().rasterSizeY(), 1,
+	                                     targetMetadata.rasterSizeX(),
+	                                     targetMetadata.rasterSizeY(), 1,
 	                                     gdalType<int>(), nullptr);
 	if (target == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 
-	target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+	target->SetGeoTransform(&targetMetadata.geoTransform()[0]);
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
@@ -766,7 +741,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, HausdorffDist
 	std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
 }
 
-void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
                              const std::string& ahn2Outpath, HausdorffDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -779,13 +754,13 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 		throw std::runtime_error("Cannot overwrite previously created target file.");
 
 	GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
-	                                     segmentation->targetMetadata().rasterSizeX(),
-	                                     segmentation->targetMetadata().rasterSizeY(), 1,
+	                                     targetMetadata.rasterSizeX(),
+	                                     targetMetadata.rasterSizeY(), 1,
 	                                     gdalType<int>(), nullptr);
 	if (target == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 
-	target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+	target->SetGeoTransform(&targetMetadata.geoTransform()[0]);
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
@@ -882,7 +857,7 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 
 
 // Write the result of Hausdorff-distance calculation to geotiff file.
-void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& metadata,
                             const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -895,13 +870,13 @@ void writeClusterCentersToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCro
 		throw std::runtime_error("Cannot overwrite previously created target file.");
 
 	GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
-	                                     segmentation->targetMetadata().rasterSizeX(),
-	                                     segmentation->targetMetadata().rasterSizeY(), 1,
+	                                     metadata.rasterSizeX(),
+	                                     metadata.rasterSizeY(), 1,
 	                                     gdalType<int>(), nullptr);
 	if (target == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 
-	target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+	target->SetGeoTransform(&metadata.geoTransform()[0]);
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
@@ -1039,7 +1014,7 @@ void calculateVolumeDifference(ClusterMap& ahn2, ClusterMap& ahn3, CentroidDista
 	std::cout << "ahn2 and ahn3 difference: " << (ahn3FullVolume - ahn2FullVolume) << std::endl;
 }
 
-void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrownSegmentation* segmentation,
+void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
                              const std::string& ahn2Outpath, CentroidDistance* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -1052,13 +1027,13 @@ void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, TreeCrown
 		throw std::runtime_error("Cannot overwrite previously created target file.");
 
 	GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
-	                                     segmentation->targetMetadata().rasterSizeX(),
-	                                     segmentation->targetMetadata().rasterSizeY(), 1,
+	                                     targetMetadata.rasterSizeX(),
+	                                     targetMetadata.rasterSizeY(), 1,
 	                                     gdalType<int>(), nullptr);
 	if (target == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 
-	target->SetGeoTransform(&segmentation->targetMetadata().geoTransform()[0]);
+	target->SetGeoTransform(&targetMetadata.geoTransform()[0]);
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
