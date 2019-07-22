@@ -132,20 +132,5 @@ std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances() con
 {
 	return hausdorffDistances;
 }
-
-const std::map<std::pair<GUInt32, GUInt32>, double>& HausdorffDistance::closest() const
-{
-	return closestClusters;
-}
-
-const std::vector<GUInt32>& HausdorffDistance::lonelyAHN2() const
-{
-	return lonelyClustersAHN2;
-}
-
-const std::vector<GUInt32>& HausdorffDistance::lonelyAHN3() const
-{
-	return lonelyClustersAHN3;
-}
 }
 }

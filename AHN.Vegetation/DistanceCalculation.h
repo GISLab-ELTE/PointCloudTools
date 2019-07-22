@@ -1,5 +1,5 @@
-#ifndef CLOUDTOOLS_DISTANCECALCULATION_HPP
-#define CLOUDTOOLS_DISTANCECALCULATION_HPP
+#ifndef CLOUDTOOLS_DISTANCECALCULATION_H
+#define CLOUDTOOLS_DISTANCECALCULATION_H
 
 #include "CloudTools.Common/Operation.h"
 #include "CloudTools.DEM/ClusterMap.h"
@@ -40,9 +40,7 @@ public:
 
   void onPrepare() override {}
 
-  virtual void onExecute() override = 0;
-
-private:
+protected:
   std::map<std::pair<GUInt32, GUInt32>, double> closestClusters;
   std::vector<GUInt32> lonelyClustersAHN2;
   std::vector<GUInt32> lonelyClustersAHN3;

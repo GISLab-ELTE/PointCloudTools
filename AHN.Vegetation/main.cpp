@@ -506,7 +506,7 @@ ClusterMap createRefinedClusterMap(int ahnVersion, const std::string& DTMinput, 
 		chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
 		antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
 		nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
-    interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
+		interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
 		segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
 		morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
 	}

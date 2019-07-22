@@ -10,7 +10,8 @@ add_executable(ahn_vegetation
 	InterpolateNoData.hpp
 	EliminateNonTrees.hpp
 	VolumeDifference.cpp VolumeDifference.h
-	DistanceCalculation.hpp)
+	DistanceCalculation.h
+	Process.h Process.cpp)
 
 target_link_libraries(ahn_vegetation
 	dem

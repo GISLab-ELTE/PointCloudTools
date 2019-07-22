@@ -91,20 +91,5 @@ void CentroidDistance::onExecute()
 		                 }) == closestClusters.end())
 			lonelyClustersAHN3.push_back(index);
 }
-
-const std::map<std::pair<GUInt32, GUInt32>, double>& CentroidDistance::closest() const
-{
-	return closestClusters;
-}
-
-const std::vector<GUInt32>& CentroidDistance::lonelyAHN2() const
-{
-	return lonelyClustersAHN2;
-}
-
-const std::vector<GUInt32>& CentroidDistance::lonelyAHN3() const
-{
-	return lonelyClustersAHN3;
-}
 }
 }
