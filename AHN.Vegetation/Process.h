@@ -37,6 +37,11 @@ private:
                                CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 
   bool runReporter(CloudTools::DEM::Calculation* operation);
+
+  std::vector<OGRPoint> collectSeedPoints(GDALDataset* target, po::variables_map& vm);
+
+  void writeClusterMapToFile(const ClusterMap& cluster,
+	  const RasterMetadata& metadata, const std::string& outpath);
 };
 }
 }
