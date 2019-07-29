@@ -7,11 +7,11 @@ add_executable(ahn_vegetation
 	HausdorffDistance.cpp HausdorffDistance.h
 	MorphologyClusterFilter.h MorphologyClusterFilter.cpp
 	CentroidDistance.cpp CentroidDistance.h
-	InterpolateNoData.hpp
-	EliminateNonTrees.hpp
+	InterpolateNoData.h InterpolateNoData.cpp
+	EliminateNonTrees.h EliminateNonTrees.cpp
 	VolumeDifference.cpp VolumeDifference.h
 	DistanceCalculation.h
-	Process.h Process.cpp)
+	Process.h Process.cpp )
 
 target_link_libraries(ahn_vegetation
 	dem

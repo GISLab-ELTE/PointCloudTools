@@ -1,8 +1,12 @@
-#ifndef CLOUDTOOLS_ELIMINATENONTREES_HPP
-#define CLOUDTOOLS_ELIMINATENONTREES_HPP
+#pragma once
+
+#ifndef CLOUDTOOLS_ELIMINATENONTREES_H
+#define CLOUDTOOLS_ELIMINATENONTREES_H
 
 #include "CloudTools.Common/Operation.h"
 #include "CloudTools.DEM/SweepLineTransformation.hpp"
+
+using namespace CloudTools::DEM;
 
 namespace AHN
 {
@@ -50,18 +54,7 @@ public:
 private:
   void initialize();
 };
+}
+}
 
-void EliminateNonTrees::initialize()
-{
-  this->computation = [this](int x, int y, const std::vector<Window<float>>& sources)
-  {
-    const Window<float>& source = sources[0];
-
-    if (!source.hasData() || source.data() < this->threshold)
-      return static_cast<float>(this->nodataValue);
-    else
-      return source.data();
-  };
-}
-}
-}
+#endif

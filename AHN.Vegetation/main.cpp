@@ -17,7 +17,7 @@
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
 
-#include "InterpolateNoData.hpp"
+#include "InterpolateNoData.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"

@@ -6,6 +6,8 @@
 #include <CloudTools.Common/Operation.h>
 #include <CloudTools.DEM/Calculation.h>
 
+#include "InterpolateNoData.h"
+
 #include <gdal_priv.h>
 
 namespace po = boost::program_options;
