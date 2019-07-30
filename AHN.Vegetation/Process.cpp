@@ -196,7 +196,7 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
 
   cluster = segmentation.clusterMap();
 
-  writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
+  //writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
 
   int morphologyCounter = 3, erosionThreshold = 6;
   for (int i = 0; i < morphologyCounter; ++i)
@@ -218,7 +218,7 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
   int removalRadius = 16;
   cluster.removeSmallClusters(removalRadius);
 
-  writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
+  //writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
 }
 }
 }

@@ -5,6 +5,7 @@
 #include <CloudTools.Common/IO/Reporter.h>
 #include <CloudTools.Common/Operation.h>
 #include <CloudTools.DEM/Calculation.h>
+#include <CloudTools.DEM/ClusterMap.h>
 
 #include "InterpolateNoData.h"
 
