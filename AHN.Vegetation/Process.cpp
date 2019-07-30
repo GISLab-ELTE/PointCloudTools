@@ -17,6 +17,11 @@ namespace AHN
 {
 namespace Vegetation
 {
+void Process::setAHNVersion(int version)
+{
+	this->AHNVersion = version;
+}
+
 bool Process::runReporter(CloudTools::DEM::Calculation* operation)
 {
   operation->progress = [this](float complete, const std::string& message)
@@ -58,7 +63,7 @@ std::vector<OGRPoint> Process::collectSeedPoints(GDALDataset* target, po::variab
 	return seedPoints;
 }
 
-void writeClusterMapToFile(const ClusterMap& cluster,
+void Process::writeClusterMapToFile(const ClusterMap& cluster,
 	const RasterMetadata& metadata, const std::string& outpath)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -117,12 +122,10 @@ void writeClusterMapToFile(const ClusterMap& cluster,
 	GDALClose(target);
 }
 
-void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinput, const std::string& DSMinput,
-                                      const std::string& outputDir, RasterMetadata& targetMetadata,
-                                      CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+void Process::createRefinedClusterMap()
 {
   std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
-  if (ahnVersion == 3)
+  if (AHNVersion == 3)
   {
     chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
     antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
@@ -141,13 +144,15 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
     morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
   }
 
-  Difference<float> comparison({DTMinput, DSMinput}, chmOut);
+  Difference<float> comparison({DTMInputPath, DSMInputPath}, chmOut);
   if (!vm.count("quiet"))
   {
     runReporter(&comparison);
   }
   comparison.execute();
   reporter->reset();
+
+  this->targetMetadata = comparison.targetMetadata();
 
   InterpolateNoData interpolation({comparison.target()}, interpolOut);
   if (!vm.count("quiet"))
@@ -185,7 +190,10 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
 
   std::vector<OGRPoint> seedPoints = collectSeedPoints(elimination.target(), vm);
 
-  ClusterMap cluster;
+  //ClusterMap cluster;
+	cluster.setSizeX(this->targetMetadata.rasterSizeX());
+	cluster.setSizeY(this->targetMetadata.rasterSizeY());
+
   TreeCrownSegmentation segmentation({ elimination.target() }, seedPoints);
   if (!vm.count("quiet"))
   {
@@ -196,7 +204,7 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
 
   cluster = segmentation.clusterMap();
 
-  //writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
+  writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
 
   int morphologyCounter = 3, erosionThreshold = 6;
   for (int i = 0; i < morphologyCounter; ++i)
@@ -218,7 +226,19 @@ void Process::createRefinedClusterMap(int ahnVersion, const std::string& DTMinpu
   int removalRadius = 16;
   cluster.removeSmallClusters(removalRadius);
 
-  //writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
+  writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
+}
+
+ClusterMap Process::map()
+{
+	return cluster;
+}
+
+ClusterMap Process::run(int version)
+{
+	setAHNVersion(version);
+	createRefinedClusterMap();
+  return cluster;
 }
 }
 }

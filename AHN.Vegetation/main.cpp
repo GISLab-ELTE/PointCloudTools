@@ -17,6 +17,7 @@
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
 
+#include "Process.h"
 #include "InterpolateNoData.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
@@ -191,18 +192,31 @@ int main(int argc, char* argv[])
 
 	RasterMetadata targetMetadata, targetMetadata_dummy;
 
+	//Process* process = new Process(3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
+
 	std::future<ClusterMap> ahn3Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
 			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, std::ref(targetMetadata), reporter, std::ref(vm));
 
-	std::future<ClusterMap> ahn2Future =
+	/*std::future<ClusterMap> ahn2Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
 			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
 
+  std::future<ClusterMap> ahn3Future =
+    std::async(
+      vm.count("parallel") ? std::launch::async : std::launch::deferred, &Process::run, process, 3);*/
+
+  std::future<ClusterMap> ahn2Future =
+    std::async(
+      vm.count("parallel") ? std::launch::async : std::launch::deferred,
+      createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
+
 	// wait for the async results ...
 	ClusterMap ahn3Pair = ahn3Future.get();
+	//delete process;
+	std::cout << ahn3Pair.sizeX() << std::endl;
 	ClusterMap ahn2Pair = ahn2Future.get();
 
 	int pairs, lonelyAHN2, lonelyAHN3;

@@ -21,20 +21,16 @@ void InterpolateNoData::initialize()
         {
           counter++;
           data += source.data(i, j);
-          std::cout << "counter: " << counter << std::endl;
         }
 
     if (this->threshold > 1.0 || this->threshold < 0.0)
       this->threshold = 0.5;
 
-    std::cout << data << ", " << counter << ", " << this->threshold << std::endl;
     if (counter < ((std::pow((this->range() * 2 + 1), 2.0) - 1) * this->threshold))
     {
-      std::cout << "Returning nodata-" << std::endl;
       return static_cast<float>(this->nodataValue);
     }
 
-    std::cout << "Returning " << (data / counter) << std::endl;
     return static_cast<float>(data / counter);
   };
 }

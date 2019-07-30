@@ -22,20 +22,33 @@ namespace Vegetation
 class Process
 {
 public:
-  Process(CloudTools::IO::Reporter* reporter);
+  Process(int AHNVersion, const std::string& DTMInputPath, const std::string& DSMInputPath,
+          const std::string& outputDir, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+          : AHNVersion(AHNVersion), DTMInputPath(DTMInputPath), DSMInputPath(DSMInputPath),
+          outputDir(outputDir), reporter(reporter), vm(vm)
+  {
 
-  void run();
+  }
+
+  void setAHNVersion(int);
+
+  ClusterMap run(int);
+
+  ClusterMap map();
 
 private:
+  int AHNVersion;
+  std::string DTMInputPath, DSMInputPath, outputDir;
+  po::variables_map& vm;
   CloudTools::IO::Reporter* reporter;
   RasterMetadata targetMetadata;
 
   double treeHeightThreshold;
   float interpolationRatio;
 
-  void createRefinedClusterMap(int ahnVersion, const std::string& DTMinput, const std::string& DSMinput,
-                               const std::string& outputDir, RasterMetadata& targetMetadata,
-                               CloudTools::IO::Reporter* reporter, po::variables_map& vm);
+  ClusterMap cluster;
+
+  void createRefinedClusterMap();
 
   bool runReporter(CloudTools::DEM::Calculation* operation);
 
