@@ -18,7 +18,7 @@ public:
 		CloudTools::DEM::ClusterMap& AHN3clusterMap,
 		double maximumDistance = 9.0,
 		Operation::ProgressType progress = nullptr)
-		: DistanceCalculation(AHN2ClusterMap, AHN3ClusterMap, maximumDistance, progress)
+		: DistanceCalculation(AHN2clusterMap, AHN3clusterMap, maximumDistance, progress)
 	{
 	}
 

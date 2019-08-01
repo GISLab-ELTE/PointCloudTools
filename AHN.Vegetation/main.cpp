@@ -496,7 +496,9 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, Cluste
 // Calculate the Hausdorff-distance of two cluster maps.
 CentroidDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
 {
+  std::cout << "step 1" << std::endl;
 	CentroidDistance* distance = new CentroidDistance(ahn2ClusterMap, ahn3ClusterMap);
+  std::cout << "step 2" << std::endl;
 	distance->execute();
 	return distance;
 }

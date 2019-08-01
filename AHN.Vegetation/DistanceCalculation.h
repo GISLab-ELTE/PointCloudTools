@@ -15,8 +15,8 @@ public:
   CloudTools::DEM::ClusterMap AHN2ClusterMap;
   CloudTools::DEM::ClusterMap AHN3ClusterMap;
 
-  DistanceCalculation(CloudTools::DEM::ClusterMap& AHN2clusterMap,
-                      CloudTools::DEM::ClusterMap& AHN3clusterMap,
+  DistanceCalculation(const CloudTools::DEM::ClusterMap& AHN2clusterMap,
+                      const CloudTools::DEM::ClusterMap& AHN3clusterMap,
                       double maximumDistance = 9.0,
                       Operation::ProgressType progress = nullptr)
         : AHN2ClusterMap(AHN2clusterMap), AHN3ClusterMap(AHN3clusterMap), maximumDistance(maximumDistance)
