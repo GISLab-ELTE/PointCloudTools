@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 	/*std::future<ClusterMap> ahn2Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
-			createRefinedClusterMap, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
+			preprocess, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
 
   std::future<ClusterMap> ahn3Future =
     std::async(
@@ -496,9 +496,7 @@ HausdorffDistance* calculateHausdorffDistance(ClusterMap& ahn2ClusterMap, Cluste
 // Calculate the Hausdorff-distance of two cluster maps.
 CentroidDistance* calculateGravityDistance(ClusterMap& ahn2ClusterMap, ClusterMap& ahn3ClusterMap)
 {
-  std::cout << "step 1" << std::endl;
 	CentroidDistance* distance = new CentroidDistance(ahn2ClusterMap, ahn3ClusterMap);
-  std::cout << "step 2" << std::endl;
 	distance->execute();
 	return distance;
 }

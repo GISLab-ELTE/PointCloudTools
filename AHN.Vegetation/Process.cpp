@@ -9,6 +9,8 @@
 #include "EliminateNonTrees.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
+#include "HausdorffDistance.h"
+#include "CentroidDistance.h"
 
 using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
@@ -122,10 +124,12 @@ void Process::writeClusterMapToFile(const ClusterMap& cluster,
 	GDALClose(target);
 }
 
-void Process::createRefinedClusterMap()
+ClusterMap Process::preprocess(int version)
 {
   std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
-  if (AHNVersion == 3)
+  ClusterMap cluster;
+
+  if (version == 3)
   {
     chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
     antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
@@ -227,18 +231,50 @@ void Process::createRefinedClusterMap()
   cluster.removeSmallClusters(removalRadius);
 
   writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
+
+  return cluster;
+}
+
+void Process::process()
+{
+  std::unique_ptr<DistanceCalculation> p;
+	if (method == Hausdorff)
+	{
+		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
+		//HausdorffDistance distance(clusterAHN2, clusterAHN3);
+		//c = new HausdorffDistance(clusterAHN2, clusterAHN3);
+		p.reset(new HausdorffDistance(clusterAHN2, clusterAHN3));
+		//distance.execute();
+		std::cout << "Hausdorff distance calculated." << std::endl;
+
+		/*pairs = distance->closest().size();
+		lonelyAHN2 = distance->lonelyAHN2().size();
+		lonelyAHN3 = distance->lonelyAHN3().size();*/
+	}
+
+	if (method == Centroid)
+	{
+		std::cout << "Using gravity distance to pair up clusters." << std::endl;
+    p.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
+		//distance.execute();
+		std::cout << "Gravity distance calculated." << std::endl;
+	}
+
+	p->execute();
 }
 
 ClusterMap Process::map()
 {
-	return cluster;
+	//return cluster;
 }
 
-ClusterMap Process::run(int version)
+void Process::run(int version)
 {
 	setAHNVersion(version);
-	createRefinedClusterMap();
-  return cluster;
+
+	clusterAHN2 = preprocess(2);
+	clusterAHN3 = preprocess(3);
+  process();
 }
 }
 }

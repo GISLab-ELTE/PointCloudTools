@@ -22,22 +22,30 @@ namespace Vegetation
 class Process
 {
 public:
+  enum DifferenceMethod
+  {
+    Hausdorff,
+    Centroid
+  };
+
   Process(int AHNVersion, const std::string& DTMInputPath, const std::string& DSMInputPath,
-          const std::string& outputDir, CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+          const std::string& outputDir, CloudTools::IO::Reporter* reporter, po::variables_map& vm,
+          DifferenceMethod method = DifferenceMethod::Centroid)
           : AHNVersion(AHNVersion), DTMInputPath(DTMInputPath), DSMInputPath(DSMInputPath),
-          outputDir(outputDir), reporter(reporter), vm(vm)
+          outputDir(outputDir), reporter(reporter), vm(vm), method(method)
   {
 
   }
 
   void setAHNVersion(int);
 
-  ClusterMap run(int);
+  void run(int);
 
   ClusterMap map();
 
 private:
   int AHNVersion;
+  DifferenceMethod method;
   std::string DTMInputPath, DSMInputPath, outputDir;
   po::variables_map& vm;
   CloudTools::IO::Reporter* reporter;
@@ -46,9 +54,11 @@ private:
   double treeHeightThreshold;
   float interpolationRatio;
 
-  ClusterMap cluster;
+  ClusterMap clusterAHN2, clusterAHN3;
 
-  void createRefinedClusterMap();
+  ClusterMap preprocess(int version);
+
+  void process();
 
   bool runReporter(CloudTools::DEM::Calculation* operation);
 
