@@ -2,6 +2,7 @@ include_directories(../)
 
 add_library(dem
 	Calculation.cpp Calculation.h
+	Creation.cpp Creation.h
 	Transformation.cpp Transformation.h
 	Color.cpp Color.h
 	Helper.cpp Helper.h

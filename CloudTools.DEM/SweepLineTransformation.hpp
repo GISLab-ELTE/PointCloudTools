@@ -8,7 +8,6 @@
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
-#include <gdal_priv.h>
 
 #include "Transformation.h"
 #include "Window.hpp"
@@ -29,7 +28,7 @@ class SweepLineTransformation : public Transformation
 {
 public:
 	typedef std::function<TargetType(int, int, const std::vector<Window<SourceType>>&)> ComputationType;
-	ComputationType computation;	
+	ComputationType computation;
 	/// <summary>
 	/// The indices of bands to use respectively for each data source.
 	/// </summary>

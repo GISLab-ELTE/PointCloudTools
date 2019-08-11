@@ -8,7 +8,6 @@
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
-#include <gdal_priv.h>
 
 #include "Calculation.h"
 #include "Window.hpp"
@@ -47,9 +46,9 @@ namespace DEM
 		/// <param name="computation">The callback function for computation.</param>
 		/// <param name="progress">The callback method to report progress.</param>
 		SweepLineCalculation(const std::vector<std::string>& sourcePaths,
-			int range,
-			ComputationType computation,
-			ProgressType progress = nullptr);
+			                 int range,
+			                 ComputationType computation,
+			                 ProgressType progress = nullptr);
 
 		/// <summary>
 		/// Initializes a new instance of the class and loads source metadata.
@@ -58,8 +57,8 @@ namespace DEM
 		/// <param name="computation">The callback function for computation.</param>
 		/// <param name="progress">The callback method to report progress.</param>
 		SweepLineCalculation(const std::vector<std::string>& sourcePaths,
-			ComputationType computation,
-			ProgressType progress = nullptr)
+			                 ComputationType computation,
+			                 ProgressType progress = nullptr)
 			: SweepLineCalculation(sourcePaths, 0, computation, progress)
 		{ }
 
@@ -71,9 +70,9 @@ namespace DEM
 		/// <param name="computation">The callback function for computation.</param>
 		/// <param name="progress">The callback method to report progress.</param>
 		SweepLineCalculation(const std::vector<GDALDataset*>& sourceDatasets,
-			int range,
-			ComputationType computation,
-			ProgressType progress = nullptr);
+			                 int range,
+			                 ComputationType computation,
+			                 ProgressType progress = nullptr);
 
 		SweepLineCalculation(const SweepLineCalculation&) = delete;
 		SweepLineCalculation& operator=(const SweepLineCalculation&) = delete;

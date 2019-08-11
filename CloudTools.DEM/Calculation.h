@@ -15,7 +15,7 @@ namespace DEM
 /// <summary>
 /// Represents a calculation on DEM datasets.
 /// </summary>
-class Calculation : public Operation
+class Calculation : public virtual Operation
 {
 public:
 	/// <summary>
