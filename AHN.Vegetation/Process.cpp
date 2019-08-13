@@ -127,6 +127,7 @@ void Process::writeClusterMapToFile(const ClusterMap& cluster,
 ClusterMap Process::preprocess(int version)
 {
   std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
+  std::string dtm, dsm;
   ClusterMap cluster;
 
   if (version == 3)
@@ -137,8 +138,11 @@ ClusterMap Process::preprocess(int version)
     interpolOut = (fs::path(outputDir) / "ahn3_interpol.tif").string();
     segmentationOut = (fs::path(outputDir) / "ahn3_segmentation.tif").string();
     morphologyOut = (fs::path(outputDir) / "ahn3_morphology.tif").string();
+    dsm = AHN3DSMInputPath;
+    dtm = AHN3DTMInputPath;
   }
-  else
+
+  if (version == 2)
   {
     chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
     antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
@@ -146,9 +150,11 @@ ClusterMap Process::preprocess(int version)
     interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
     segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
     morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
+		dsm = AHN2DSMInputPath;
+		dtm = AHN2DTMInputPath;
   }
 
-  Difference<float> comparison({DTMInputPath, DSMInputPath}, chmOut);
+  Difference<float> comparison({dtm, dsm}, chmOut);
   if (!vm.count("quiet"))
   {
     runReporter(&comparison);
@@ -237,14 +243,11 @@ ClusterMap Process::preprocess(int version)
 
 void Process::process()
 {
-  std::unique_ptr<DistanceCalculation> p;
+  std::unique_ptr<DistanceCalculation> distance;
 	if (method == Hausdorff)
 	{
 		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
-		//HausdorffDistance distance(clusterAHN2, clusterAHN3);
-		//c = new HausdorffDistance(clusterAHN2, clusterAHN3);
-		p.reset(new HausdorffDistance(clusterAHN2, clusterAHN3));
-		//distance.execute();
+		distance.reset(new HausdorffDistance(clusterAHN2, clusterAHN3));
 		std::cout << "Hausdorff distance calculated." << std::endl;
 
 		/*pairs = distance->closest().size();
@@ -255,12 +258,19 @@ void Process::process()
 	if (method == Centroid)
 	{
 		std::cout << "Using gravity distance to pair up clusters." << std::endl;
-    p.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
-		//distance.execute();
+    distance.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
 		std::cout << "Gravity distance calculated." << std::endl;
 	}
 
-	p->execute();
+	distance->execute();
+
+  std::cout << "Total number of clusters in AHN2: " << clusterAHN2.clusterIndexes().size() << std::
+  endl;
+  std::cout << "Total number of clusters in AHN3: " << clusterAHN3.clusterIndexes().size() << std::
+  endl;
+  std::cout << "Pairs found: " << distance->closest().size() << std::endl;
+  std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
+  std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
 }
 
 ClusterMap Process::map()
@@ -268,12 +278,13 @@ ClusterMap Process::map()
 	//return cluster;
 }
 
-void Process::run(int version)
+void Process::run()
 {
-	setAHNVersion(version);
+	//setAHNVersion(version);
 
 	clusterAHN2 = preprocess(2);
 	clusterAHN3 = preprocess(3);
+
   process();
 }
 }

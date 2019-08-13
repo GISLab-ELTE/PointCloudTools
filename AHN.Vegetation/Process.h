@@ -28,25 +28,27 @@ public:
     Centroid
   };
 
-  Process(int AHNVersion, const std::string& DTMInputPath, const std::string& DSMInputPath,
+  Process(int AHNVersion, const std::string& AHN2DTMInputPath, const std::string& AHN2DSMInputPath,
+          const std::string& AHN3DTMInputPath, const std::string& AHN3DSMInputPath,
           const std::string& outputDir, CloudTools::IO::Reporter* reporter, po::variables_map& vm,
           DifferenceMethod method = DifferenceMethod::Centroid)
-          : AHNVersion(AHNVersion), DTMInputPath(DTMInputPath), DSMInputPath(DSMInputPath),
-          outputDir(outputDir), reporter(reporter), vm(vm), method(method)
+          : AHNVersion(AHNVersion), AHN2DTMInputPath(AHN2DTMInputPath), AHN2DSMInputPath(AHN2DSMInputPath),
+            AHN3DTMInputPath(AHN3DTMInputPath), AHN3DSMInputPath(AHN3DSMInputPath),
+            outputDir(outputDir), reporter(reporter), vm(vm), method(method)
   {
 
   }
 
   void setAHNVersion(int);
 
-  void run(int);
+  void run();
 
   ClusterMap map();
 
 private:
   int AHNVersion;
   DifferenceMethod method;
-  std::string DTMInputPath, DSMInputPath, outputDir;
+  std::string AHN2DTMInputPath, AHN2DSMInputPath, AHN3DTMInputPath, AHN3DSMInputPath, outputDir;
   po::variables_map& vm;
   CloudTools::IO::Reporter* reporter;
   RasterMetadata targetMetadata;

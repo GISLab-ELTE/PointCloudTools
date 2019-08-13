@@ -192,21 +192,22 @@ int main(int argc, char* argv[])
 
 	RasterMetadata targetMetadata, targetMetadata_dummy;
 
-	//Process* process = new Process(3, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
-
+	Process process(3, AHN2DTMinputPath, AHN2DSMinputPath, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
+	process.run();
+/*
 	std::future<ClusterMap> ahn3Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
 			createRefinedClusterMap, 3, DTMinputPath, DSMinputPath, outputDir, std::ref(targetMetadata), reporter, std::ref(vm));
 
-	/*std::future<ClusterMap> ahn2Future =
+	std::future<ClusterMap> ahn2Future =
 		std::async(
 			vm.count("parallel") ? std::launch::async : std::launch::deferred,
 			preprocess, 2, AHN2DTMinputPath, AHN2DSMinputPath, outputDir, std::ref(targetMetadata_dummy), reporter, std::ref(vm));
 
   std::future<ClusterMap> ahn3Future =
     std::async(
-      vm.count("parallel") ? std::launch::async : std::launch::deferred, &Process::run, process, 3);*/
+      vm.count("parallel") ? std::launch::async : std::launch::deferred, &Process::run, process, 3);
 
   std::future<ClusterMap> ahn2Future =
     std::async(
@@ -271,7 +272,7 @@ int main(int argc, char* argv[])
 	std::cout << "Pairs found: " << pairs << std::endl;
 	std::cout << "Number of unpaired clusters in AHN2: " << lonelyAHN2 << std::endl;
 	std::cout << "Number of unpaired clusters in AHN3: " << lonelyAHN3 << std::endl;
-
+*/
 	delete reporter;
 	return Success;
 }
