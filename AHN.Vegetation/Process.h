@@ -8,6 +8,7 @@
 #include <CloudTools.DEM/ClusterMap.h>
 
 #include "InterpolateNoData.h"
+#include "DistanceCalculation.h"
 
 #include <gdal_priv.h>
 
@@ -68,6 +69,9 @@ private:
 
   void writeClusterMapToFile(const ClusterMap& cluster,
 	  const RasterMetadata& metadata, const std::string& outpath);
+
+  void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
+                               const std::string& ahn2Outpath, DistanceCalculation* distance);
 };
 }
 }
