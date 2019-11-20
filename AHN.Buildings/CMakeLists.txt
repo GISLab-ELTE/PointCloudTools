@@ -3,7 +3,6 @@ include_directories(../)
 add_library(ahn_buildings
 	BuildingExtraction.cpp BuildingExtraction.h
 	BuildingFilter.cpp BuildingFilter.h
-	CannyEdgeDetector.hpp
 	BuildingAreaComparer.hpp
 	ContourDetection.cpp ContourDetection.h
 	ContourFiltering.cpp ContourFiltering.h

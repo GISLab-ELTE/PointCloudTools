@@ -22,7 +22,12 @@
 #include "Process.h"
 #include "BuildingExtraction.h"
 #include "BuildingFilter.h"
-#include "CannyEdgeDetector.hpp"
+#include "ContourDetection.h"
+#include "ContourFiltering.h"
+#include "ContourSplitting.h"
+#include "ContourSimplification.h"
+#include "ContourClassification.h"
+#include "ContourConvexHullRasterizer.h"
 #include "BuildingAreaComparer.hpp"
 #include "Comparison.h"
 
@@ -102,17 +107,39 @@ void Process::onExecute()
 	}
 	else
 	{
-		_progressMessage = "Edge detection / AHN-2";
+		_progressMessage = "AHN-2";
 		{
+/*
 			CannyEdgeDetector<float> edge(_ahn2SurfaceDataset, result("buildings-ahn2").path(), _progress);
 			configure(edge);
 
 			edge.execute();
 			result("buildings-ahn2").dataset = edge.target();
+*/
+			ContourDetection cd(_ahn2SurfaceDataset, _progress);
+			cd.execute();
+
+			ContourFiltering cf(cd.getContours());
+			cf.execute();
+
+			ContourSplitting cs(cf.getContours());
+			cs.execute();
+
+			ContourSimplification cs2(cs.getContours());
+			cs2.execute();
+
+			ContourClassification cc(cs2.getContours());
+			cc.execute();
+
+			ContourConvexHullRasterizer cr(_ahn2SurfaceDataset, cc.getContours(), result("buildings-ahn2").path(), _progress);
+			configure(cr);
+			cr.execute();
+			result("buildings-ahn2").dataset = cr.target();
 		}
 
-		_progressMessage = "Edge detection / AHN-3";
+		_progressMessage = "AHN-3";
 		{
+/*
 			CannyEdgeDetector<float> edge(_ahn3SurfaceDataset, result("buildings-ahn3").path(), _progress);
 			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
 				edge.bands = { 2 };
@@ -120,6 +147,26 @@ void Process::onExecute()
 
 			edge.execute();
 			result("buildings-ahn3").dataset = edge.target();
+*/
+			ContourDetection cd(_ahn3SurfaceDataset, _progress);
+			cd.execute();
+
+			ContourFiltering cf(cd.getContours());
+			cf.execute();
+
+			ContourSplitting cs(cf.getContours());
+			cs.execute();
+
+			ContourSimplification cs2(cs.getContours());
+			cs2.execute();
+
+			ContourClassification cc(cs2.getContours());
+			cc.execute();
+
+			ContourConvexHullRasterizer cr(_ahn3SurfaceDataset, cc.getContours(), result("buildings-ahn3").path(), _progress);
+			configure(cr);
+			cr.execute();
+			result("buildings-ahn3").dataset = cr.target();
 		}
 	}
 
