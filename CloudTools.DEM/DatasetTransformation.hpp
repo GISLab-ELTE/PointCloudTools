@@ -14,6 +14,8 @@
 #include "Metadata.h"
 #include "Helper.h"
 
+namespace fs = boost::filesystem;
+
 namespace CloudTools
 {
 namespace DEM

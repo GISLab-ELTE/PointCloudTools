@@ -8,8 +8,6 @@
 
 #include <CloudTools.DEM/DatasetTransformation.hpp>
 
-namespace fs = boost::filesystem;
-
 namespace AHN
 {
 namespace Buildings
