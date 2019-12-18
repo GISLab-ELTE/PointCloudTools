@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 #include <opencv2/imgproc.hpp>
@@ -40,7 +41,7 @@ protected:
 	void onExecute() override;
 
 	int closurePixelDifference = 5;
-	float similarAngleThreshold = 3.14 / 18;
+	float similarAngleThreshold = M_PI / 18;
 	int chainingPixelDifference = 15;
 	int minBuildingPixelPerimeter = 80;
 	int contourPartitionNumber = 8;
