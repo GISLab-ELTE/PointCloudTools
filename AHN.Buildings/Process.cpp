@@ -77,7 +77,7 @@ void Process::onExecute()
 	// Building filtering / extraction
 	newResult("buildings-ahn2");
 	newResult("buildings-ahn3");
-	if(_ahn2TerrainDataset && _ahn3TerrainDataset) // TODO: DTM not needed for edge detection
+	if(_ahn2TerrainDataset && _ahn3TerrainDataset)
 	{
 		_progressMessage = "Building extraction / AHN-2";
 		{
@@ -104,18 +104,119 @@ void Process::onExecute()
 			extraction.execute();
 			result("buildings-ahn3").dataset = extraction.target();
 		}
+
+		// Create basic changeset
+		_progressMessage = "Creating changeset";
+		newResult("changeset");
+		{
+		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset,
+		result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+		result("changeset").path(), _progress);
+		comparison.minimumThreshold = 1.f;
+		comparison.spatialReference = "EPSG:28992"; // The SRS is given slightly differently for some AHN-2 tiles (but not all).
+		if (_ahn2TerrainDataset && _ahn3TerrainDataset &&
+		_ahn2SurfaceDataset == _ahn3SurfaceDataset)
+		comparison.bands = { 1, 3 };
+		configure(comparison);
+
+		comparison.execute();
+		result("changeset").dataset = comparison.target();
+		}
+		GDALClose(_ahn2SurfaceDataset);
+		if (_ahn3SurfaceDataset != _ahn2SurfaceDataset)
+		GDALClose(_ahn3SurfaceDataset);
+		if (_ahn2TerrainDataset != _ahn2SurfaceDataset)
+		GDALClose(_ahn2TerrainDataset);
+		if (_ahn3TerrainDataset != _ahn3SurfaceDataset)
+		GDALClose(_ahn3TerrainDataset);
+		_ahn2SurfaceDataset = nullptr;
+		_ahn3SurfaceDataset = nullptr;
+		_ahn2TerrainDataset = nullptr;
+		_ahn3TerrainDataset = nullptr;
+		deleteResult("buildings-ahn2");
+		deleteResult("buildings-ahn3");
+
+		// Noise filtering
+		_progressMessage = "Noise filtering";
+		newResult("noise");
+		{
+			NoiseFilter<float> filter(result("changeset").dataset, result("noise").path(), 2, _progress);
+			configure(filter);
+
+			filter.execute();
+			result("noise").dataset = filter.target();
+		}
+		deleteResult("changeset");
+
+		// Cluster filtering
+		_progressMessage = "Cluster filtering";
+		newResult("sieve");
+		newResult("cluster");
+		{
+			ClusterFilter<float> filter(result("noise").dataset, result("sieve").path(), result("cluster").path(), _progress);
+			filter.nodataValue = 0;
+			configure(filter);
+
+			filter.execute();
+			result("sieve").dataset = filter.filter();
+			result("cluster").dataset = filter.target();
+		}
+		deleteResult("noise");
+		deleteResult("sieve");
+
+		// Morpohology dilation
+		_progressMessage = "Morpohology dilation";
+		newResult("dilation");
+		{
+			MorphologyFilter<float> filter(result("cluster").dataset, result("dilation").path(), MorphologyFilter<float>::Dilation, _progress);
+			configure(filter);
+
+			filter.execute();
+			result("dilation").dataset = filter.target();
+		}
+		deleteResult("cluster");
+
+		// Majority filtering
+		for (int range = 1; range <= 2; ++range)
+		{
+			_progressMessage = "Majority filtering / r=" + std::to_string(range);
+			std::size_t index = newResult("majority");
+			{
+				MajorityFilter<float> filter(
+					index == 0 ? result("dilation").dataset : result("majority", 0).dataset,
+					result("majority", index).path(),
+					range, _progress);
+				configure(filter);
+
+				filter.execute();
+				result("majority", index).dataset = filter.target();
+			}
+			if (index == 0)
+				deleteResult("dilation");
+			else
+				deleteResult("majority", 0);
+		}
+
+		// Write out the results
+		_progressMessage = "Writing results";
+		newResult(std::string(), true);
+		{
+			// GTiff creation options
+			char** params = nullptr;
+			params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+
+			// Copy results to disk or VSI
+			GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+			result("").dataset = driver->CreateCopy(result("").path().c_str(), result("majority").dataset,
+				false, params, gdalProgress, static_cast<void*>(this));
+			CSLDestroy(params);
+		}
+		deleteResult("majority");
 	}
 	else
 	{
-		_progressMessage = "AHN-2";
+		_progressMessage = "Building extraction / AHN-2";
 		{
-/*
-			CannyEdgeDetector<float> edge(_ahn2SurfaceDataset, result("buildings-ahn2").path(), _progress);
-			configure(edge);
-
-			edge.execute();
-			result("buildings-ahn2").dataset = edge.target();
-*/
 			ContourDetection cd(_ahn2SurfaceDataset, _progress);
 			cd.execute();
 
@@ -137,17 +238,8 @@ void Process::onExecute()
 			result("buildings-ahn2").dataset = cr.target();
 		}
 
-		_progressMessage = "AHN-3";
+		_progressMessage = "Building extraction / AHN-3";
 		{
-/*
-			CannyEdgeDetector<float> edge(_ahn3SurfaceDataset, result("buildings-ahn3").path(), _progress);
-			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
-				edge.bands = { 2 };
-			configure(edge);
-
-			edge.execute();
-			result("buildings-ahn3").dataset = edge.target();
-*/
 			ContourDetection cd(_ahn3SurfaceDataset, _progress);
 			cd.execute();
 
@@ -168,126 +260,40 @@ void Process::onExecute()
 			cr.execute();
 			result("buildings-ahn3").dataset = cr.target();
 		}
-	}
 
-	newResult("changes");
-	{
-		BuildingAreaComparer comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
-										 _ahn2SurfaceDataset, _ahn3SurfaceDataset,
-										 result("changes").path(), _progress);
-		configure(comp);
-		comp.execute();
-		result("changes").dataset = comp.target();
-	}
-	/*
-	// Create basic changeset
-	_progressMessage = "Creating changeset";
-	newResult("changeset");
-	{
-		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset, 
-							  result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
-		                      result("changeset").path(), _progress);
-		comparison.minimumThreshold = 1.f;
-		comparison.spatialReference = "EPSG:28992"; // The SRS is given slightly differently for some AHN-2 tiles (but not all).
-		if (_ahn2TerrainDataset && _ahn3TerrainDataset &&
-			_ahn2SurfaceDataset == _ahn3SurfaceDataset)
-			comparison.bands = { 1, 3 };
-		configure(comparison);
-
-		comparison.execute();
-		result("changeset").dataset = comparison.target();
-	}
-	GDALClose(_ahn2SurfaceDataset);
-	if (_ahn3SurfaceDataset != _ahn2SurfaceDataset)
-		GDALClose(_ahn3SurfaceDataset);
-	if (_ahn2TerrainDataset != _ahn2SurfaceDataset)
-		GDALClose(_ahn2TerrainDataset);
-	if (_ahn3TerrainDataset != _ahn3SurfaceDataset)
-		GDALClose(_ahn3TerrainDataset);
-	_ahn2SurfaceDataset = nullptr;
-	_ahn3SurfaceDataset = nullptr;
-	_ahn2TerrainDataset = nullptr;
-	_ahn3TerrainDataset = nullptr;
-	deleteResult("buildings-ahn2");
-	deleteResult("buildings-ahn3");
-
-	// Noise filtering
-	_progressMessage = "Noise filtering";
-	newResult("noise");
-	{
-		NoiseFilter<float> filter(result("changeset").dataset, result("noise").path(), 2, _progress);
-		configure(filter);
-
-		filter.execute();
-		result("noise").dataset = filter.target();
-	}
-	deleteResult("changeset");
-
-	// Cluster filtering
-	_progressMessage = "Cluster filtering";
-	newResult("sieve");
-	newResult("cluster");
-	{
-		ClusterFilter<float> filter(result("noise").dataset, result("sieve").path(), result("cluster").path(), _progress);
-		filter.nodataValue = 0;
-		configure(filter);
-
-		filter.execute();
-		result("sieve").dataset = filter.filter();
-		result("cluster").dataset = filter.target();
-	}
-	deleteResult("noise");
-	deleteResult("sieve");
-
-	// Morpohology dilation
-	_progressMessage = "Morpohology dilation";
-	newResult("dilation");
-	{
-		MorphologyFilter<float> filter(result("cluster").dataset, result("dilation").path(), MorphologyFilter<float>::Dilation, _progress);
-		configure(filter);
-
-		filter.execute();
-		result("dilation").dataset = filter.target();
-	}
-	deleteResult("cluster");
-
-	// Majority filtering
-	for (int range = 1; range <= 2; ++range)
-	{
-		_progressMessage = "Majority filtering / r=" + std::to_string(range);
-		std::size_t index = newResult("majority");
+		_progressMessage = "Change detection";
+		newResult("changes");
 		{
-			MajorityFilter<float> filter(
-				index == 0 ? result("dilation").dataset : result("majority", 0).dataset,
-				result("majority", index).path(),
-				range, _progress);
-			configure(filter);
-
-			filter.execute();
-			result("majority", index).dataset = filter.target();
+			BuildingAreaComparer comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+				_ahn2SurfaceDataset, _ahn3SurfaceDataset,
+				result("changes").path(), _progress);
+			configure(comp);
+			comp.execute();
+			result("changes").dataset = comp.target();
 		}
-		if (index == 0)
-			deleteResult("dilation");
-		else
-			deleteResult("majority", 0);
-	}
+		GDALClose(_ahn2SurfaceDataset);
+		if (_ahn3SurfaceDataset != _ahn2SurfaceDataset)
+			GDALClose(_ahn3SurfaceDataset);
+		_ahn2SurfaceDataset = nullptr;
+		_ahn3SurfaceDataset = nullptr;
+		deleteResult("buildings-ahn2");
+		deleteResult("buildings-ahn3");
 
-	// Write out the results
-	_progressMessage = "Writing results";
-	newResult(std::string(), true);
-	{
-		// GTiff creation options
-		char** params = nullptr;
-		params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+		_progressMessage = "Writing results";
+		newResult(std::string(), true);
+		{
+			// GTiff creation options
+			char** params = nullptr;
+			params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
 
-		// Copy results to disk or VSI
-		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
-		result("").dataset = driver->CreateCopy(result("").path().c_str(), result("majority").dataset,
-		                                         false, params, gdalProgress, static_cast<void*>(this));
-		CSLDestroy(params);
+			// Copy results to disk or VSI
+			GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+			result("").dataset = driver->CreateCopy(result("").path().c_str(), result("changes").dataset,
+				false, params, gdalProgress, static_cast<void*>(this));
+			CSLDestroy(params);
+		}
+		deleteResult("changes");
 	}
-	deleteResult("majority");
-	*/
 }
 
 Result& Process::result(const std::string& name, std::size_t index)
