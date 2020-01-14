@@ -69,16 +69,12 @@ void ContourClassification::onExecute()
 			}
 			else
 			{
-				//it = groupedSegments.erase(it);
 				++it;
 				refAngle = old;
 			}
 		}
 
-		//bool simple = groupedSegments.size() < 10;
-		//bool hasLongSegment = std::find_if(groupedSegments.begin(), groupedSegments.end(),
-		//	[](const std::vector<cv::Point>& s) { return s.size() > 25; }) != groupedSegments.end();
-		bool size = sumCnt > minBuildingPixelPerimeter; // at least 40 meters perimeter
+		bool size = sumCnt > minBuildingPixelPerimeter;
 		if (size)
 		{
 			// vegetation filter

@@ -1,5 +1,7 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <vector>
 
 #include <opencv2/imgproc.hpp>
@@ -28,6 +30,12 @@ public:
 	/// </summary>
 	/// <returns>The initial contours without redundancy.</returns>
 	std::vector<std::vector<std::vector<cv::Point> > >& getContours();
+
+	int maxSegmentEndpointPixelDifference = 7;
+	int maxSegmentNormDifference = 10;
+	float minRatio_identicalPoints = 1. / 2;
+	float similarAngleThreshold = M_PI / 16;
+
 protected:
 	/// <summary>
 	/// Prepares the output.
@@ -38,11 +46,6 @@ protected:
 	/// Calculates the output.
 	/// </summary>
 	void onExecute() override;
-
-	int maxSegmentEndpointPixelDifference = 7;
-	int maxSegmentNormDifference = 10;
-	float minRatio_identicalPoints = 1. / 2;
-	float similarAngleThreshold = 3.14 / 16;
 
 private:
 	std::vector<std::vector<std::vector<cv::Point> > > _contours;

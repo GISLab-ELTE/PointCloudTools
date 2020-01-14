@@ -13,12 +13,6 @@ void ContourFiltering::onExecute()
 {
 	std::copy_if(_contours.begin(), _contours.end(), std::back_inserter(_filteredContours),
 		[this](const std::vector<cv::Point>& c) {
-		// possible connection between redundancy and geometry
-		//auto hash = [](const cv::Point& p) { return (size_t)(p.x * 100 + p.y); };
-		//auto eq = [](const cv::Point& p1, const cv::Point& p2) { return p1 == p2; };
-		//std::unordered_set<cv::Point, decltype(hash), decltype(eq)> set(c.begin(), c.end(), 11, hash, eq);
-		//bool redundancy = set.size() * 1.6 < c.size() || set.size() * 1.1 > c.size();
-
 		int minStraightLength = this->subsequenceLength_monotonic;
 		auto pred = [&minStraightLength, it = c.begin()](const cv::Point& p) mutable {
 			auto interval = it + minStraightLength;

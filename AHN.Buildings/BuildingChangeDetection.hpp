@@ -10,14 +10,14 @@ namespace AHN
 namespace Buildings
 {
 /// <summary>
-/// Represents 
+/// Change detection for builings using surface data and building areas.
 /// </summary>
 
-class BuildingAreaComparer : public CloudTools::DEM::DatasetTransformation<int, uint32_t>
+class BuildingChangeDetection: public CloudTools::DEM::DatasetTransformation<int, uint32_t>
 {
 public:
 	/// <summary>
-	/// Initializes 
+	/// Initializes a new instance of the class.
 	/// </summary>
 	/// <param name="ahn2Dataset">The AHN-2 dataset of the comparison.</param>
 	/// <param name="ahn3Dataset">The AHN-3 dataset of the comparison.</param>
@@ -25,7 +25,7 @@ public:
 	/// <param name="ahn3Surface">The AHN-3 surface data of the comparison.</param>
 	/// <param name="targetPath">The target path of the comparison.</param>
 	/// <param name="progress">he callback method to report progress.</param>
-	BuildingAreaComparer(GDALDataset* ahn2Dataset, GDALDataset* ahn3Dataset,
+	BuildingChangeDetection(GDALDataset* ahn2Dataset, GDALDataset* ahn3Dataset,
 						 GDALDataset* ahn2Surface, GDALDataset* ahn3Surface,
 						 const std::string& targetPath,
 						 CloudTools::Operation::ProgressType progress = nullptr)
@@ -36,8 +36,8 @@ public:
 	}
 
 
-	BuildingAreaComparer(const BuildingAreaComparer&) = delete;
-	BuildingAreaComparer& operator=(const BuildingAreaComparer&) = delete;
+	BuildingChangeDetection(const BuildingChangeDetection&) = delete;
+	BuildingChangeDetection& operator=(const BuildingChangeDetection&) = delete;
 
 private:
 	/// <summary>
@@ -46,7 +46,7 @@ private:
 	void initialize();
 };
 
-void BuildingAreaComparer::initialize()
+void BuildingChangeDetection::initialize()
 {
 	this->nodataValue = 0;
 
@@ -64,35 +64,21 @@ void BuildingAreaComparer::initialize()
 				float ahn2H = this->sourceData(2, i, j);
 				float ahn3H = this->sourceData(3, i, j);
 				auto pair = std::make_pair(ahn2, ahn3);
-				/*try
-				{
-					stat.at(pair);;
-				}
-				catch (std::exception e)
-				{
-					stat[pair].first = 0;
-					stat[pair].second = 0;
 
-				}*/
 				if ((ahn2 > 0 || ahn3 > 0) && ahn2H < 10000 && ahn3H < 10000)
 				{
-					auto tmp1 = stat[pair].second * stat[pair].first;
-					auto tmp2 = tmp1 + ahn3H - ahn2H;
-					auto tmp3 = tmp2 / (stat[pair].first + 1);
-					stat[pair].second = tmp3;
-					// stat[pair].second = (stat[pair].second * stat[pair].first + (ahn3H - ahn2H)) / (stat[pair].first + 1);
+					stat[pair].second += (1. / (stat[pair].first + 1)) * (ahn3H - ahn2H - stat[pair].second);
 				}
 				stat[pair].first++;
 				if (ahn2 > 0) pairings2[ahn2].insert(ahn3);
 				if (ahn3 > 0) pairings3[ahn3].insert(ahn2);
 			}
 
-		std::set<std::pair<uint32_t, uint32_t> > type2;
-		std::set<std::pair<uint32_t, uint32_t> > type3;
-		std::set<std::pair<uint32_t, uint32_t> > type5;
-		std::set<std::pair<uint32_t, uint32_t> > type8;
-		std::set<std::pair<uint32_t, uint32_t> > type9;
-		//std::set<std::pair<uint32_t, uint32_t> > type;
+		std::set<std::pair<uint32_t, uint32_t> > type2; // only AHN2
+		std::set<std::pair<uint32_t, uint32_t> > type3; // only AHN3
+		std::set<std::pair<uint32_t, uint32_t> > type5; // unchanged AHN2-3
+		std::set<std::pair<uint32_t, uint32_t> > type8; // changed AHN2-3
+		std::set<std::pair<uint32_t, uint32_t> > type9; // reconstructed (unchanged)
 
 		for (auto const &entry : stat)
 		{
@@ -119,7 +105,7 @@ void BuildingAreaComparer::initialize()
 					if (id > 0)
 					{
 						if (abs(data.second) <= 2) type5.insert(pair);
-						 else type8.insert(pair);
+						else type8.insert(pair);
 					}
 					else if (abs(data.second) >= 2) type3.insert(pair);
 					else if (abs(data.second) <= 2) type9.insert(pair);

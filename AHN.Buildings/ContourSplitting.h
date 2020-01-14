@@ -28,6 +28,9 @@ public:
 	/// </summary>
 	/// <returns>The straight contour segments for each initial contour.</returns>
 	std::vector<std::vector<std::vector<cv::Point> > >& getContours();
+
+	int minStraightSegmentLength = 5;
+
 protected:
 	/// <summary>
 	/// Prepares the output.
@@ -38,8 +41,6 @@ protected:
 	/// Calculates the output.
 	/// </summary>
 	void onExecute() override;
-
-	int minStraightSegmentLength = 5;
 
 private:
 	std::vector<std::vector<cv::Point> > _contours;

@@ -1,5 +1,6 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <vector>
 
@@ -29,16 +30,6 @@ public:
 	/// </summary>
 	/// <returns>The contours denoting buildings.</returns>
 	std::vector<std::vector<cv::Point> >& getContours();
-protected:
-	/// <summary>
-	/// Prepares the output.
-	/// </summary>
-	void onPrepare() override;
-
-	/// <summary>
-	/// Calculates the output.
-	/// </summary>
-	void onExecute() override;
 
 	int closurePixelDifference = 5;
 	float similarAngleThreshold = M_PI / 18;
@@ -52,6 +43,17 @@ protected:
 	float avgSegmentPixels = 15;
 	float minChainingRatio = 3. / 4;
 	int maxChainingPixelError = 20;
+
+protected:
+	/// <summary>
+	/// Prepares the output.
+	/// </summary>
+	void onPrepare() override;
+
+	/// <summary>
+	/// Calculates the output.
+	/// </summary>
+	void onExecute() override;
 
 private:
 	std::vector<std::vector<std::vector<cv::Point> > > _contours;

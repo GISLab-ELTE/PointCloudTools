@@ -43,6 +43,7 @@ protected:
 	/// Calculates the output.
 	/// </summary>
 	void onExecute() override;
+
 private:
 	std::vector<std::vector<cv::Point> > _contours;
 	std::vector<std::vector<cv::Point> > _filteredContours;

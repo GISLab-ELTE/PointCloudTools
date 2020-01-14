@@ -28,7 +28,7 @@
 #include "ContourSimplification.h"
 #include "ContourClassification.h"
 #include "ContourConvexHullRasterizer.h"
-#include "BuildingAreaComparer.hpp"
+#include "BuildingChangeDetection.hpp"
 #include "Comparison.h"
 
 using namespace CloudTools::DEM;
@@ -264,7 +264,7 @@ void Process::onExecute()
 		_progressMessage = "Change detection";
 		newResult("changes");
 		{
-			BuildingAreaComparer comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+			BuildingChangeDetection comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
 				_ahn2SurfaceDataset, _ahn3SurfaceDataset,
 				result("changes").path(), _progress);
 			configure(comp);

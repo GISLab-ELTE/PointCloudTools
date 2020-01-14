@@ -11,8 +11,6 @@ void ContourDetection::initialize()
 		cv::Mat edge;
 		edge.create(sizeY, sizeX, CV_8UC1); // required format for the Canny function
 
-		// auto m1 = _sourceDatasets[0]->GetRasterBand(1)->GetMinimum();
-		// auto m2 = _sourceDatasets[0]->GetRasterBand(1)->GetMaximum();
 		float min = FLT_MAX, max = 0;
 		for (int i = 0; i < sizeX; ++i)
 			for (int j = 0; j < sizeY; ++j)
@@ -41,7 +39,6 @@ void ContourDetection::initialize()
 			}
 
 		// smooth elevation image for better edge results
-		// TODO: Gaussian vs box filter
 		cv::blur(edge, edge, cv::Size(smoothingFilterKernelSize,smoothingFilterKernelSize));
 		cannyUpperThreshold = (255 / (max - min)) * 2 * 2;
 		cv::Canny(edge, edge,
@@ -50,7 +47,6 @@ void ContourDetection::initialize()
 				  smoothingFilterKernelSize, // equal kernel size with smoothing
 				  false); // more accurate computation
 
-		// std::vector<cv::Vec4i> hierarchy;
 		findContours(edge, this->_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
 	};
 }
