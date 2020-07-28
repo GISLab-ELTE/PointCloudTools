@@ -1,6 +1,8 @@
 #ifndef CLOUDTOOLS_VOLUMEDIFFERENCE_H
 #define CLOUDTOOLS_VOLUMEDIFFERENCE_H
 
+#include <map>
+
 #include <CloudTools.DEM/ClusterMap.h>
 
 using namespace CloudTools::DEM;

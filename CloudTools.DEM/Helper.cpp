@@ -46,7 +46,7 @@ std::string SRSDescription(const OGRSpatialReference& reference)
 	char *wkt;
 	reference.exportToPrettyWkt(&wkt);
 	std::string srs = std::string(wkt);
-    CPLFree(wkt);
+	CPLFree(wkt);
 
 	return srs;
 }

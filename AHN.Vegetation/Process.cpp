@@ -397,6 +397,7 @@ void Process::process()
 
 ClusterMap Process::map()
 {
+	return ClusterMap();
 	//return cluster;
 }
 
