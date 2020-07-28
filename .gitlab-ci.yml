@@ -1,6 +1,10 @@
 stages:
   - build
 
+variables:
+  # No interactive timezone dialog for tzdata
+  DEBIAN_FRONTEND: noninteractive
+
 before_script:
   - apt-get update -yqq
   - apt-get install -yqq build-essential cmake
