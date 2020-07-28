@@ -26,12 +26,12 @@ void Process::setAHNVersion(int version)
 
 bool Process::runReporter(CloudTools::DEM::Calculation* operation)
 {
-  operation->progress = [this](float complete, const std::string& message)
-  {
-    this->reporter->report(complete, message);
-    return true;
-  };
-  return false;
+	operation->progress = [this](float complete, const std::string& message)
+	{
+		this->reporter->report(complete, message);
+		return true;
+	};
+	return false;
 }
 
 std::vector<OGRPoint> Process::collectSeedPoints(GDALDataset* target, po::variables_map& vm)
@@ -125,21 +125,21 @@ void Process::writeClusterMapToFile(const ClusterMap& cluster,
 }
 
 void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
-																			const std::string& ahn2Outpath, DistanceCalculation* distance)
+	const std::string& ahn2Outpath, DistanceCalculation* distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 	if (driver == nullptr)
 		throw std::invalid_argument("Target output format unrecognized.");
 
 	if (fs::exists(ahn2Outpath) &&
-			driver->Delete(ahn2Outpath.c_str()) == CE_Failure &&
-			!fs::remove(ahn2Outpath))
+		driver->Delete(ahn2Outpath.c_str()) == CE_Failure &&
+		!fs::remove(ahn2Outpath))
 		throw std::runtime_error("Cannot overwrite previously created target file.");
 
 	GDALDataset* target = driver->Create(ahn2Outpath.c_str(),
-																			 targetMetadata.rasterSizeX(),
-																			 targetMetadata.rasterSizeY(), 1,
-																			 gdalType<int>(), nullptr);
+		targetMetadata.rasterSizeX(),
+		targetMetadata.rasterSizeY(), 1,
+		gdalType<int>(), nullptr);
 	if (target == nullptr)
 		throw std::runtime_error("Target file creation failed.");
 
@@ -167,26 +167,26 @@ void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, 
 		for (const auto& point : points)
 		{
 			ioResult = static_cast<CPLErr>(ioResult |
-																		 targetBand->RasterIO(GF_Write,
-																													point.getX(), point.getY(),
-																													1, 1,
-																													&commonId,
-																													1, 1,
-																													gdalType<int>(),
-																													0, 0));
+				targetBand->RasterIO(GF_Write,
+					point.getX(), point.getY(),
+					1, 1,
+					&commonId,
+					1, 1,
+					gdalType<int>(),
+					0, 0));
 		}
 
 		points = ahn3Map.points(elem.first.second);
 		for (const auto& point : points)
 		{
 			ioResult = static_cast<CPLErr>(ioResult |
-																		 targetBand->RasterIO(GF_Write,
-																													point.getX(), point.getY(),
-																													1, 1,
-																													&commonId,
-																													1, 1,
-																													gdalType<int>(),
-																													0, 0));
+				targetBand->RasterIO(GF_Write,
+					point.getX(), point.getY(),
+					1, 1,
+					&commonId,
+					1, 1,
+					gdalType<int>(),
+					0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -201,13 +201,13 @@ void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, 
 		for (const auto& point : points)
 		{
 			ioResult = static_cast<CPLErr>(ioResult |
-																		 targetBand->RasterIO(GF_Write,
-																													point.getX(), point.getY(),
-																													1, 1,
-																													&commonId,
-																													1, 1,
-																													gdalType<int>(),
-																													0, 0));
+				targetBand->RasterIO(GF_Write,
+					point.getX(), point.getY(),
+					1, 1,
+					&commonId,
+					1, 1,
+					gdalType<int>(),
+					0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -222,13 +222,13 @@ void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, 
 		for (const auto& point : points)
 		{
 			ioResult = static_cast<CPLErr>(ioResult |
-																		 targetBand->RasterIO(GF_Write,
-																													point.getX(), point.getY(),
-																													1, 1,
-																													&commonId,
-																													1, 1,
-																													gdalType<int>(),
-																													0, 0));
+				targetBand->RasterIO(GF_Write,
+					point.getX(), point.getY(),
+					1, 1,
+					&commonId,
+					1, 1,
+					gdalType<int>(),
+					0, 0));
 		}
 
 		if (ioResult != CE_None)
@@ -240,130 +240,130 @@ void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, 
 
 ClusterMap Process::preprocess(int version)
 {
-  std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
-  std::string dtm, dsm;
-  ClusterMap cluster;
+	std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
+	std::string dtm, dsm;
+	ClusterMap cluster;
 
-  if (version == 3)
-  {
-    chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
-    antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
-    nosmallOut = (fs::path(outputDir) / "ahn3_nosmall.tif").string();
-    interpolOut = (fs::path(outputDir) / "ahn3_interpol.tif").string();
-    segmentationOut = (fs::path(outputDir) / "ahn3_segmentation.tif").string();
-    morphologyOut = (fs::path(outputDir) / "ahn3_morphology.tif").string();
-    dsm = AHN3DSMInputPath;
-    dtm = AHN3DTMInputPath;
-  }
+	if (version == 3)
+	{
+		chmOut = (fs::path(outputDir) / "ahn3_CHM.tif").string();
+		antialiasOut = (fs::path(outputDir) / "ahn3_antialias.tif").string();
+		nosmallOut = (fs::path(outputDir) / "ahn3_nosmall.tif").string();
+		interpolOut = (fs::path(outputDir) / "ahn3_interpol.tif").string();
+		segmentationOut = (fs::path(outputDir) / "ahn3_segmentation.tif").string();
+		morphologyOut = (fs::path(outputDir) / "ahn3_morphology.tif").string();
+		dsm = AHN3DSMInputPath;
+		dtm = AHN3DTMInputPath;
+	}
 
-  if (version == 2)
-  {
-    chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
-    antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
-    nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
-    interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
-    segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
-    morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
+	if (version == 2)
+	{
+		chmOut = (fs::path(outputDir) / "ahn2_CHM.tif").string();
+		antialiasOut = (fs::path(outputDir) / "ahn2_antialias.tif").string();
+		nosmallOut = (fs::path(outputDir) / "ahn2_nosmall.tif").string();
+		interpolOut = (fs::path(outputDir) / "ahn2_interpol.tif").string();
+		segmentationOut = (fs::path(outputDir) / "ahn2_segmentation.tif").string();
+		morphologyOut = (fs::path(outputDir) / "ahn2_morphology.tif").string();
 		dsm = AHN2DSMInputPath;
 		dtm = AHN2DTMInputPath;
-  }
+	}
 
-  Difference<float> comparison({dtm, dsm}, chmOut);
-  if (!vm.count("quiet"))
-  {
-    runReporter(&comparison);
-  }
-  comparison.execute();
-  reporter->reset();
-  std::cout << "CHM created." << std::endl;
+	Difference<float> comparison({ dtm, dsm }, chmOut);
+	if (!vm.count("quiet"))
+	{
+		runReporter(&comparison);
+	}
+	comparison.execute();
+	reporter->reset();
+	std::cout << "CHM created." << std::endl;
 
-  this->targetMetadata = comparison.targetMetadata();
+	this->targetMetadata = comparison.targetMetadata();
 
-  MatrixTransformation filter(comparison.target(), antialiasOut, 1);
-  filter.setMatrix(0, 0, 4); // middle
-  filter.setMatrix(0, -1, 2); // sides
-  filter.setMatrix(0, 1, 2);
-  filter.setMatrix(-1, 0, 2);
-  filter.setMatrix(1, 0, 2);
-  filter.setMatrix(-1, -1, 1); // corners
-  filter.setMatrix(1, -1, 1);
-  filter.setMatrix(-1, 1, 1);
-  filter.setMatrix(1, 1, 1);
+	MatrixTransformation filter(comparison.target(), antialiasOut, 1);
+	filter.setMatrix(0, 0, 4); // middle
+	filter.setMatrix(0, -1, 2); // sides
+	filter.setMatrix(0, 1, 2);
+	filter.setMatrix(-1, 0, 2);
+	filter.setMatrix(1, 0, 2);
+	filter.setMatrix(-1, -1, 1); // corners
+	filter.setMatrix(1, -1, 1);
+	filter.setMatrix(-1, 1, 1);
+	filter.setMatrix(1, 1, 1);
 
-  if (!vm.count("quiet"))
-  {
-    runReporter(&filter);
-  }
-  filter.execute();
-  reporter->reset();
-  std::cout << "Matrix transformation executed.." << std::endl;
+	if (!vm.count("quiet"))
+	{
+		runReporter(&filter);
+	}
+	filter.execute();
+	reporter->reset();
+	std::cout << "Matrix transformation executed.." << std::endl;
 
-  EliminateNonTrees elimination({filter.target()}, nosmallOut);
-  if (!vm.count("quiet"))
-  {
-	  runReporter(&elimination);
-  }
-  elimination.execute();
-  reporter->reset();
-  std::cout << "Small points eliminated.." << std::endl;
+	EliminateNonTrees elimination({ filter.target() }, nosmallOut);
+	if (!vm.count("quiet"))
+	{
+		runReporter(&elimination);
+	}
+	elimination.execute();
+	reporter->reset();
+	std::cout << "Small points eliminated.." << std::endl;
 
-  InterpolateNoData interpolation({elimination.target()}, interpolOut);
-  if (!vm.count("quiet"))
-  {
-    runReporter(&interpolation);
-  }
-  interpolation.execute();
-  reporter->reset();
-  std::cout << "Interpolation is done." << std::endl;
+	InterpolateNoData interpolation({ elimination.target() }, interpolOut);
+	if (!vm.count("quiet"))
+	{
+		runReporter(&interpolation);
+	}
+	interpolation.execute();
+	reporter->reset();
+	std::cout << "Interpolation is done." << std::endl;
 
-  std::vector<OGRPoint> seedPoints = collectSeedPoints(interpolation.target(), vm);
-  std::cout << "Seed points collected." << std::endl;
+	std::vector<OGRPoint> seedPoints = collectSeedPoints(interpolation.target(), vm);
+	std::cout << "Seed points collected." << std::endl;
 
-  //ClusterMap cluster;
+	//ClusterMap cluster;
 	cluster.setSizeX(this->targetMetadata.rasterSizeX());
 	cluster.setSizeY(this->targetMetadata.rasterSizeY());
 
-  TreeCrownSegmentation segmentation({ interpolation.target() }, seedPoints);
-  if (!vm.count("quiet"))
-  {
-	  runReporter(&segmentation);
-  }
-  segmentation.execute();
-  reporter->reset();
-  std::cout << "Tree crown segmentation is done." << std::endl;
+	TreeCrownSegmentation segmentation({ interpolation.target() }, seedPoints);
+	if (!vm.count("quiet"))
+	{
+		runReporter(&segmentation);
+	}
+	segmentation.execute();
+	reporter->reset();
+	std::cout << "Tree crown segmentation is done." << std::endl;
 
-  cluster = segmentation.clusterMap();
+	cluster = segmentation.clusterMap();
 
-  writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
+	writeClusterMapToFile(cluster, targetMetadata, segmentationOut);
 
-  int morphologyCounter = 3, erosionThreshold = 6;
-  for (int i = 0; i < morphologyCounter; ++i)
-  {
-	  MorphologyClusterFilter erosion(cluster, { elimination.target() }, nullptr,
-		  MorphologyClusterFilter::Method::Erosion, nullptr);
-	  erosion.threshold = erosionThreshold;
-	  erosion.execute();
-	  std::cout << "Morphological erosion performed." << std::endl;
+	int morphologyCounter = 3, erosionThreshold = 6;
+	for (int i = 0; i < morphologyCounter; ++i)
+	{
+		MorphologyClusterFilter erosion(cluster, { elimination.target() }, nullptr,
+			MorphologyClusterFilter::Method::Erosion, nullptr);
+		erosion.threshold = erosionThreshold;
+		erosion.execute();
+		std::cout << "Morphological erosion performed." << std::endl;
 
-	  MorphologyClusterFilter dilation(erosion.clusterMap, { elimination.target() }, nullptr,
-		  MorphologyClusterFilter::Method::Dilation, nullptr);
-	  dilation.execute();
-	  std::cout << "Morphological dilation performed." << std::endl;
+		MorphologyClusterFilter dilation(erosion.clusterMap, { elimination.target() }, nullptr,
+			MorphologyClusterFilter::Method::Dilation, nullptr);
+		dilation.execute();
+		std::cout << "Morphological dilation performed." << std::endl;
 
-	  cluster = dilation.clusterMap;
-  }
+		cluster = dilation.clusterMap;
+	}
 
-  int removalRadius = 16;
-  cluster.removeSmallClusters(removalRadius);
+	int removalRadius = 16;
+	cluster.removeSmallClusters(removalRadius);
 
-  writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
+	writeClusterMapToFile(cluster, targetMetadata, morphologyOut);
 
-  return cluster;
+	return cluster;
 }
 
 void Process::process()
 {
-  std::unique_ptr<DistanceCalculation> distance;
+	std::unique_ptr<DistanceCalculation> distance;
 	if (method == Hausdorff)
 	{
 		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
@@ -378,7 +378,7 @@ void Process::process()
 	if (method == Centroid)
 	{
 		std::cout << "Using gravity distance to pair up clusters." << std::endl;
-    distance.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
+		distance.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
 		std::cout << "Gravity distance calculated." << std::endl;
 	}
 
@@ -386,13 +386,13 @@ void Process::process()
 
 	writeClusterPairsToFile(clusterAHN2, clusterAHN3, targetMetadata, "cluster_pairs.tif", distance.get());
 
-  std::cout << "Total number of clusters in AHN2: " << clusterAHN2.clusterIndexes().size() << std::
-  endl;
-  std::cout << "Total number of clusters in AHN3: " << clusterAHN3.clusterIndexes().size() << std::
-  endl;
-  std::cout << "Pairs found: " << distance->closest().size() << std::endl;
-  std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
-  std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
+	std::cout << "Total number of clusters in AHN2: " << clusterAHN2.clusterIndexes().size() << std::
+		endl;
+	std::cout << "Total number of clusters in AHN3: " << clusterAHN3.clusterIndexes().size() << std::
+		endl;
+	std::cout << "Pairs found: " << distance->closest().size() << std::endl;
+	std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
+	std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
 }
 
 ClusterMap Process::map()
@@ -408,7 +408,7 @@ void Process::run()
 	clusterAHN2 = preprocess(2);
 	clusterAHN3 = preprocess(3);
 
-  process();
+	process();
 }
 }
 }
