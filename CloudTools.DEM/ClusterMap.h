@@ -41,7 +41,6 @@ private:
 	{
 		bool operator()(const OGRPoint& a, const OGRPoint& b) const
 		{
-			//return a.Equals(&const_cast<OGRPoint&>(b));
 			return a.getX() == b.getX() && a.getY() == b.getY();
 		}
 	};

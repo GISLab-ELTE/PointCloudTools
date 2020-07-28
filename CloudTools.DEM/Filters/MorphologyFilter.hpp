@@ -27,6 +27,11 @@ public:
 	/// </summary>
 	Method method;
 
+    /// <summary>
+    /// Threshold value for morphology filter.
+    ///
+    /// Default value is -1, which will be 0 for dilation and 9 for erosion.
+    /// </summary>
 	int threshold = -1;
 
 public:

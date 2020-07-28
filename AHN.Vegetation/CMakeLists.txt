@@ -19,4 +19,4 @@ target_link_libraries(ahn_vegetation
 	Threads::Threads)
 
 install(TARGETS ahn_vegetation
-		DESTINATION ${CMAKE_INSTALL_PREFIX})
+	DESTINATION ${CMAKE_INSTALL_PREFIX})
