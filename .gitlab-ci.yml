@@ -1,8 +1,9 @@
-# Default image (https://hub.docker.com/_/php/)
-image: ubuntu:18.04
-
 stages:
   - build
+
+variables:
+  # No interactive timezone dialog for tzdata
+  DEBIAN_FRONTEND: noninteractive
 
 before_script:
   - apt-get update -yqq
@@ -11,10 +12,18 @@ before_script:
   - apt-get install -yqq libopenmpi-dev
 
 # Build
-build:
+.build:
   stage: build
   script:
     - mkdir -p build
     - cd build
     - cmake ..
     - make
+
+build_bionic:
+  extends: .build
+  image: ubuntu:18.04
+
+build_focal:
+  extends: .build
+  image: ubuntu:20.04
