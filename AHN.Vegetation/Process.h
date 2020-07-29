@@ -37,7 +37,6 @@ public:
             AHN3DTMInputPath(AHN3DTMInputPath), AHN3DSMInputPath(AHN3DSMInputPath),
             outputDir(outputDir), reporter(reporter), vm(vm), method(method)
   {
-
   }
 
   void run();
@@ -49,9 +48,6 @@ private:
   po::variables_map& vm;
   CloudTools::IO::Reporter* reporter;
   RasterMetadata targetMetadata;
-
-  double treeHeightThreshold;
-  float interpolationRatio;
 
   ClusterMap clusterAHN2, clusterAHN3;
 
