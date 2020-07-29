@@ -13,6 +13,7 @@
 #include "HausdorffDistance.h"
 #include "CentroidDistance.h"
 #include "VolumeDifference.h"
+#include "HeightDifference.h"
 
 using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
@@ -122,7 +123,7 @@ void Process::writeClusterMapToFile(const ClusterMap& cluster,
 }
 
 void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
-	const std::string& ahn2Outpath, DistanceCalculation* distance)
+	const std::string& ahn2Outpath, std::shared_ptr<DistanceCalculation> distance)
 {
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 	if (driver == nullptr)
@@ -233,6 +234,77 @@ void Process::writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, 
 	}
 
 	GDALClose(target);
+}
+
+void Process::writeClusterHeightsToFile(
+	ClusterMap& ahn2Map, ClusterMap& ahn3Map,
+	const std::string& ahn2DSM, const std::string& ahn3DSM,
+	const std::string& outpath, std::shared_ptr<DistanceCalculation> distance,
+	CloudTools::IO::Reporter* reporter, po::variables_map& vm)
+{
+	std::map<std::pair<int, int>, float> heightMap;
+	for (const auto& elem : distance->closest())
+	{
+		float ahn2ClusterHeight = std::accumulate(ahn2Map.points(elem.first.first).begin(),
+																							ahn2Map.points(elem.first.first).end(), 0.0,
+																							[](float sum, const OGRPoint& point)
+																							{
+																								return sum + point.getZ();
+																							});
+
+		float ahn3ClusterHeight = std::accumulate(ahn3Map.points(elem.first.second).begin(),
+																							ahn3Map.points(elem.first.second).end(), 0.0,
+																							[](float sum, const OGRPoint& point)
+																							{
+																								return sum + point.getZ();
+																							});
+
+		float heightDiff = ahn3ClusterHeight - ahn2ClusterHeight;
+		float avgHeightDiff = heightDiff /
+													std::max(ahn2Map.points(elem.first.first).size(), ahn3Map.points(elem.first.second).size());
+
+		for(const OGRPoint& point : ahn2Map.points(elem.first.first))
+		{
+			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
+		}
+
+		for (const OGRPoint& point : ahn3Map.points(elem.first.second))
+		{
+			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
+		}
+	}
+
+	SweepLineTransformation<float>* heightWriter = new SweepLineTransformation<float>(
+		{ ahn2DSM, ahn3DSM }, outpath, 0, nullptr);
+
+	heightWriter->computation = [&heightWriter, &heightMap](int x, int y,
+																													const std::vector<Window<float>>& sources)
+	{
+		const Window<float>& ahn2 = sources[0];
+		const Window<float>& ahn3 = sources[1];
+
+		if (!ahn2.hasData() || !ahn3.hasData())
+			return static_cast<float>(heightWriter->nodataValue);
+
+		auto index = std::make_pair(x, y);
+		if (!heightMap.count(index))
+			return static_cast<float>(heightWriter->nodataValue);
+		else
+			return heightMap[index];
+	};
+
+	if (!vm.count("quiet"))
+	{
+		heightWriter->progress = [&reporter](float complete, const std::string& message)
+		{
+			reporter->report(complete, message);
+			return true;
+		};
+	}
+	reporter->reset();
+	heightWriter->execute();
+
+	std::cout << "Height map written." << std::endl;
 }
 
 ClusterMap Process::preprocess(int version)
@@ -360,7 +432,7 @@ ClusterMap Process::preprocess(int version)
 
 void Process::process()
 {
-	std::unique_ptr<DistanceCalculation> distance;
+	std::shared_ptr<DistanceCalculation> distance;
 	if (method == Hausdorff)
 	{
 		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
@@ -376,7 +448,8 @@ void Process::process()
 	}
 
 	distance->execute();
-	writeClusterPairsToFile(clusterAHN2, clusterAHN3, targetMetadata, "cluster_pairs.tif", distance.get());
+	writeClusterPairsToFile(clusterAHN2, clusterAHN3, targetMetadata,
+		(fs::path(outputDir) / "cluster_pairs.tif").string(), distance);
 
 	std::cout << "Total number of clusters in AHN2: " << clusterAHN2.clusterIndexes().size() << std::
 		endl;
@@ -386,11 +459,14 @@ void Process::process()
 	std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
 	std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
 
-	VolumeDifference<DistanceCalculation> volumeDifference(clusterAHN2, clusterAHN3, distance.get());
+	VolumeDifference volumeDifference(clusterAHN2, clusterAHN3, distance);
 
 	std::cout << "AHN2 full volume: " << volumeDifference.ahn2_fullVolume << std::endl;
 	std::cout << "AHN3 full volume: " << volumeDifference.ahn3_fullVolume << std::endl;
 	std::cout << "AHN2 and AHN3 difference: " << (volumeDifference.ahn3_fullVolume - volumeDifference.ahn2_fullVolume) << std::endl;
+
+	writeClusterHeightsToFile(clusterAHN2, clusterAHN3, AHN2DSMInputPath, AHN3DSMInputPath,
+		(fs::path(outputDir) / "cluster_heights.tif").string(), distance, reporter, vm);
 }
 
 void Process::run()

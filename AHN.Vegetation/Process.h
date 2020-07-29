@@ -67,7 +67,13 @@ private:
 	  const RasterMetadata& metadata, const std::string& outpath);
 
   void writeClusterPairsToFile(ClusterMap& ahn2Map, ClusterMap& ahn3Map, RasterMetadata& targetMetadata,
-                               const std::string& ahn2Outpath, DistanceCalculation* distance);
+                               const std::string& ahn2Outpath, std::shared_ptr<DistanceCalculation> distance);
+
+  void writeClusterHeightsToFile(
+    ClusterMap& ahn2Map, ClusterMap& ahn3Map,
+    const std::string& ahn2DSM, const std::string& ahn3DSM,
+    const std::string& outpath, std::shared_ptr<DistanceCalculation> distance,
+    CloudTools::IO::Reporter* reporter, po::variables_map& vm);
 };
 }
 }

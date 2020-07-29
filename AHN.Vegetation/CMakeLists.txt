@@ -11,6 +11,7 @@ add_executable(ahn_vegetation
 	EliminateNonTrees.h EliminateNonTrees.cpp
 	VolumeDifference.cpp VolumeDifference.h
 	DistanceCalculation.h
+	HeightDifference.h HeightDifference.cpp
 	Process.h Process.cpp )
 
 target_link_libraries(ahn_vegetation
