@@ -96,3 +96,13 @@ Get usage information and available arguments with the `-h` flag.
 
 *Note:* since the GDAL library is linked dynamically, some environment variables (`GDAL_BIN`, `GDAL_DATA` and `GDAL_DRIVER_PATH`) must be configured to execute the above binaries. Set them correctly in your OS account or in the active shell.  
 On Windows you may create a `Shell.config.cmd` file based on the given sample (`Shell.config.cmd.sample`) and run the `Shell.bat` preconfigured environment at the installation location.
+
+Contributing
+------------
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on coding conventions.
+
+License
+------------
+
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
