@@ -26,8 +26,8 @@ public:
 	std::map<std::pair<GUInt32, GUInt32>, double> distances() const;
 
 private:
-	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances;
-	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistances2;
+	std::map<std::pair<GUInt32, GUInt32>, double> ahn2HausdorffDistances;
+	std::map<std::pair<GUInt32, GUInt32>, double> ahn3HausdorffDistances;
 
 	void onExecute() override;
 };

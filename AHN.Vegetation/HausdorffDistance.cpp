@@ -33,7 +33,7 @@ void HausdorffDistance::onExecute()
 				}
 				distances.push_back(minDistance);
 			}
-			hausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex),
+			ahn2HausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex),
 			                                          *std::max_element(distances.begin(), distances.end())));
 		}
 	}
@@ -62,14 +62,14 @@ void HausdorffDistance::onExecute()
 				}
 				distances.push_back(minDistance);
 			}
-			hausdorffDistances2.emplace(std::make_pair(std::make_pair(otherIndex, index),
+			ahn3HausdorffDistances.emplace(std::make_pair(std::make_pair(otherIndex, index),
 			                                           *std::max_element(distances.begin(), distances.end())));
 		}
 	}
 
-	for (auto iter = hausdorffDistances.begin(); iter != hausdorffDistances.end(); iter++)
+	for (auto iter = ahn2HausdorffDistances.begin(); iter != ahn2HausdorffDistances.end(); iter++)
 	{
-		if (hausdorffDistances2.count(iter->first) == 1 &
+		if (ahn3HausdorffDistances.count(iter->first) == 1 &
 			std::find_if(closestClusters.begin(), closestClusters.end(),
 			             [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 			             {
@@ -77,50 +77,29 @@ void HausdorffDistance::onExecute()
 			             }) == closestClusters.end())
 			closestClusters.emplace(*iter);
 	}
-	/*
-		for (std::map<std::pair<GUInt32, GUInt32>, double>::iterator iter
-				= hausdorffDistances.begin(); iter != hausdorffDistances.end(); iter++)
-			if ()
-				closestClusters.emplace(*iter);
-	*/
 
 	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
-		if (std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
+		if (std::find_if(ahn2HausdorffDistances.begin(), ahn2HausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
 			                 return item.first.first == index;
-		                 }) == hausdorffDistances.end())
+		                 }) == ahn2HausdorffDistances.end())
 			lonelyClustersAHN2.push_back(index);
 
 	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
-		if (std::find_if(hausdorffDistances.begin(), hausdorffDistances.end(),
+		if (std::find_if(ahn2HausdorffDistances.begin(), ahn2HausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
 			                 return item.first.second == index;
-		                 }) == hausdorffDistances.end())
+		                 }) == ahn2HausdorffDistances.end())
 			lonelyClustersAHN3.push_back(index);
-
-	/*for (GUInt32 index : lonelyClustersAHN2.clusterIndexes())
-	  for (const OGRPoint& point : clusterMap.points(index))
-	  {
-		this->setTargetData(point.getX(), point.getY(), index);
-	  }*/
-}
-
-double HausdorffDistance::clusterDistance(GUInt32 index1, GUInt32 index2)
-{
-	std::pair<GUInt32, GUInt32> indexPair = std::make_pair(index1, index2);
-	if (hausdorffDistances.find(indexPair) != hausdorffDistances.end())
-		return hausdorffDistances.at(indexPair);
-
-	// TODO: missing return statement!
 }
 
 GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 {
 	GUInt32 closest = index;
 	std::map<double, GUInt32> distances;
-	for (auto elem : hausdorffDistances)
+	for (auto elem : ahn2HausdorffDistances)
 		if (elem.first.first == index)
 			distances.emplace(std::make_pair(elem.second, elem.first.second));
 
@@ -130,7 +109,7 @@ GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 
 std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances() const
 {
-	return hausdorffDistances;
+	return ahn2HausdorffDistances;
 }
 }
 }

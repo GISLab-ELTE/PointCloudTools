@@ -44,7 +44,7 @@ void TreeCrownSegmentation::initialize()
 
 					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
 					double otherSeedHeight = clusters.seedPoint(index_j).getZ();
-					//OGRPoint& lowestPoint = std::min(intersection.begin(), intersection.end(), PointComparator);
+
 					for (const OGRPoint& point : intersection)
 					{
 						double pointHeight = point.getZ();
@@ -102,13 +102,6 @@ void TreeCrownSegmentation::initialize()
 		}
 		while (hasChanged && currentVerticalDistance <= maxVerticalDistance);
 
-		// Write out the clusters as a DEM
-		/*for (GUInt32 index : clusterMap.clusterIndexes())
-			for (const OGRPoint& point : clusterMap.points(index))
-			{
-				this->setTargetData(point.getX(), point.getY(), index);
-			}
-			*/
 		if (this->progress)
 			this->progress(1.f, "Target created");
 	};

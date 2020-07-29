@@ -22,8 +22,6 @@ std::pair<double, std::map<GUInt32, double>> VolumeDifference<T>::calculateLonel
   std::map<GUInt32, double> lonelyVolume;
   std::vector<GUInt32> lonely;
 
-  //epoch == AHN2 ? lonely = this->distance->lonelyAHN2 : lonely = this->distance->lonelyAHN3;
-
   if (epoch == AHN2)
     lonely = this->distance->lonelyAHN2();
 
