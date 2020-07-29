@@ -6,11 +6,13 @@
 
 #include <CloudTools.DEM/Comparers/Difference.hpp>
 #include <CloudTools.DEM/Algorithms/MatrixTransformation.h>
+#include <future>
 #include "EliminateNonTrees.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
 #include "HausdorffDistance.h"
 #include "CentroidDistance.h"
+#include "VolumeDifference.h"
 
 using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
@@ -19,11 +21,6 @@ namespace AHN
 {
 namespace Vegetation
 {
-void Process::setAHNVersion(int version)
-{
-	this->AHNVersion = version;
-}
-
 bool Process::runReporter(CloudTools::DEM::Calculation* operation)
 {
 	operation->progress = [this](float complete, const std::string& message)
@@ -369,21 +366,16 @@ void Process::process()
 		std::cout << "Using Hausdorff distance to pair up clusters." << std::endl;
 		distance.reset(new HausdorffDistance(clusterAHN2, clusterAHN3));
 		std::cout << "Hausdorff distance calculated." << std::endl;
-
-		/*pairs = distance->closest().size();
-		lonelyAHN2 = distance->lonelyAHN2().size();
-		lonelyAHN3 = distance->lonelyAHN3().size();*/
 	}
 
 	if (method == Centroid)
 	{
-		std::cout << "Using gravity distance to pair up clusters." << std::endl;
+		std::cout << "Using centroid distance to pair up clusters." << std::endl;
 		distance.reset(new CentroidDistance(clusterAHN2, clusterAHN3));
 		std::cout << "Gravity distance calculated." << std::endl;
 	}
 
 	distance->execute();
-
 	writeClusterPairsToFile(clusterAHN2, clusterAHN3, targetMetadata, "cluster_pairs.tif", distance.get());
 
 	std::cout << "Total number of clusters in AHN2: " << clusterAHN2.clusterIndexes().size() << std::
@@ -393,20 +385,24 @@ void Process::process()
 	std::cout << "Pairs found: " << distance->closest().size() << std::endl;
 	std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
 	std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
-}
 
-ClusterMap Process::map()
-{
-	return ClusterMap();
-	//return cluster;
+	VolumeDifference<DistanceCalculation> volumeDifference(clusterAHN2, clusterAHN3, distance.get());
+
+	std::cout << "AHN2 full volume: " << volumeDifference.ahn2_fullVolume << std::endl;
+	std::cout << "AHN3 full volume: " << volumeDifference.ahn3_fullVolume << std::endl;
+	std::cout << "AHN2 and AHN3 difference: " << (volumeDifference.ahn3_fullVolume - volumeDifference.ahn2_fullVolume) << std::endl;
 }
 
 void Process::run()
 {
-	//setAHNVersion(version);
+	std::future<ClusterMap> ahn2Future = std::async(
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &Process::preprocess, this, 2);
 
-	clusterAHN2 = preprocess(2);
-	clusterAHN3 = preprocess(3);
+	std::future<ClusterMap> ahn3Future = std::async(
+			vm.count("parallel") ? std::launch::async : std::launch::deferred, &Process::preprocess, this, 3);
+
+	clusterAHN2 = ahn2Future.get();
+	clusterAHN3 = ahn3Future.get();
 
 	process();
 }

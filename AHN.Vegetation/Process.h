@@ -40,11 +40,7 @@ public:
 
   }
 
-  void setAHNVersion(int);
-
   void run();
-
-  ClusterMap map();
 
 private:
   int AHNVersion;
