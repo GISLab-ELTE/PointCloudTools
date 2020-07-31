@@ -1,0 +1,45 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <Objective-C>
+      <option name="INDENT_NAMESPACE_MEMBERS" value="0" />
+      <option name="KEEP_STRUCTURES_IN_ONE_LINE" value="true" />
+      <option name="NAMESPACE_BRACE_PLACEMENT" value="2" />
+      <option name="FUNCTION_BRACE_PLACEMENT" value="2" />
+      <option name="BLOCK_BRACE_PLACEMENT" value="2" />
+      <option name="SPACE_BEFORE_POINTER_IN_DECLARATION" value="false" />
+      <option name="SPACE_AFTER_POINTER_IN_DECLARATION" value="true" />
+      <option name="SPACE_BEFORE_REFERENCE_IN_DECLARATION" value="false" />
+      <option name="SPACE_AFTER_REFERENCE_IN_DECLARATION" value="true" />
+    </Objective-C>
+    <Objective-C-extensions>
+      <rules>
+        <rule entity="NAMESPACE" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="MACRO" visibility="ANY" specifier="ANY" prefix="" style="SCREAMING_SNAKE_CASE" suffix="" />
+        <rule entity="CLASS" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="ENUM" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="ENUMERATOR" visibility="ANY" specifier="ANY" prefix="" style="SCREAMING_SNAKE_CASE" suffix="" />
+        <rule entity="TYPEDEF" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="UNION" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="MEMBER_FUNCTION" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+        <rule entity="MEMBER_FIELD" visibility="PROTECTED,PRIVATE" specifier="ANY" prefix="_" style="CAMEL_CASE" suffix="" />
+        <rule entity="MEMBER_FIELD" visibility="PUBLIC" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+        <rule entity="GLOBAL_FUNCTION" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+        <rule entity="GLOBAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+        <rule entity="PARAMETER" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+        <rule entity="LOCAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+      </rules>
+    </Objective-C-extensions>
+    <codeStyleSettings language="ObjectiveC">
+      <option name="BRACE_STYLE" value="2" />
+      <option name="CLASS_BRACE_STYLE" value="2" />
+      <option name="ELSE_ON_NEW_LINE" value="true" />
+      <option name="WHILE_ON_NEW_LINE" value="true" />
+      <option name="CATCH_ON_NEW_LINE" value="true" />
+      <indentOptions>
+        <option name="CONTINUATION_INDENT_SIZE" value="4" />
+        <option name="USE_TAB_CHARACTER" value="true" />
+        <option name="SMART_TABS" value="true" />
+      </indentOptions>
+    </codeStyleSettings>
+  </code_scheme>
+</component>
