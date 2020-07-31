@@ -75,6 +75,10 @@ void CentroidDistance::onExecute()
 	}
 	while (hasChanged);
 
+	// TODO: add intermediate reporting into above loop
+	if (progress)
+		progress(0.8f, "Cluster map pairs calculated.");
+
 	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
@@ -83,6 +87,9 @@ void CentroidDistance::onExecute()
 		                 }) == closestClusters.end())
 			lonelyClustersAHN2.push_back(index);
 
+	if (progress)
+		progress(0.9f, "Lonely AHN2 clusters calculated.");
+
 	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
@@ -90,6 +97,9 @@ void CentroidDistance::onExecute()
 			                 return item.first.second == index;
 		                 }) == closestClusters.end())
 			lonelyClustersAHN3.push_back(index);
+
+	if (progress)
+		progress(1.f, "Lonely AHN3 clusters calculated.");
 }
 }
 }

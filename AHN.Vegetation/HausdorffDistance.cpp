@@ -38,6 +38,10 @@ void HausdorffDistance::onExecute()
 		}
 	}
 
+	// TODO: add intermediate reporting into above loop
+	if (progress)
+		progress(0.35f, "AHN2 to AHN3 distances calculated.");
+
 	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 	{
 		for (GUInt32 otherIndex : AHN2ClusterMap.clusterIndexes())
@@ -67,6 +71,10 @@ void HausdorffDistance::onExecute()
 		}
 	}
 
+	// TODO: add intermediate reporting into above loop
+	if (progress)
+		progress(0.7f, "AHN3 to AHN2 distances calculated.");
+
 	for (auto iter = ahn2HausdorffDistances.begin(); iter != ahn2HausdorffDistances.end(); iter++)
 	{
 		if (ahn3HausdorffDistances.count(iter->first) == 1 &
@@ -78,6 +86,9 @@ void HausdorffDistance::onExecute()
 			closestClusters.emplace(*iter);
 	}
 
+	if (progress)
+		progress(0.8f, "Cluster map pairs calculated.");
+
 	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
 		if (std::find_if(ahn2HausdorffDistances.begin(), ahn2HausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
@@ -86,6 +97,9 @@ void HausdorffDistance::onExecute()
 		                 }) == ahn2HausdorffDistances.end())
 			lonelyClustersAHN2.push_back(index);
 
+	if (progress)
+		progress(0.9f, "Lonely AHN2 clusters calculated.");
+
 	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
 		if (std::find_if(ahn2HausdorffDistances.begin(), ahn2HausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
@@ -93,6 +107,9 @@ void HausdorffDistance::onExecute()
 			                 return item.first.second == index;
 		                 }) == ahn2HausdorffDistances.end())
 			lonelyClustersAHN3.push_back(index);
+
+	if (progress)
+		progress(1.f, "Lonely AHN3 clusters calculated.");
 }
 
 GUInt32 HausdorffDistance::closestCluster(GUInt32 index)

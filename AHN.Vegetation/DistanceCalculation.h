@@ -15,11 +15,16 @@ public:
   CloudTools::DEM::ClusterMap AHN2ClusterMap;
   CloudTools::DEM::ClusterMap AHN3ClusterMap;
 
+	/// <summary>
+	/// Callback function for reporting progress.
+	/// </summary>
+	ProgressType progress;
+
   DistanceCalculation(const CloudTools::DEM::ClusterMap& AHN2clusterMap,
                       const CloudTools::DEM::ClusterMap& AHN3clusterMap,
                       double maximumDistance = 9.0,
                       Operation::ProgressType progress = nullptr)
-        : AHN2ClusterMap(AHN2clusterMap), AHN3ClusterMap(AHN3clusterMap), maximumDistance(maximumDistance)
+        : AHN2ClusterMap(AHN2clusterMap), AHN3ClusterMap(AHN3clusterMap), maximumDistance(maximumDistance), progress(progress)
   {
   }
 

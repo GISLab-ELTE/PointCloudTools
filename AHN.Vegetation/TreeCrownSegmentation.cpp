@@ -101,9 +101,6 @@ void TreeCrownSegmentation::initialize()
 			currentVerticalDistance += increaseVerticalDistance;
 		}
 		while (hasChanged && currentVerticalDistance <= maxVerticalDistance);
-
-		if (this->progress)
-			this->progress(1.f, "Target created");
 	};
 }
 

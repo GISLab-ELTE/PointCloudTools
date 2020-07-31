@@ -1,5 +1,8 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
+#include <ctime>
+#include <chrono>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -45,7 +48,7 @@ int main(int argc, char* argv[])
 	// Argument validation
 	if (vm.count("help"))
 	{
-		std::cout << "Compares an AHN-2 and AHN-3 tile pair and filters out changes in vegtation." << std::endl;
+		std::cout << "Compares an AHN-2 and AHN-3 tile pair and filters out changes in vegetation." << std::endl;
 		std::cout << desc << std::endl;
 		return Success;
 	}
@@ -110,28 +113,48 @@ int main(int argc, char* argv[])
 
 	if (!vm.count("quiet"))
 		std::cout << "=== AHN Vegetation Filter ===" << std::endl;
+	std::clock_t clockStart = std::clock();
+	auto timeStart = std::chrono::high_resolution_clock::now();
 
-	GDALAllRegister();
-
+    // Configure the operation
+    GDALAllRegister();
+    std::string lastStatus;
 	RasterMetadata targetMetadata, targetMetadata_dummy;
-
 	Process process(3, AHN2DTMinputPath, AHN2DSMinputPath, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
-	process.run();
 
+
+    if (!vm.count("quiet"))
+    {
+        process.progress = [&reporter, &lastStatus](float complete, const std::string &message)
+        {
+            if(message != lastStatus)
+            {
+                std::cout << std::endl
+                    << "Task: " << message << std::endl;
+                reporter->reset();
+                lastStatus = message;
+            }
+            reporter->report(complete, message);
+            return true;
+        };
+    }
+
+    // Execute operation
+	process.execute();
 	delete reporter;
-	return Success;
+
+	// Execution time measurement
+    std::clock_t clockEnd = std::clock();
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+
+    if (!vm.count("quiet"))
+    {
+        std::cout << std::endl
+            << "All completed!" << std::endl
+            << std::fixed << std::setprecision(2) << "CPU time used: "
+            << 1.f * (clockEnd - clockStart) / CLOCKS_PER_SEC << "s" << std::endl
+            << "Wall clock time passed: "
+            << std::chrono::duration<float>(timeEnd - timeStart).count() << "s" << std::endl;
+    }
+    return Success;
 }
-
-bool reporter(CloudTools::DEM::SweepLineTransformation<float>* transformation, CloudTools::IO::Reporter* reporter)
-{
-	transformation->progress = [&reporter](float complete, const std::string& message)
-	{
-		reporter->report(complete, message);
-		return true;
-	};
-	return false;
-}
-
-
-
-
