@@ -34,17 +34,18 @@ public:
 	/// <param name="mode">The applied morphology method.</param>
 	/// <param name="progress">The callback method to report progress.</param>
 	MorphologyClusterFilter(CloudTools::DEM::ClusterMap& source,
-		const std::vector<GDALDataset*>& sourceDatasets,
-		ComputationType computation,
-		Method method = Method::Dilation,
-		ProgressType progress = nullptr)
+	                        const std::vector<GDALDataset*>& sourceDatasets,
+	                        ComputationType computation,
+	                        Method method = Method::Dilation,
+	                        ProgressType progress = nullptr)
 		: DatasetCalculation(sourceDatasets, computation, progress),
-			clusterMap(source), method(method)
+		  clusterMap(source), method(method)
 	{
-    initialize();
+		initialize();
 	}
 
 	MorphologyClusterFilter(const MorphologyClusterFilter&) = delete;
+
 	MorphologyClusterFilter& operator=(const MorphologyClusterFilter&) = delete;
 
 	CloudTools::DEM::ClusterMap& target();
@@ -54,5 +55,5 @@ private:
 
 	void initialize();
 };
-}
-}
+} // Vegetation
+} // AHN

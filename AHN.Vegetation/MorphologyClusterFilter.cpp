@@ -34,10 +34,10 @@ void MorphologyClusterFilter::initialize()
 							                 [&point](const OGRPoint& p)
 							                 {
 								                 return point.getX() == p.getX() &&
-									                 point.getY() == p.getY();
+								                        point.getY() == p.getY();
 							                 })
-								!= clusterMap.points(index).end()
-								&& clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
+							    != clusterMap.points(index).end()
+							    && clusterMap.clusterIndex(i, j) == clusterMap.clusterIndex(p.getX(), p.getY()))
 							{
 								++counter;
 							}
@@ -72,10 +72,10 @@ void MorphologyClusterFilter::initialize()
 							                 [&point](const OGRPoint& p)
 							                 {
 								                 return point.getX() == p.getX() &&
-									                 point.getY() == p.getY();
+								                        point.getY() == p.getY();
 							                 })
-								!= clusterMap.points(index).end()
-								&& clusterMap.clusterIndex(i, j) == index)
+							    != clusterMap.points(index).end()
+							    && clusterMap.clusterIndex(i, j) == index)
 								++counter;
 						}
 					if (counter > this->threshold)
@@ -92,5 +92,5 @@ CloudTools::DEM::ClusterMap& MorphologyClusterFilter::target()
 {
 	return this->targetMap;
 }
-} //Vegetation
-} //AHN
+} // Vegetation
+} // AHN

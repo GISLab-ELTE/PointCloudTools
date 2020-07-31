@@ -13,7 +13,7 @@ namespace Vegetation
 /// </summary>
 class NoiseFilter : public CloudTools::DEM::SweepLineTransformation<float>
 {
-public:	
+public:
 	/// <summary>
 	/// The threshold of noise in percentage (between values 0 and 1).
 	/// </summary>
@@ -30,12 +30,14 @@ public:
 	/// <param name="targetPath">The target file of the filter.</param>
 	/// <param name="range">The range of surrounding data to involve.</param>
 	/// <param name="progress">The callback method to report progress.</param>
-	NoiseFilter(GDALDataset *sourceDataset,
+	NoiseFilter(GDALDataset* sourceDataset,
 	            const std::string& targetPath,
-				int range,
+	            int range,
 	            ProgressType progress = nullptr);
+
 	NoiseFilter(const NoiseFilter&) = delete;
+
 	NoiseFilter& operator=(const NoiseFilter&) = delete;
 };
-} // Buildings
+} // Vegetation
 } // AHN

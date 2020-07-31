@@ -354,16 +354,16 @@ ClusterMap Process::preprocess(int version)
 	for (int i = 0; i < morphologyCounter; ++i)
 	{
 		_progressMessage = "Morphological erosion "
-			+ std::to_string(i+1) + "/" + std::to_string(morphologyCounter)
-			+ " (AHN-" + std::to_string(version) + ")";
+		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
+		                   + " (AHN-" + std::to_string(version) + ")";
 		MorphologyClusterFilter erosion(cluster, {elimination.target()}, nullptr,
 		                                MorphologyClusterFilter::Method::Erosion, _progress);
 		erosion.threshold = erosionThreshold;
 		erosion.execute();
 
 		_progressMessage = "Morphological dilation "
-		                  + std::to_string(i+1) + "/" + std::to_string(morphologyCounter)
-		                  + " (AHN-" + std::to_string(version) + ")";
+		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
+		                   + " (AHN-" + std::to_string(version) + ")";
 		MorphologyClusterFilter dilation(erosion.clusterMap, {elimination.target()}, nullptr,
 		                                 MorphologyClusterFilter::Method::Dilation, _progress);
 		dilation.execute();

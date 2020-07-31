@@ -57,6 +57,7 @@ public:
 	}
 
 	TreeCrownSegmentation(const TreeCrownSegmentation&) = delete;
+
 	TreeCrownSegmentation& operator=(const TreeCrownSegmentation&) = delete;
 
 	CloudTools::DEM::ClusterMap& clusterMap();

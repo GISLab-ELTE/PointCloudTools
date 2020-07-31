@@ -26,20 +26,20 @@ void CentroidDistance::onExecute()
 			                 {
 				                 return p.first.first == index;
 			                 })
-				== closestClusters.end())
+			    == closestClusters.end())
 			{
 				for (const GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
 				{
 					OGRPoint point = AHN3ClusterMap.center(otherIndex);
 					double newDist = AHN2ClusterMap.center(index).Distance(&point);
 					if (newDist < dist &&
-						std::find_if(closestClusters.begin(),
-						             closestClusters.end(),
-						             [&otherIndex](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
-						             {
-							             return p.first.second == otherIndex;
-						             })
-						== closestClusters.end())
+					    std::find_if(closestClusters.begin(),
+					                 closestClusters.end(),
+					                 [&otherIndex](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
+					                 {
+						                 return p.first.second == otherIndex;
+					                 })
+					    == closestClusters.end())
 					{
 						dist = newDist;
 						i = otherIndex;
@@ -101,5 +101,5 @@ void CentroidDistance::onExecute()
 	if (progress)
 		progress(1.f, "Lonely AHN3 clusters calculated.");
 }
-}
-}
+} // Vegetation
+} // AHN

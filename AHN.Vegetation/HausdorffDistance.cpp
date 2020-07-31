@@ -34,7 +34,7 @@ void HausdorffDistance::onExecute()
 				distances.push_back(minDistance);
 			}
 			ahn2HausdorffDistances.emplace(std::make_pair(std::make_pair(index, otherIndex),
-			                                          *std::max_element(distances.begin(), distances.end())));
+			                                              *std::max_element(distances.begin(), distances.end())));
 		}
 	}
 
@@ -67,7 +67,7 @@ void HausdorffDistance::onExecute()
 				distances.push_back(minDistance);
 			}
 			ahn3HausdorffDistances.emplace(std::make_pair(std::make_pair(otherIndex, index),
-			                                           *std::max_element(distances.begin(), distances.end())));
+			                                              *std::max_element(distances.begin(), distances.end())));
 		}
 	}
 
@@ -78,11 +78,11 @@ void HausdorffDistance::onExecute()
 	for (auto iter = ahn2HausdorffDistances.begin(); iter != ahn2HausdorffDistances.end(); iter++)
 	{
 		if (ahn3HausdorffDistances.count(iter->first) == 1 &
-			std::find_if(closestClusters.begin(), closestClusters.end(),
-			             [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
-			             {
-				             return iter->first.first == item.first.first;
-			             }) == closestClusters.end())
+		    std::find_if(closestClusters.begin(), closestClusters.end(),
+		                 [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
+		                 {
+			                 return iter->first.first == item.first.first;
+		                 }) == closestClusters.end())
 			closestClusters.emplace(*iter);
 	}
 
@@ -128,5 +128,5 @@ std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances() con
 {
 	return ahn2HausdorffDistances;
 }
-}
-}
+} // Vegetation
+} // AHN
