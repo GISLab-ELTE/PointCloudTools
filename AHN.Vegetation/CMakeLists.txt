@@ -5,14 +5,15 @@ add_executable(ahn_vegetation
 	NoiseFilter.cpp NoiseFilter.h
 	TreeCrownSegmentation.cpp TreeCrownSegmentation.h
 	HausdorffDistance.cpp HausdorffDistance.h
-	MorphologyClusterFilter.h MorphologyClusterFilter.cpp
+	MorphologyClusterFilter.cpp MorphologyClusterFilter.h
 	CentroidDistance.cpp CentroidDistance.h
-	InterpolateNoData.h InterpolateNoData.cpp
-	EliminateNonTrees.h EliminateNonTrees.cpp
+	InterpolateNoData.cpp InterpolateNoData.h
+	EliminateNonTrees.cpp EliminateNonTrees.h
 	VolumeDifference.cpp VolumeDifference.h
 	DistanceCalculation.h
 	HeightDifference.h HeightDifference.cpp
-	Process.h Process.cpp )
+	PreProcess.cpp PreProcess.h
+	PostProcess.cpp PostProcess.h)
 
 target_link_libraries(ahn_vegetation
 	dem

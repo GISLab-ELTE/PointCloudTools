@@ -3,6 +3,7 @@
 #include <string>
 #include <ctime>
 #include <chrono>
+#include <future>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -10,7 +11,8 @@
 #include <CloudTools.Common/IO/IO.h>
 #include <CloudTools.Common/IO/Reporter.h>
 
-#include "Process.h"
+#include "PreProcess.h"
+#include "PostProcess.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -119,28 +121,54 @@ int main(int argc, char* argv[])
 	// Configure the operation
 	GDALAllRegister();
 	std::string lastStatus;
-	RasterMetadata targetMetadata, targetMetadata_dummy;
-	Process process(3, AHN2DTMinputPath, AHN2DSMinputPath, DTMinputPath, DSMinputPath, outputDir, reporter, vm);
 
+	// Create preprocessors
+	PreProcess ahn2PreProcess("ahn2", AHN2DTMinputPath, AHN2DSMinputPath, outputDir);
+	PreProcess ahn3PreProcess("ahn3", DTMinputPath, DSMinputPath, outputDir);
 
 	if (!vm.count("quiet"))
 	{
-		process.progress = [&reporter, &lastStatus](float complete, const std::string& message)
-		{
-			if (message != lastStatus)
+		ahn2PreProcess.progress = ahn3PreProcess.progress =
+			[&reporter, &lastStatus](float complete, const std::string& message)
 			{
-				std::cout << std::endl
-				          << "Task: " << message << std::endl;
-				reporter->reset();
-				lastStatus = message;
-			}
-			reporter->report(complete, message);
-			return true;
-		};
+				if (message != lastStatus)
+				{
+					std::cout << std::endl
+					          << "Task: " << message << std::endl;
+					reporter->reset();
+					lastStatus = message;
+				}
+				reporter->report(complete, message);
+				return true;
+			};
 	}
 
-	// Execute operation
-	process.execute();
+	// Execute preprocess operations
+	auto ahn2Future = std::async(
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, ahn2PreProcess, false);
+
+	auto ahn3Future = std::async(
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, ahn3PreProcess, false);
+
+	ahn2Future.wait();
+	ahn3Future.wait();
+
+	// Create the postprocessor
+	PostProcess postProcess(
+		AHN2DSMinputPath, DSMinputPath,
+		ahn2PreProcess.target(), ahn3PreProcess.target(),
+		outputDir,
+		vm.count("hausdorff-distance")
+		? PostProcess::DifferenceMethod::Hausdorff
+		: PostProcess::DifferenceMethod::Centroid);
+
+	if (!vm.count("quiet"))
+	{
+		postProcess.progress = ahn2PreProcess.progress;
+	}
+
+	// Execute postprocess operations
+	postProcess.execute();
 	delete reporter;
 
 	// Execution time measurement

@@ -22,10 +22,17 @@ public:
 	/// </summary>
 	Method method;
 
-	CloudTools::DEM::ClusterMap clusterMap;
-
+	/// <summary>
+	/// Threshold value for morphology filter.
+	///
+	/// Default value is -1, which will be 0 for dilation and 9 for erosion.
+	/// </summary>
 	int threshold = -1;
 
+private:
+	CloudTools::DEM::ClusterMap _clusterMap;
+
+public:
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
 	/// </summary>
@@ -39,7 +46,7 @@ public:
 	                        Method method = Method::Dilation,
 	                        ProgressType progress = nullptr)
 		: DatasetCalculation(sourceDatasets, computation, progress),
-		  clusterMap(source), method(method)
+		  _clusterMap(source), method(method)
 	{
 		initialize();
 	}
@@ -51,8 +58,6 @@ public:
 	CloudTools::DEM::ClusterMap& target();
 
 private:
-	CloudTools::DEM::ClusterMap targetMap;
-
 	void initialize();
 };
 } // Vegetation
