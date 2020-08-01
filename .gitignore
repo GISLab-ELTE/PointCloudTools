@@ -246,7 +246,9 @@ ModelManifest.xml
 
 # Customization
 /[Bb]uild/
+/[Bb]uild_*/
 /[Ii]nstall/
+/[Ii]nstall_*/
 /[Tt]est/
 /Shell.config.cmd
 /CMakeSettings.json
