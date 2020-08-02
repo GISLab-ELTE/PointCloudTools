@@ -81,20 +81,13 @@ void TreeCrownSegmentation::initialize()
 				{
 					try
 					{
-						try
-						{
-							clusters.clusterIndex(point.getX(), point.getY());
-						}
-						catch (std::out_of_range)
-						{
-							//TODO
-							clusters.addPoint(index, point.getX(), point.getY(), point.getZ());
-							hasChanged = true;
-						}
+						clusters.clusterIndex(point.getX(), point.getY());
 					}
-					catch (std::logic_error)
+					catch (std::out_of_range)
 					{
-					};
+						clusters.addPoint(index, point.getX(), point.getY(), point.getZ());
+						hasChanged = true;
+					}
 				}
 			}
 
