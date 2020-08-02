@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "CloudTools.Common/Operation.h"
 #include "CloudTools.DEM/ClusterMap.h"
 

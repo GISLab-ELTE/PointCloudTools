@@ -23,8 +23,8 @@ using namespace AHN::Vegetation;
 
 int main(int argc, char* argv[])
 {
-	std::string DTMinputPath;
-	std::string DSMinputPath;
+	std::string AHN3DTMinputPath;
+	std::string AHN3DSMinputPath;
 	std::string AHN2DSMinputPath;
 	std::string AHN2DTMinputPath;
 	std::string outputDir = fs::current_path().string();
@@ -32,13 +32,13 @@ int main(int argc, char* argv[])
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
-		("ahn3-dtm-input-path,t", po::value<std::string>(&DTMinputPath), "DTM input path")
-		("ahn3-dsm-input-path,s", po::value<std::string>(&DSMinputPath), "DSM input path")
+		("ahn3-dtm-input-path,t", po::value<std::string>(&AHN3DTMinputPath), "AHN3 DTM input path")
+		("ahn3-dsm-input-path,s", po::value<std::string>(&AHN3DSMinputPath), "AHN3 DSM input path")
 		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
 		("hausdorff-distance,d", "use Hausdorff-distance")
-		("parallel,p", "parallel execution for AHN-2 and AHN-3") // TODO: this will mess up the log output
+		("parallel,p", "parallel execution for AHN-2 and AHN-3")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
 		("help,h", "produce help message");
@@ -80,12 +80,12 @@ int main(int argc, char* argv[])
 		argumentError = true;
 	}
 
-	if (!fs::exists(DSMinputPath))
+	if (!fs::exists(AHN3DSMinputPath))
 	{
 		std::cerr << "The surface input file does not exist." << std::endl;
 		argumentError = true;
 	}
-	if (!fs::exists(DTMinputPath))
+	if (!fs::exists(AHN3DTMinputPath))
 	{
 		std::cerr << "The terrain input file does not exist." << std::endl;
 		argumentError = true;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
 
 	// Create preprocessors
 	PreProcess ahn2PreProcess("ahn2", AHN2DTMinputPath, AHN2DSMinputPath, outputDir);
-	PreProcess ahn3PreProcess("ahn3", DTMinputPath, DSMinputPath, outputDir);
+	PreProcess ahn3PreProcess("ahn3", AHN3DTMinputPath, AHN3DSMinputPath, outputDir);
 
 	if (!vm.count("quiet"))
 	{
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 
 	// Create the postprocessor
 	PostProcess postProcess(
-		AHN2DSMinputPath, DSMinputPath,
+		AHN2DSMinputPath, AHN3DSMinputPath,
 		ahn2PreProcess.target(), ahn3PreProcess.target(),
 		outputDir,
 		vm.count("hausdorff-distance")
