@@ -24,29 +24,42 @@ Formatting
   ```cpp
   namespace CloudTools
   {
+  namespace DEM
+  {
   /* ... */
+  } // DEM
   } // CloudTools
   ```
 - **Blocks** should follow the K&R style, where related opening and closing 
   brackets for namespaces, classes and function blocks should be placed to the 
   same column; while other compound statements should have their opening braces 
   at the same line as their respective control statements.
-- **Class declarations** should use only one `public`, `protected` and
-  `private` part (in this order). The keywords `public`, `protected`,
-  `private` are not indented, the member declarations are indented as usual
-  (with 4 spaces). Inside a visibility class declare types first.
+- **Class declarations** should contain the nested types, data members and 
+  methods in this order. Therefore multiple `public`, `protected` and
+  `private` parts are possible (also in this order). The keywords `public`, 
+  `protected`, `private` are not indented, the member declarations are indented 
+  as usual (with 4 spaces). Inside a visibility class declare types first.
 
   ```cpp
-  class MyClass
+  class Operation
   {
   public:
-      int getX();
-
-  protected:
-      int _protX;
-
+    typedef std::function<bool(float, const std::string&)> ProgressType;
+  
   private:
-      int _privX;
+    bool _isPrepared = false;
+    bool _isExecuted = false;
+  
+  public:
+    virtual ~Operation() { }
+    bool isPrepared() const { return _isPrepared; }
+    bool isExecuted() const { return _isExecuted; }
+    void prepare(bool force = false);
+    void execute(bool force = false);
+  
+  protected:
+    virtual void onPrepare() = 0;
+    virtual void onExecute() = 0;
   };
   ```
 - **Friend** declarations, if any, should be placed before the public
@@ -86,7 +99,8 @@ Headers
 - **Order of the inclusion of headers** - either in source files or in other
   header files - should be the following: First include standard C++ headers,
   then Boost headers, then other supporting library headers (GDAL, MPI, etc.), 
-  then your implementing headers.
+  then your implementing headers. Among the own headers of `CloudTools`, list the
+  ones from other modules first.
 
   ```cpp
   #include <iostream>
