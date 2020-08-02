@@ -1,16 +1,15 @@
 #pragma once
 
 #include <CloudTools.Common/Operation.h>
+#include <CloudTools.Common/IO/ResultCollection.h>
 #include <CloudTools.DEM/Metadata.h>
 #include <CloudTools.DEM/ClusterMap.h>
-
-using namespace CloudTools::DEM;
 
 namespace AHN
 {
 namespace Vegetation
 {
-class PreProcess : public CloudTools::Operation
+class PreProcess : public CloudTools::Operation, protected CloudTools::IO::ResultCollection
 {
 public:
 	/// <summary>
@@ -32,6 +31,11 @@ public:
 	/// Remove clusters smaller than this threshold.
 	/// </summary>
 	unsigned int removalRadius = 16;
+
+	/// <summary>
+	/// Keep intermediate results on disk after progress.
+	/// </summary>
+	bool debug = false;
 
 protected:
 	/// <summary>
@@ -55,14 +59,14 @@ public:
 	{
 	}
 
-	inline ClusterMap& target()
+	inline CloudTools::DEM::ClusterMap& target()
 	{
 		if (!isExecuted())
 			throw std::logic_error("The operation is not executed.");
 		return _targetCluster;
 	}
 
-	inline RasterMetadata targetMetadata()
+	inline CloudTools::DEM::RasterMetadata targetMetadata()
 	{
 		if (!isExecuted())
 			throw std::logic_error("The operation is not executed.");
@@ -80,10 +84,18 @@ protected:
 	/// </summary>
 	void onExecute() override;
 
+	/// <summary>
+	/// Creates a new result object.
+	/// </summary>
+	/// <param name="name">The name of the result.</param>
+	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
+	/// <returns>New result on the heap.</returns>
+	CloudTools::IO::Result* createResult(const std::string& name, bool isFinal = false) override;
+
 private:
 	std::string _prefix, _dtmInputPath, _dsmInputPath, _outputDir;
-	RasterMetadata _targetMetadata;
-	ClusterMap _targetCluster;
+	CloudTools::DEM::RasterMetadata _targetMetadata;
+	CloudTools::DEM::ClusterMap _targetCluster;
 
 	std::vector<OGRPoint> collectSeedPoints(GDALDataset* target);
 
