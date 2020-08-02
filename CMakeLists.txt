@@ -21,7 +21,7 @@ if(MSVC)
     add_compile_options(/W4)
 else()
     # add most warnings
-    add_compile_options(-pedantic -Wall -Wno-unknown-pragmas)
+    add_compile_options(-pedantic -Wall -Wno-unknown-pragmas -Wno-reorder)
 endif()
 
 find_package(Boost 1.58 REQUIRED COMPONENTS filesystem program_options regex)

@@ -170,7 +170,7 @@ public:
 	/// </summary>
 	/// <param name="threshold">The minimum threshold of size to keep a cluster.</param>
 	/// <returns>The number of removed clusters.</returns>
-	std::size_t removeSmallClusters(int threshold);
+	std::size_t removeSmallClusters(unsigned int threshold);
 
 private:
 	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
