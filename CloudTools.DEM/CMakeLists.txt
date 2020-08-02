@@ -19,4 +19,5 @@ add_library(dem
 	Filters/MorphologyFilter.hpp
 	Filters/NoiseFilter.hpp
 	Comparers/Difference.hpp
-	Algorithms/HierachicalClustering.hpp)
+	Algorithms/HierachicalClustering.hpp
+	Algorithms/MatrixTransformation.cpp Algorithms/MatrixTransformation.h)

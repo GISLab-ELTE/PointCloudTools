@@ -2,6 +2,7 @@
 #include <ostream>
 #include <algorithm>
 #include <stdexcept>
+#include <mutex>
 
 #include <ogrsf_frmts.h>
 
@@ -166,7 +167,16 @@ RasterMetadata::RasterMetadata(GDALDataset* dataset)
 	setGeoTransform(geoTransform);
 
 	// Retrieving spatial reference system
-	_reference = OGRSpatialReference(dataset->GetProjectionRef());
+	// For some strange reason the GetProjectionRef() method below is not thread safe (at least for GeoTiff files),
+	// it segfaults when called on multiple datasets parallelly, even for different files.
+	// TODO: fix this (tested on GDAL 2.2.3, Ubuntu 18.04)
+	// Error message: Read of file /usr/share/gdal/2.2/pcs.csv failed
+	//                Segmentation fault
+	static std::mutex mutex;
+	mutex.lock();
+	const char* wkt = dataset->GetProjectionRef();
+	mutex.unlock();
+	_reference = OGRSpatialReference(wkt);
 }
 
 RasterMetadata::RasterMetadata(const RasterMetadata& other)

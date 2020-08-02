@@ -1,7 +1,10 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <typeinfo>
+
+#include <boost/functional/hash/hash.hpp>
 
 #include <gdal.h>
 #include <ogr_spatialref.h>
@@ -57,3 +60,24 @@ std::string SRSName(const OGRSpatialReference& reference);
 std::string SRSDescription(const OGRSpatialReference& reference);
 } // DEM
 } // CloudTools
+
+namespace std
+{
+/// <summary>
+/// Represents the default hashing functor for std::pair objects.
+/// </summary>
+template <class T1, class T2>
+struct hash<std::pair<T1, T2>>
+{
+    std::size_t operator() (const std::pair<T1, T2>& p) const
+    {
+        std::size_t seed = 0;
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+
+        boost::hash_combine(seed, h1);
+        boost::hash_combine(seed, h2);
+        return seed;
+    }
+};
+} // std

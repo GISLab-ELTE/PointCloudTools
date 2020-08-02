@@ -61,6 +61,9 @@ public:
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
 	/// </summary>
+	/// <remarks>
+	/// Target is in memory raster by default and can be retrieved by <see cref="target()"/>.
+	/// </remarks>
 	/// <param name="sourceDatasets">The source datasets of the transformation.</param>
 	/// <param name="targetPath">The target file of the transformation.</param>
 	/// <param name="computation">The callback function for computation.</param>
