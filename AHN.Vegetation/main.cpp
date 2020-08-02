@@ -145,10 +145,10 @@ int main(int argc, char* argv[])
 
 	// Execute preprocess operations
 	auto ahn2Future = std::async(
-		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, ahn2PreProcess, false);
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &ahn2PreProcess, false);
 
 	auto ahn3Future = std::async(
-		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, ahn3PreProcess, false);
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &ahn3PreProcess, false);
 
 	ahn2Future.wait();
 	ahn3Future.wait();
