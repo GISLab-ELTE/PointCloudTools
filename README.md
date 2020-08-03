@@ -2,19 +2,19 @@ CloudTools
 ============
 
 Massive airborne laser altimetry (ALS) point cloud and digital elevation model (DEM) processing library.  
-Contains the **AHN Building Change Detector**, a toolset for change detection of the built-up area based on the study dataset: [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
+Contains the **AHN Change Detector**, a toolset for change detection of the built-up area and vegetation based on the study dataset: [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
 
 
 Dependencies
 ------------
-- [Boost Library](https://www.boost.org/), >=1.60 *(mandatory)*
+- [Boost Library](https://www.boost.org/), >=1.58 *(mandatory)*
 - [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.1 *(mandatory)*
 - MPI - Message Passing Interface<sup>2</sup> *(optional)*
   - Windows: [MS-MPI](https://msdn.microsoft.com/en-us/library/bb524831), >=7.1
   - Linux: [Open MPI](https://www.open-mpi.org/), >=1.10
 
 For Windows operating systems binary releases are available to simply install the above defined libraries.  
-For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements. Otherwise building the dependencies from source is recommended.
+For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements.
 
 <sup>1</sup> GDAL must be compiled with [GEOS](https://trac.osgeo.org/geos/) support enabled.  
 <sup>2</sup> MPI dependency is required only for the `AHN.Buildings.MPI` project to evaluate in a HPC environment.
@@ -33,15 +33,18 @@ The repository in consisted of 9 projects altogether.
 - **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
 - **AHN.Buildings.Aggregate:** Computes aggregative change of volume for administrative units.
 - **AHN.Buildings.Verify:** Verifies detected building changes against reference files.
+- **AHN.Vegetation:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in the vegetation (trees).
 
 
 How to build
 ------------
 
-The project was built and tested on the following operating systems:
+The project is continously built and tested on the following operating systems:
 - Windows 10
-- Windows 7
-- Ubuntu Linux 16.04 LTS
+- Ubuntu Linux 18.04 LTS and 20.04 LTS
+
+It was furthermore tested to work on *Windows 7* and *Ubuntu Linux 16.04 LTS*, but these distributions are not officially supported anymore.
+Please note that on *Ubuntu 16.04*, the building of the GDAL dependency from source is needed to meet the version requirement.
 
 The repository utilizes the [CMake](https://cmake.org/) cross-platform build system. To generate the build environment, run CMake:
 ```bash
@@ -92,6 +95,7 @@ ahn_buildings_par
 ahn_buildings_agg
 ahn_buildings_ver
 ahn_buildings_mpi
+ahn_vegetation
 ```
 Get usage information and available arguments with the `-h` flag.
 
