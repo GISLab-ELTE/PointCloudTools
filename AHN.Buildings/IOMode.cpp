@@ -1,4 +1,5 @@
 #include <string>
+#include <istream>
 
 #include <boost/algorithm/string.hpp>
 
