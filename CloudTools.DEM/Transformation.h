@@ -1,12 +1,9 @@
 #pragma once
 
-#include <string>
 #include <vector>
-#include <map>
-
-#include <gdal_priv.h>
 
 #include "Calculation.h"
+#include "Creation.h"
 
 namespace CloudTools
 {
@@ -15,38 +12,8 @@ namespace DEM
 /// <summary>
 /// Represents a transformation on DEM datasets.
 /// </summary>
-class Transformation : public Calculation
+class Transformation : public Calculation, public Creation
 {
-public:
-	/// <summary>
-	/// Target output format.
-	/// </summary>
-	/// <remarks>
-	/// For supported formats, <see cref="http://www.gdal.org/formats_list.html" />.
-	/// </remarks>
-	std::string targetFormat = "GTiff";
-
-	/// <summary>
-	/// Format specific output creation options.
-	/// </summary>
-	/// <remarks>
-	/// For supported options, <see cref="http://www.gdal.org/formats_list.html" />.
-	/// </remarks>
-	std::map<std::string, std::string> createOptions;
-
-	/// <summary>
-	/// The nodata value.
-	/// </summary>
-	/// <remarks>
-	/// Default value as defined by GDAL (gdalrasterband.cpp).
-	/// </remarks>
-	double nodataValue = -1e10;
-
-protected:
-	std::string _targetPath;
-	GDALDataset* _targetDataset;
-	bool _targetOwnerShip = true;
-
 public:
 	/// <summary>
 	/// Initializes a new instance of the class and loads source metadata.
@@ -58,7 +25,7 @@ public:
 	               const std::string& targetPath,
 	               ProgressType progress = nullptr)
 		: Calculation(sourcePaths, progress),
-		  _targetPath(targetPath), _targetDataset(nullptr)
+		  Creation(targetPath)
 	{ }
 
 	/// <summary>
@@ -71,21 +38,12 @@ public:
 	               const std::string& targetPath,
 	               ProgressType progress = nullptr)
 		: Calculation(sourceDatasets, progress),
-		  _targetPath(targetPath), _targetDataset(nullptr)
+		  Creation(targetPath)
 	{ }
 
 	Transformation(const Transformation&) = delete;
 	Transformation& operator=(const Transformation&) = delete;
-	~Transformation();
-	
-	/// <summary>
-	/// Retrieves the target dataset.
-	/// </summary>
-	/// <remarks>
-	/// By calling this method, the target datatset will be released by the transformation and won't be automatically freed.
-	/// </remarks>
-	/// <returns>The target dataset.</returns>
-	GDALDataset* target();
+	~Transformation() { };
 };
 } // DEM
 } // CloudTools

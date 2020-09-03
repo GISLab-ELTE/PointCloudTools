@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
+#include <stdexcept>
 
 #include "ClusterMap.h"
 
@@ -251,7 +252,7 @@ void ClusterMap::removeCluster(GUInt32 clusterIndex)
 	_clusterIndexes.erase(clusterIndex);
 }
 
-std::size_t ClusterMap::removeSmallClusters(int threshold)
+std::size_t ClusterMap::removeSmallClusters(unsigned int threshold)
 {
 	std::vector<GUInt32> removedIndexes;
 	for (const auto& item : _clusterIndexes)

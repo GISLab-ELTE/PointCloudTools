@@ -5,7 +5,7 @@ project(CloudTools)
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
-    set(CMAKE_BUILD_TYPE "${DEFAULT_BUUILD_TYPE}" CACHE
+    set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE
         STRING "Choose the type of build." FORCE)
     # Set the possible values of build type for cmake-gui
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
@@ -13,6 +13,16 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # add most warnings
+    add_compile_options(-pedantic -Wall -Wno-unknown-pragmas -Wno-reorder)
+endif()
 
 find_package(Boost 1.58 REQUIRED COMPONENTS filesystem program_options regex)
 find_package(GDAL 2.1 REQUIRED)
