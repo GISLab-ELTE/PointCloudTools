@@ -147,6 +147,13 @@ void PreProcess::writeClusterMapToFile(const std::string& outPath)
 		throw std::runtime_error("Target file creation failed.");
 
 	target->SetGeoTransform(&_targetMetadata.geoTransform()[0]);
+	if (_targetMetadata.reference().Validate() == OGRERR_NONE)
+	{
+		char *wkt;
+		_targetMetadata.reference().exportToWkt(&wkt);
+		target->SetProjection(wkt);
+		CPLFree(wkt);
+	}
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);

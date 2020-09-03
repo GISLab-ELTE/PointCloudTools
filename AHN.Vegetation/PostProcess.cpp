@@ -36,6 +36,13 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 		throw std::runtime_error("Target file creation failed.");
 
 	target->SetGeoTransform(&_rasterMetadata.geoTransform()[0]);
+	if (_rasterMetadata.reference().Validate() == OGRERR_NONE)
+	{
+		char *wkt;
+		_rasterMetadata.reference().exportToWkt(&wkt);
+		target->SetProjection(wkt);
+		CPLFree(wkt);
+	}
 
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
