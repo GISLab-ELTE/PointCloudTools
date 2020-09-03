@@ -1,15 +1,14 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
 #include <gdal_priv.h>
 
 #include <CloudTools.Common/Operation.h>
+#include <CloudTools.Common/IO/ResultCollection.h>
 #include <CloudTools.DEM/Transformation.h>
-#include "Result.h"
 
 namespace fs = boost::filesystem;
 
@@ -20,7 +19,7 @@ namespace Buildings
 /// <summary>
 /// The AHN Building Filter operation.
 /// </summary>
-class Process : public CloudTools::Operation
+class Process : public CloudTools::Operation, protected CloudTools::IO::ResultCollection
 {
 public:
 	/// <summary>
@@ -48,9 +47,6 @@ protected:
 	/// </summary>
 	std::string _progressMessage;
 
-private:
-	std::multimap<std::string, Result*> _results;
-
 public:
 	~Process();
 
@@ -77,36 +73,6 @@ protected:
 	/// Produces the output file(s).
 	/// </summary>
 	void onExecute() override;
-
-	/// <summary>
-	/// Gets the specified result object.
-	/// </summary>
-	/// <param name="name">The name of the result.</param>
-	/// <param name="index">The index of the result with the same name.</param>
-	Result& result(const std::string& name, std::size_t index = 0);
-	
-	/// <summary>
-	/// Creates and inserts new result object.
-	/// </summary>
-	/// <param name="name">The name of the result.</param>
-	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	/// <returns>The index of the result with the same name.</returns>
-	std::size_t newResult(const std::string& name, bool isFinal = false);
-	
-	/// <summary>
-	/// Creates a new result object.
-	/// </summary>
-	/// <param name="name">The name of the result.</param>
-	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
-	/// <returns>New result on the heap.</returns>
-	virtual Result* createResult(const std::string& name, bool isFinal = false) = 0;
-	
-	/// <summary>
-	/// Deletes the specified result object.
-	/// </summary>
-	/// <param name="name">The name of the result.</param>
-	/// <param name="index">The index of the result with the same name.</param>
-	void deleteResult(const std::string& name, std::size_t index = 0);
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -181,7 +147,7 @@ protected:
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
 	/// <returns>New result on the heap.</returns>
-	Result* createResult(const std::string& name, bool isFinal = false) override;
+	CloudTools::IO::Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -249,7 +215,7 @@ protected:
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
 	/// <returns>New result on the heap.</returns>
-	Result* createResult(const std::string& name, bool isFinal = false) override;
+	CloudTools::IO::Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.
@@ -307,7 +273,7 @@ protected:
 	/// <param name="name">The name of the result.</param>
 	/// <param name="isFinal"><c>true</c> if the result is final, otherwise <c>false</c>.</param>
 	/// <returns>New result on the heap.</returns>
-	Result* createResult(const std::string& name, bool isFinal = false) override;
+	CloudTools::IO::Result* createResult(const std::string& name, bool isFinal = false) override;
 
 	/// <summary>
 	/// Configures the output format options for the given transformation.

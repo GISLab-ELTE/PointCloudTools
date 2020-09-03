@@ -2,9 +2,9 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-namespace AHN
+namespace CloudTools
 {
-namespace Buildings
+namespace IO
 {
 #pragma region Result
 
@@ -72,5 +72,5 @@ VirtualResult::~VirtualResult()
 }
 
 #pragma endregion
-} // Buildings
-} // AHN
+} // IO
+} // CloudTools

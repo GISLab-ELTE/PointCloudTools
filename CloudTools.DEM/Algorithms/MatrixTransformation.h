@@ -7,9 +7,15 @@ namespace CloudTools
 {
 namespace DEM
 {
+/// <summary>
+/// Convolution matrix transformation.
+/// </summary>
 class MatrixTransformation : public SweepLineTransformation<float>
 {
 private:
+	/// <summary>
+	/// Kernel.
+	/// </summary>
 	float* _matrix;
 
 public:
@@ -41,6 +47,11 @@ public:
 		: SweepLineTransformation<float>({ sourceDataset }, targetPath, range, nullptr, progress)
 	{
 		initialize();
+	}
+
+	~MatrixTransformation()
+	{
+		delete[] this->_matrix;
 	}
 
 	MatrixTransformation(const MatrixTransformation&) = delete;

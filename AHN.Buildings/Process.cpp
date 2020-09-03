@@ -43,10 +43,6 @@ Process::~Process()
 		GDALClose(_ahn2TerrainDataset);
 	if (_ahn3TerrainDataset && _ahn3TerrainDataset != _ahn2TerrainDataset)
 		GDALClose(_ahn3TerrainDataset);
-
-	for (auto& item : _results)
-		delete item.second;
-	_results.clear();
 }
 
 void Process::onPrepare()
@@ -230,36 +226,6 @@ void Process::onExecute()
 		CSLDestroy(params);
 	}
 	deleteResult("majority");
-}
-
-Result& Process::result(const std::string& name, std::size_t index)
-{
-	if (_results.count(name) <= index)
-		throw std::out_of_range("No result found with the given name and index.");
-
-	auto range = _results.equal_range(name);
-	auto it = range.first;
-	std::advance(it, index);
-	return *it->second;
-}
-
-std::size_t Process::newResult(const std::string& name, bool isFinal)
-{
-	std::pair<std::string, Result*> item(name, createResult(name, isFinal));
-	_results.emplace(std::move(item));
-	return _results.count(name) - 1;
-}
-
-void Process::deleteResult(const std::string& name, std::size_t index)
-{
-	if (_results.count(name) <= index)
-		throw std::out_of_range("No result found with the given name and index.");
-
-	auto range = _results.equal_range(name);
-	auto it = range.first;
-	std::advance(it, index);
-	delete it->second;
-	_results.erase(it);
 }
 
 int Process::gdalProgress(double dfComplete, const char* pszMessage, void* pProgressArg)
