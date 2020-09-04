@@ -1,5 +1,4 @@
 #include <numeric>
-#include <algorithm>
 
 #include <gdal_priv.h>
 #include <ogrsf_frmts.h>
@@ -182,14 +181,6 @@ void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
 
 void PreProcess::writePointsToFile(std::vector<OGRPoint> points, const std::string& outPath)
 {
-	std::sort(points.begin(), points.end(), [](OGRPoint& a, OGRPoint& b)
-	{
-		if (a.getX() == b.getX())
-			return a.getY() < b.getY();
-		else
-			return a.getX() < b.getX();
-	});
-
 	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GeoJSON");
 	if (driver == nullptr)
 		throw std::invalid_argument("Target output format unrecognized.");
