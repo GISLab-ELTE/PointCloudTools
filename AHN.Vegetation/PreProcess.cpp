@@ -1,6 +1,8 @@
 #include <numeric>
+#include <algorithm>
 
 #include <gdal_priv.h>
+#include <ogrsf_frmts.h>
 
 #include <CloudTools.DEM/SweepLineCalculation.hpp>
 #include <CloudTools.DEM/Comparers/Difference.hpp>
@@ -82,6 +84,8 @@ void PreProcess::onExecute()
 
 	_progressMessage = "Seed points collection (" + _prefix + ")";
 	std::vector<OGRPoint> seedPoints = collectSeedPoints(result("interpol").dataset);
+	if (debug)
+		writePointsToFile(seedPoints, (fs::path(_outputDir) / (_prefix + "_seedpoints.json")).string());
 
 	_progressMessage = "Tree crown segmentation (" + _prefix + ")";
 	{
@@ -174,6 +178,45 @@ void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
 			clusterMap.removeCluster(index);
 		}
 	}
+}
+
+void PreProcess::writePointsToFile(std::vector<OGRPoint> points, const std::string& outPath)
+{
+	std::sort(points.begin(), points.end(), [](OGRPoint& a, OGRPoint& b)
+	{
+		if (a.getX() == b.getX())
+			return a.getY() < b.getY();
+		else
+			return a.getX() < b.getX();
+	});
+
+	GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GeoJSON");
+	if (driver == nullptr)
+		throw std::invalid_argument("Target output format unrecognized.");
+
+	if (fs::exists(outPath) &&
+	    driver->Delete(outPath.c_str()) == CE_Failure &&
+	    !fs::remove(outPath))
+		throw std::runtime_error("Cannot overwrite previously created target file.");
+
+	GDALDataset* ds = driver->Create(outPath.c_str(), 0, 0, 0, GDT_Unknown, nullptr);
+	if (ds == nullptr)
+		throw std::runtime_error("Target file creation failed.");
+
+	OGRLayer* layer = ds->CreateLayer("points", &_targetMetadata.reference(), wkbPoint, nullptr);
+	OGRFeature *feature;
+	for(auto& point : points)
+	{
+		point.setX(_targetMetadata.originX() + point.getX() * _targetMetadata.pixelSizeX());
+		point.setY(_targetMetadata.originY() + point.getY() * _targetMetadata.pixelSizeY());
+		feature = OGRFeature::CreateFeature(layer->GetLayerDefn());
+		feature->SetGeometry(&point);
+		if (layer->CreateFeature(feature) != OGRERR_NONE)
+			throw std::runtime_error("Feature creation failed.");
+		OGRFeature::DestroyFeature(feature);
+	}
+
+	GDALClose(ds);
 }
 
 void PreProcess::writeClusterMapToFile(const std::string& outPath)

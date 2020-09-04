@@ -111,6 +111,8 @@ private:
 	/// <param name="clusterMap">The cluster map to transform.</param>
 	void removeDeformedClusters(CloudTools::DEM::ClusterMap& clusterMap);
 
+	void writePointsToFile(std::vector<OGRPoint> points, const std::string& outPath);
+
 	void writeClusterMapToFile(const std::string& outPath);
 };
 } // Vegetation
