@@ -99,6 +99,18 @@ private:
 
 	std::vector<OGRPoint> collectSeedPoints(GDALDataset* target);
 
+	/// <summary>
+	/// Removed deformed clusters from the cluster map.
+	/// </summary>
+	/// <remarks>
+	/// A cluster is deemed deformed (as a tree), if one the following 3 conditions apply:
+	/// - its X dimension is less than half of its Y dimension;
+	/// - its Y dimension is less than half of its X dimension;
+	/// - less than 60% of its bounding box belongs to the cluster.
+	/// </remarks>
+	/// <param name="clusterMap">The cluster map to transform.</param>
+	void removeDeformedClusters(CloudTools::DEM::ClusterMap& clusterMap);
+
 	void writeClusterMapToFile(const std::string& outPath);
 };
 } // Vegetation

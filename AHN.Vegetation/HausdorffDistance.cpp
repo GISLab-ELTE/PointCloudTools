@@ -75,9 +75,9 @@ void HausdorffDistance::onExecute()
 	if (progress)
 		progress(0.7f, "AHN3 to AHN2 distances calculated.");
 
-	for (auto iter = ahn2HausdorffDistances.begin(); iter != ahn2HausdorffDistances.end(); iter++)
+	for (auto iter = ahn2HausdorffDistances.begin(); iter != ahn2HausdorffDistances.end(); ++iter)
 	{
-		if (ahn3HausdorffDistances.count(iter->first) == 1 &
+		if (ahn3HausdorffDistances.count(iter->first) == 1 &&
 		    std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&iter](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {

@@ -26,7 +26,7 @@ void PreProcess::onPrepare()
 
 	// Piping the internal progress reporter to override message.
 	if (progress)
-		_progress = [this](float complete, std::string message)
+		_progress = [this](float complete, const std::string& message)
 		{
 			return this->progress(complete, this->_progressMessage);
 		};
@@ -97,7 +97,7 @@ void PreProcess::onExecute()
 		_progressMessage = "Morphological erosion "
 		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
 		                   + " (" + _prefix + ")";
-		MorphologyClusterFilter erosion(_targetCluster, {result("nosmall").dataset}, nullptr,
+		MorphologyClusterFilter erosion(_targetCluster, {result("nosmall").dataset},
 		                                MorphologyClusterFilter::Method::Erosion, _progress);
 		erosion.threshold = erosionThreshold;
 		erosion.execute();
@@ -105,14 +105,20 @@ void PreProcess::onExecute()
 		_progressMessage = "Morphological dilation "
 		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
 		                   + " (" + _prefix + ")";
-		MorphologyClusterFilter dilation(erosion.target(), {result("nosmall").dataset}, nullptr,
+		MorphologyClusterFilter dilation(erosion.target(), {result("nosmall").dataset},
 		                                 MorphologyClusterFilter::Method::Dilation, _progress);
 		dilation.execute();
 
 		_targetCluster = dilation.target();
 	}
 
+	_progressMessage = "Remove small and deformed trees (" + _prefix + ")";
+	_progress(0, "Removing small and deformed trees.");
 	_targetCluster.removeSmallClusters(removalRadius);
+	_progress(0.5, "Small clusters removed.");
+	removeDeformedClusters(_targetCluster);
+	_progress(1.0, "Deformed clusters removed.");
+	
 	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_morphology.tif")).string());
 	deleteResult("nosmall");
 }
@@ -137,6 +143,37 @@ std::vector<OGRPoint> PreProcess::collectSeedPoints(GDALDataset* target)
 
 	collectSeeds.execute();
 	return seedPoints;
+}
+
+void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
+{
+	for (const GUInt32 index : clusterMap.clusterIndexes())
+	{
+		const auto& bbox = clusterMap.boundingBox(index);
+		int minX = bbox[0].getX(), maxX = bbox[0].getX(), minY = bbox[0].getY(), maxY = bbox[0].getY();
+		for (size_t i = 1; i < 4; ++i)
+		{
+			if (bbox[i].getX() < minX)
+				minX = bbox[i].getX();
+			else if (bbox[i].getX() > maxX)
+				maxX = bbox[i].getX();
+			if (bbox[i].getY() < minY)
+				minY = bbox[i].getY();
+			else if (bbox[i].getY() > maxY)
+				maxY = bbox[i].getY();
+		}
+
+		int sizeX = maxX - minX;
+		int sizeY = maxY - minY;
+
+		if (sizeX < sizeY / 2 ||
+			sizeY < sizeX / 2 ||
+			clusterMap.points(index).size() < sizeX * sizeY * 0.6)
+		{
+			// Cluster is deformed, so remove.
+			clusterMap.removeCluster(index);
+		}
+	}
 }
 
 void PreProcess::writeClusterMapToFile(const std::string& outPath)

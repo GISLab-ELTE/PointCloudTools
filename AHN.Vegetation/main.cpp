@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
 		("hausdorff-distance", "use Hausdorff-distance")
-		("parallel,p", "parallel execution for AHN-2 and AHN-3") // TODO: this will mess up the log output
+		("parallel,p", "parallel execution for AHN-2 and AHN-3")
 		("debug,d", "keep intermediate results on disk after progress")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")

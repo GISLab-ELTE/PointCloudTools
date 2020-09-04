@@ -36,16 +36,16 @@ public:
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
 	/// </summary>
-	/// <param name="sourceDataset">The source path of the filter.</param>
-	/// <param name="targetPath">The target file of the filter.</param>
-	/// <param name="mode">The applied morphology method.</param>
+	/// <param name="source">The cluster map to apply the morphological filter on.</param>
+	/// <param name="sourceDatasets">The source raster datasets storing the height values for the points.</param>
+	/// <param name="method">The method (DILATION or EROSION) to apply.</param>
 	/// <param name="progress">The callback method to report progress.</param>
+	/// <returns></returns>
 	MorphologyClusterFilter(CloudTools::DEM::ClusterMap& source,
 	                        const std::vector<GDALDataset*>& sourceDatasets,
-	                        ComputationType computation,
 	                        Method method = Method::Dilation,
 	                        ProgressType progress = nullptr)
-		: DatasetCalculation(sourceDatasets, computation, progress),
+		: DatasetCalculation(sourceDatasets, nullptr, progress),
 		  _clusterMap(source), method(method)
 	{
 		initialize();
