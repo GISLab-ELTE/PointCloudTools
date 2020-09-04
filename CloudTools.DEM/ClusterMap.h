@@ -45,6 +45,13 @@ private:
 		}
 	};
 
+private:
+	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
+	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
+	GUInt32 _nextClusterIndex = 1;
+	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
+	int _sizeX, _sizeY;
+
 public:
 	/// <summary>
 	/// Initializes a new, empty instance of the class.
@@ -54,8 +61,8 @@ public:
 	/// <summary>
 	/// Initializes a new instance of the class with maximum width and height.
 	/// </summary>
-	/// <param name="x">The height of the cluster map.</param>
-	/// <param name="y">The width of the cluster map.</param>
+	/// <param name="sizeX">The height of the cluster map.</param>
+	/// <param name="sizeY">The width of the cluster map.</param>
 	ClusterMap(int sizeX, int sizeY) : _sizeX(sizeX), _sizeY(sizeY)
 	{
 	}
@@ -88,7 +95,7 @@ public:
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <param name="x">The abcissa of the point.</param>
 	/// <param name="y">The ordinate of the point.</param>
-	/// <param name="z">The height of the inital point.</param>
+	/// <param name="z">The height of the initial point.</param>
 	/// </summary>
 	void addPoint(GUInt32 clusterIndex, int x, int y, double z = 0.0);
 
@@ -105,7 +112,7 @@ public:
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The neighboring points contained by the cluster.</returns>
-	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex);
+	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Calculates the center of gravity (?) of a cluster by
@@ -113,26 +120,35 @@ public:
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The center of gravity of the cluster.</returns>
-	OGRPoint center(GUInt32 clusterIndex);
+	OGRPoint center(GUInt32 clusterIndex) const;
 
 	/// <summary>
-	/// Retrieves the point with the biggest Z coordinate
-	/// in the cluster.
+	/// Retrieves the point with the biggest Z coordinate in the cluster.
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The highest point of the cluster.</returns>
-	OGRPoint highestPoint(GUInt32 clusterIndex);
+	OGRPoint highestPoint(GUInt32 clusterIndex) const;
 
-	OGRPoint lowestPoint(GUInt32 clusterIndex);
+	/// <summary>
+	/// Retrieves the point with the lowest Z coordinate in the cluster.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <returns>The lowest point of the cluster.</returns>
+	OGRPoint lowestPoint(GUInt32 clusterIndex) const;
 
-	std::vector<OGRPoint> borders(GUInt32 clusterIndex);
+	/// <summary>
+	/// Returns the minimal bounding box of the cluster.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <returns><The minimal bounding box of the cluster./returns>
+	std::vector<OGRPoint> boundingBox(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Retrieves the seed point of a cluster.
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The seed point of the cluster.</returns>
-	OGRPoint seedPoint(GUInt32 clusterIndex);
+	OGRPoint seedPoint(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Retrieves the points in a cluster.
@@ -145,9 +161,10 @@ public:
 	/// Creates a new cluster with an initial point.
 	/// </summary>
 	/// <param name="x">The abcissa of the initial point.</param>
-	/// <param name="y">The ordinate of the inital point.</param>
-	/// <param name="z">The height of the inital point.</param>
-	void createCluster(int x, int y, double z = 0.0);
+	/// <param name="y">The ordinate of the initial point.</param>
+	/// <param name="z">The height of the initial point.</param>
+	/// <returns>The id of the created cluster.</returns>
+	GUInt32 createCluster(int x, int y, double z = 0.0);
 
 	/// <summary>
 	/// Merges 2 clusters.
@@ -171,13 +188,6 @@ public:
 	/// <param name="threshold">The minimum threshold of size to keep a cluster.</param>
 	/// <returns>The number of removed clusters.</returns>
 	std::size_t removeSmallClusters(unsigned int threshold);
-
-private:
-	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
-	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
-	GUInt32 _nextClusterIndex = 1;
-	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
-	int _sizeX, _sizeY;
 };
 } // DEM
 } // CloudTools
