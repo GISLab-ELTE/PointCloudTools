@@ -7,9 +7,9 @@
 
 namespace fs = boost::filesystem;
 
-namespace AHN
+namespace CloudTools
 {
-namespace Buildings
+namespace IO
 {
 /// <summary>
 /// Represents a result object.
@@ -206,5 +206,5 @@ struct MemoryResult : Result
 		return *this;
 	}
 };
-} // Buildings
-} // AHN
+} // IO
+} // CloudTools

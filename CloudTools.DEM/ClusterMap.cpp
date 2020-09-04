@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
+#include <stdexcept>
 
 #include "ClusterMap.h"
 

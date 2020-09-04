@@ -5,8 +5,7 @@ add_library(ahn_buildings
 	BuildingFilter.cpp BuildingFilter.h
 	Comparison.cpp Comparison.h
 	IOMode.cpp IOMode.h
-	Process.cpp Process.h
-	Result.cpp Result.h)
+	Process.cpp Process.h)
 
 add_executable(ahn_buildings_sim
 	main.cpp)

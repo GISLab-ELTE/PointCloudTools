@@ -13,6 +13,7 @@
 #include "MorphologyClusterFilter.h"
 
 using namespace CloudTools::DEM;
+using namespace CloudTools::IO;
 
 namespace AHN
 {
@@ -35,59 +36,68 @@ void PreProcess::onPrepare()
 
 void PreProcess::onExecute()
 {
-	std::string chmOut, antialiasOut, nosmallOut, interpolOut, segmentationOut, morphologyOut;
-
-	chmOut = (fs::path(_outputDir) / (_prefix + "_CHM.tif")).string();
-	antialiasOut = (fs::path(_outputDir) / (_prefix + "_antialias.tif")).string();
-	nosmallOut = (fs::path(_outputDir) / (_prefix + "_nosmall.tif")).string();
-	interpolOut = (fs::path(_outputDir) / (_prefix + "_interpol.tif")).string();
-	segmentationOut = (fs::path(_outputDir) / (_prefix + "_segmentation.tif")).string();
-	morphologyOut = (fs::path(_outputDir) / (_prefix + "_morphology.tif")).string();
-
-
 	_progressMessage = "Creating CHM (" + _prefix + ")";
-	Difference<float> comparison({_dtmInputPath, _dsmInputPath}, chmOut, _progress);
-	comparison.execute();
-
-	_targetMetadata = comparison.targetMetadata();
+	newResult("CHM");
+	{
+		Difference<float> comparison({_dtmInputPath, _dsmInputPath}, result("CHM").path(), _progress);
+		comparison.execute();
+		result("CHM").dataset = comparison.target();
+		_targetMetadata = comparison.targetMetadata();
+	}
 
 	_progressMessage = "Matrix transformation (" + _prefix + ")";
-	MatrixTransformation filter(comparison.target(), antialiasOut, 1, _progress);
-	filter.setMatrix(0, 0, 4); // middle
-	filter.setMatrix(0, -1, 2); // sides
-	filter.setMatrix(0, 1, 2);
-	filter.setMatrix(-1, 0, 2);
-	filter.setMatrix(1, 0, 2);
-	filter.setMatrix(-1, -1, 1); // corners
-	filter.setMatrix(1, -1, 1);
-	filter.setMatrix(-1, 1, 1);
-	filter.setMatrix(1, 1, 1);
-	filter.execute();
+	newResult("antialias");
+	{
+		MatrixTransformation filter(result("CHM").dataset, result("antialias").path(), 1, _progress);
+		filter.setMatrix(0, 0, 4); // middle
+		filter.setMatrix(0, -1, 2); // sides
+		filter.setMatrix(0, 1, 2);
+		filter.setMatrix(-1, 0, 2);
+		filter.setMatrix(1, 0, 2);
+		filter.setMatrix(-1, -1, 1); // corners
+		filter.setMatrix(1, -1, 1);
+		filter.setMatrix(-1, 1, 1);
+		filter.setMatrix(1, 1, 1);
+		filter.execute();
+		result("antialias").dataset = filter.target();
+	}
+	deleteResult("CHM");
 
 	_progressMessage = "Small points elimination (" + _prefix + ")";
-	EliminateNonTrees elimination({filter.target()}, nosmallOut, _progress);
-	elimination.execute();
+	newResult("nosmall");
+	{
+		EliminateNonTrees elimination({result("antialias").dataset}, result("nosmall").path(), _progress);
+		elimination.execute();
+		result("nosmall").dataset = elimination.target();
+	}
+	deleteResult("antialias");
 
-	_progressMessage = "Interpolation (" + _prefix + ")";
-	InterpolateNoData interpolation({elimination.target()}, interpolOut, _progress);
-	interpolation.execute();
+	newResult("interpol");
+	{
+		_progressMessage = "Interpolation (" + _prefix + ")";
+		InterpolateNoData interpolation({result("nosmall").dataset}, result("interpol").path(), _progress);
+		interpolation.execute();
+		result("interpol").dataset = interpolation.target();
+	}
 
 	_progressMessage = "Seed points collection (" + _prefix + ")";
-	std::vector<OGRPoint> seedPoints = collectSeedPoints(interpolation.target());
+	std::vector<OGRPoint> seedPoints = collectSeedPoints(result("interpol").dataset);
 
 	_progressMessage = "Tree crown segmentation (" + _prefix + ")";
-	TreeCrownSegmentation segmentation({interpolation.target()}, seedPoints, _progress);
-	segmentation.execute();
-
-	_targetCluster = segmentation.clusterMap();
-	writeClusterMapToFile(segmentationOut);
+	{
+		TreeCrownSegmentation segmentation(result("interpol").dataset, seedPoints, _progress);
+		segmentation.execute();
+		_targetCluster = segmentation.clusterMap();
+	}
+	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_segmentation.tif")).string());
+	deleteResult("interpol");
 
 	for (int i = 0; i < morphologyCounter; ++i)
 	{
 		_progressMessage = "Morphological erosion "
 		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
 		                   + " (" + _prefix + ")";
-		MorphologyClusterFilter erosion(_targetCluster, {elimination.target()}, nullptr,
+		MorphologyClusterFilter erosion(_targetCluster, {result("nosmall").dataset}, nullptr,
 		                                MorphologyClusterFilter::Method::Erosion, _progress);
 		erosion.threshold = erosionThreshold;
 		erosion.execute();
@@ -95,7 +105,7 @@ void PreProcess::onExecute()
 		_progressMessage = "Morphological dilation "
 		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
 		                   + " (" + _prefix + ")";
-		MorphologyClusterFilter dilation(erosion.target(), {elimination.target()}, nullptr,
+		MorphologyClusterFilter dilation(erosion.target(), {result("nosmall").dataset}, nullptr,
 		                                 MorphologyClusterFilter::Method::Dilation, _progress);
 		dilation.execute();
 
@@ -103,7 +113,8 @@ void PreProcess::onExecute()
 	}
 
 	_targetCluster.removeSmallClusters(removalRadius);
-	writeClusterMapToFile(morphologyOut);
+	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_morphology.tif")).string());
+	deleteResult("nosmall");
 }
 
 std::vector<OGRPoint> PreProcess::collectSeedPoints(GDALDataset* target)
@@ -191,6 +202,16 @@ void PreProcess::writeClusterMapToFile(const std::string& outPath)
 	}
 
 	GDALClose(target);
+}
+
+Result* PreProcess::createResult(const std::string& name, bool isFinal)
+{
+	std::string filename = _prefix + "_" + name + ".tif";
+
+	if (isFinal || debug)
+		return new PermanentFileResult(fs::path(_outputDir) / filename);
+	else
+		return new TemporaryFileResult(fs::path(_outputDir) / filename);
 }
 } // Vegetation
 } // AHN

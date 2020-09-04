@@ -37,8 +37,9 @@ int main(int argc, char* argv[])
 		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
 		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
-		("hausdorff-distance,d", "use Hausdorff-distance")
-		("parallel,p", "parallel execution for AHN-2 and AHN-3")
+		("hausdorff-distance", "use Hausdorff-distance")
+		("parallel,p", "parallel execution for AHN-2 and AHN-3") // TODO: this will mess up the log output
+		("debug,d", "keep intermediate results on disk after progress")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
 		("help,h", "produce help message");
@@ -121,26 +122,32 @@ int main(int argc, char* argv[])
 	// Configure the operation
 	GDALAllRegister();
 	std::string lastStatus;
+	auto progress = [&reporter, &lastStatus](float complete, const std::string& message)
+	{
+		if (message != lastStatus)
+		{
+			std::cout << std::endl
+			          << "Task: " << message << std::endl;
+			reporter->reset();
+			lastStatus = message;
+		}
+		reporter->report(complete, message);
+		return true;
+	};
 
 	// Create preprocessors
 	PreProcess ahn2PreProcess("ahn2", AHN2DTMinputPath, AHN2DSMinputPath, outputDir);
 	PreProcess ahn3PreProcess("ahn3", AHN3DTMinputPath, AHN3DSMinputPath, outputDir);
 
+	ahn2PreProcess.debug = vm.count("debug");
+	ahn3PreProcess.debug = vm.count("debug");
+
 	if (!vm.count("quiet"))
 	{
-		ahn2PreProcess.progress = ahn3PreProcess.progress =
-			[&reporter, &lastStatus](float complete, const std::string& message)
-			{
-				if (message != lastStatus)
-				{
-					std::cout << std::endl
-					          << "Task: " << message << std::endl;
-					reporter->reset();
-					lastStatus = message;
-				}
-				reporter->report(complete, message);
-				return true;
-			};
+		if (!vm.count("parallel"))
+			ahn2PreProcess.progress = ahn3PreProcess.progress = progress;
+		else
+			std::cout << "No progress display for preprocessors in parallel mode." << std::endl;
 	}
 
 	// Execute preprocess operations
@@ -164,7 +171,7 @@ int main(int argc, char* argv[])
 
 	if (!vm.count("quiet"))
 	{
-		postProcess.progress = ahn2PreProcess.progress;
+		postProcess.progress = progress;
 	}
 
 	// Execute postprocess operations

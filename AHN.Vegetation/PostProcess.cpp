@@ -174,26 +174,26 @@ void PostProcess::writeClusterHeightsToFile(const std::string& outPath, std::sha
 		}
 	}
 
-	SweepLineTransformation<float>* heightWriter = new SweepLineTransformation<float>(
+	SweepLineTransformation<float> heightWriter(
 		{_ahn2DSMInputPath, _ahn3DSMInputPath}, outPath, 0, nullptr, _progress);
 
-	heightWriter->computation = [&heightWriter, &heightMap](int x, int y,
+	heightWriter.computation = [&heightWriter, &heightMap](int x, int y,
 	                                                        const std::vector<Window<float>>& sources)
 	{
 		const Window<float>& ahn2 = sources[0];
 		const Window<float>& ahn3 = sources[1];
 
 		if (!ahn2.hasData() || !ahn3.hasData())
-			return static_cast<float>(heightWriter->nodataValue);
+			return static_cast<float>(heightWriter.nodataValue);
 
 		auto index = std::make_pair(x, y);
 		if (!heightMap.count(index))
-			return static_cast<float>(heightWriter->nodataValue);
+			return static_cast<float>(heightWriter.nodataValue);
 		else
 			return heightMap[index];
 	};
 
-	heightWriter->execute();
+	heightWriter.execute();
 }
 
 void PostProcess::onPrepare()

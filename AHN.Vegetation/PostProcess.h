@@ -5,8 +5,6 @@
 
 #include "DistanceCalculation.h"
 
-using namespace CloudTools::DEM;
-
 namespace AHN
 {
 namespace Vegetation
@@ -37,7 +35,7 @@ protected:
 
 public:
 	PostProcess(const std::string& ahn2DSMInputPath, const std::string& ahn3DSMInputPath,
-	            const ClusterMap& clusterMapAHN2, const ClusterMap& clusterMapAHN3,
+	            const CloudTools::DEM::ClusterMap& clusterMapAHN2, const CloudTools::DEM::ClusterMap& clusterMapAHN3,
 	            const std::string& outputDir,
 	            DifferenceMethod method = DifferenceMethod::Centroid)
 		: _ahn2DSMInputPath(ahn2DSMInputPath), _ahn3DSMInputPath(ahn3DSMInputPath),
@@ -60,10 +58,10 @@ protected:
 
 private:
 	std::string _ahn2DSMInputPath, _ahn3DSMInputPath;
-	ClusterMap _clustersAHN2, _clustersAHN3;
+	CloudTools::DEM::ClusterMap _clustersAHN2, _clustersAHN3;
 	std::string _outputDir;
 	DifferenceMethod _method;
-	RasterMetadata _rasterMetadata;
+	CloudTools::DEM::RasterMetadata _rasterMetadata;
 
 	void writeClusterPairsToFile(const std::string& outPath, std::shared_ptr<DistanceCalculation> distance);
 
