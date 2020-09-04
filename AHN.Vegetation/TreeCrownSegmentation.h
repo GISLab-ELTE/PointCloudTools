@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 
+#include <CloudTools.Common/Helper.h>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 
@@ -63,19 +64,6 @@ public:
 	CloudTools::DEM::ClusterMap& clusterMap();
 
 private:
-	struct PointComparator
-	{
-		bool operator()(const OGRPoint& a, const OGRPoint& b) const
-		{
-			if (a.getX() < b.getX())
-				return true;
-			else if (a.getX() > b.getX())
-				return false;
-			else
-				return a.getY() < b.getY();
-		}
-	};
-
 	CloudTools::DEM::ClusterMap clusters;
 
 	/// <summary>
@@ -83,7 +71,7 @@ private:
 	/// </summary>
 	void initialize();
 
-	std::set<OGRPoint, PointComparator> expandCluster(GUInt32 index, double vertical);
+	std::set<OGRPoint, CloudTools::PointComparator> expandCluster(GUInt32 index, double vertical);
 };
 } // Vegetation
 } // AHN

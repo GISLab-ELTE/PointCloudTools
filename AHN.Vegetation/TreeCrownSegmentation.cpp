@@ -1,5 +1,6 @@
 #include "TreeCrownSegmentation.h"
 
+using namespace CloudTools;
 using namespace CloudTools::DEM;
 
 namespace AHN
@@ -23,7 +24,7 @@ void TreeCrownSegmentation::initialize()
 		double currentVerticalDistance = 0.5;
 		do
 		{
-			std::unordered_map<GUInt32, std::set<OGRPoint, PointComparator>> expandPoints;
+			std::map<GUInt32, std::set<OGRPoint, PointComparator>> expandPoints;
 			for (GUInt32 index : clusters.clusterIndexes())
 				expandPoints.insert(std::make_pair(index, expandCluster(index, currentVerticalDistance)));
 
@@ -40,7 +41,7 @@ void TreeCrownSegmentation::initialize()
 					std::vector<OGRPoint> intersection;
 					std::set_intersection(expandPoints[index_i].begin(), expandPoints[index_i].end(),
 					                      expandPoints[index_j].begin(), expandPoints[index_j].end(),
-					                      std::back_inserter(intersection), TreeCrownSegmentation::PointComparator());
+					                      std::back_inserter(intersection), PointComparator());
 
 					double oneSeedHeight = clusters.seedPoint(index_i).getZ();
 					double otherSeedHeight = clusters.seedPoint(index_j).getZ();
@@ -97,7 +98,7 @@ void TreeCrownSegmentation::initialize()
 	};
 }
 
-std::set<OGRPoint, TreeCrownSegmentation::PointComparator> TreeCrownSegmentation::expandCluster(
+std::set<OGRPoint, PointComparator> TreeCrownSegmentation::expandCluster(
 	GUInt32 index, double vertical)
 {
 	std::set<OGRPoint, PointComparator> expand;

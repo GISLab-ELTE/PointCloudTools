@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <unordered_map>
-
-#include <boost/functional/hash/hash.hpp>
 
 #include <gdal.h>
 #include <ogr_geometry.h>
+
+#include <CloudTools.Common/Helper.h>
 
 #include "Helper.h"
 
@@ -20,36 +21,10 @@ namespace DEM
 class ClusterMap
 {
 private:
-	/// <summary>
-	/// Represents a (X, Y) point hashing functor for OGRPoint.
-	/// </summary>
-	struct PointHash
-	{
-		std::size_t operator()(const OGRPoint& p) const
-		{
-			std::size_t seed = 0;
-			auto h1 = std::hash<double>{}(p.getX());
-			auto h2 = std::hash<double>{}(p.getY());
-
-			boost::hash_combine(seed, h1);
-			boost::hash_combine(seed, h2);
-			return seed;
-		}
-	};
-
-	struct PointEqual
-	{
-		bool operator()(const OGRPoint& a, const OGRPoint& b) const
-		{
-			return a.getX() == b.getX() && a.getY() == b.getY();
-		}
-	};
-
-private:
-	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
+	std::map<GUInt32, OGRPoint> _seedPoints;
+	std::map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
 	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
-	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
 	int _sizeX, _sizeY;
 
 public:
