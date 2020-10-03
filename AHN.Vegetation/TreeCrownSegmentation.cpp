@@ -31,9 +31,9 @@ void TreeCrownSegmentation::initialize()
 			hasChanged = false;
 			std::vector<GUInt32> indexes = clusters.clusterIndexes();
 			std::map<GUInt32, GUInt32> mergePairs;
-			for (int i = 0; i < indexes.size(); ++i)
+			for (std::size_t i = 0; i < indexes.size(); ++i)
 			{
-				for (int j = i + 1; j < indexes.size(); ++j)
+				for (std::size_t j = i + 1; j < indexes.size(); ++j)
 				{
 					GUInt32 index_i = indexes[i];
 					GUInt32 index_j = indexes[j];
@@ -57,6 +57,7 @@ void TreeCrownSegmentation::initialize()
 						{
 							mergePairs[index_i] = index_j;
 							mergePairs[index_j] = index_i;
+							break;
 						}
 					}
 				}
