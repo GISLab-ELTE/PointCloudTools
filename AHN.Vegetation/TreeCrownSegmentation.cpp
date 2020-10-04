@@ -21,7 +21,7 @@ void TreeCrownSegmentation::initialize()
 		}
 
 		bool hasChanged;
-		double currentVerticalDistance = 0.5;
+		double currentVerticalDistance = initialVerticalDistance;
 		do
 		{
 			std::map<GUInt32, std::set<OGRPoint, PointComparator>> expandPoints;
@@ -100,10 +100,10 @@ void TreeCrownSegmentation::initialize()
 }
 
 std::set<OGRPoint, PointComparator> TreeCrownSegmentation::expandCluster(
-	GUInt32 index, double vertical)
+	GUInt32 index, double verticalThreshold)
 {
 	std::set<OGRPoint, PointComparator> expand;
-	OGRPoint center = clusters.center(index);
+	OGRPoint center = clusters.center2D(index);
 
 	for (const OGRPoint& p : clusters.neighbors(index))
 	{
@@ -114,7 +114,7 @@ std::set<OGRPoint, PointComparator> TreeCrownSegmentation::expandCluster(
 		                                                clusters.seedPoint(index).getY()));
 
 		if (this->hasSourceData(p.getX(), p.getY()) && horizontalDistance <= maxHorizontalDistance
-		    && verticalDistance <= maxVerticalDistance)
+		    && verticalDistance <= verticalThreshold)
 			expand.insert(OGRPoint(p.getX(), p.getY(), sourceData(p.getX(), p.getY())));
 	}
 

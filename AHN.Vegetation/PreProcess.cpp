@@ -92,10 +92,10 @@ void PreProcess::onExecute()
 		segmentation.execute();
 		_targetCluster = segmentation.clusterMap();
 	}
-	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_segmentation.tif")).string());
 	deleteResult("interpol");
+	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_segmentation.tif")).string());
 
-	for (int i = 0; i < morphologyCounter; ++i)
+	for (std::size_t i = 0; i < morphologyCounter; ++i)
 	{
 		_progressMessage = "Morphological erosion "
 		                   + std::to_string(i + 1) + "/" + std::to_string(morphologyCounter)
@@ -114,6 +114,7 @@ void PreProcess::onExecute()
 
 		_targetCluster = dilation.target();
 	}
+	deleteResult("nosmall");
 
 	_progressMessage = "Remove small and deformed trees (" + _prefix + ")";
 	_progress(0, "Removing small and deformed trees.");
@@ -123,7 +124,17 @@ void PreProcess::onExecute()
 	_progress(1.0, "Deformed clusters removed.");
 	
 	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_morphology.tif")).string());
-	deleteResult("nosmall");
+
+	if (debug)
+	{
+		std::vector<OGRPoint> clusterPoints;
+		clusterPoints.reserve(_targetCluster.clusterIndexes().size());
+		for(auto index : _targetCluster.clusterIndexes())
+		{
+			clusterPoints.push_back(_targetCluster.center3D(index));
+		}
+		writePointsToFile(clusterPoints, (fs::path(_outputDir) / (_prefix + "_clusterpoints.json")).string());
+	}
 }
 
 std::vector<OGRPoint> PreProcess::collectSeedPoints(GDALDataset* target)
@@ -169,8 +180,8 @@ void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
 		int sizeX = maxX - minX;
 		int sizeY = maxY - minY;
 
-		if (sizeX < sizeY / 2 ||
-			sizeY < sizeX / 2 ||
+		if (sizeX < sizeY * 0.6 ||
+			sizeY < sizeX * 0.6 ||
 			clusterMap.points(index).size() < sizeX * sizeY * 0.6)
 		{
 			// Cluster is deformed, so remove.
@@ -240,7 +251,7 @@ void PreProcess::writeClusterMapToFile(const std::string& outPath)
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
 
-	srand(time(NULL));
+	std::srand(42); // Fixed seed, so the random shuffling is reproducible.
 	int commonId;
 	std::vector<OGRPoint> points;
 

@@ -30,8 +30,9 @@ void CentroidDistance::onExecute()
 			{
 				for (const GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
 				{
-					OGRPoint point = AHN3ClusterMap.center(otherIndex);
-					double newDist = AHN2ClusterMap.center(index).Distance(&point);
+					OGRPoint ahn2Center = AHN2ClusterMap.center2D(index);
+					OGRPoint ahn3Center = AHN3ClusterMap.center2D(otherIndex);
+					double newDist = ahn2Center.Distance(&ahn3Center);
 					if (newDist < dist &&
 					    std::find_if(closestClusters.begin(),
 					                 closestClusters.end(),

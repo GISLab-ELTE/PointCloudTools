@@ -90,12 +90,20 @@ public:
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex) const;
 
 	/// <summary>
-	/// Calculates the center of gravity (?) of a cluster by
+	/// Calculates the 3 dimensional center of gravity of a cluster by
 	/// taking the average of the coordinates of its points.
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The center of gravity of the cluster.</returns>
-	OGRPoint center(GUInt32 clusterIndex) const;
+	OGRPoint center3D(GUInt32 clusterIndex) const;
+
+	/// <summary>
+	/// Calculates the 2 dimensional center of a cluster by
+	/// taking the average of the X and Y coordinates of its points.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <returns>The center of the cluster.</returns>
+	OGRPoint center2D(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Retrieves the point with the biggest Z coordinate in the cluster.
