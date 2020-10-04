@@ -180,9 +180,9 @@ void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
 		int sizeX = maxX - minX;
 		int sizeY = maxY - minY;
 
-		if (sizeX < sizeY * 0.6 ||
-			sizeY < sizeX * 0.6 ||
-			clusterMap.points(index).size() < sizeX * sizeY * 0.6)
+		if (sizeX < sizeY * 0.5 ||
+			sizeY < sizeX * 0.5 ||
+			clusterMap.points(index).size() < sizeX * sizeY * 0.5)
 		{
 			// Cluster is deformed, so remove.
 			clusterMap.removeCluster(index);
