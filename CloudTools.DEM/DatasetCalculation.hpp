@@ -204,7 +204,7 @@ DatasetCalculation<SourceType>::~DatasetCalculation()
 {
 	if (isExecuted())
 	{
-		for (int i = 0; i < sourceCount(); ++i)
+		for (std::size_t i = 0; i < sourceCount(); ++i)
 			delete[] _sourceData[i];
 	}
 }

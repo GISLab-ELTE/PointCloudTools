@@ -47,7 +47,7 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 	GDALRasterBand* targetBand = target->GetRasterBand(1);
 	targetBand->SetNoDataValue(-1);
 
-	srand(time(NULL));
+	std::srand(42); // Fixed seed, so the random shuffling is reproducible.
 	int commonId;
 	std::vector<OGRPoint> points;
 

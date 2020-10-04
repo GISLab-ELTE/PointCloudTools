@@ -91,8 +91,7 @@ void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 
 	if (_clusterIndexes[clusterIndex].empty())
 		removeCluster(clusterIndex);
-
-	if (_seedPoints[clusterIndex].getX() == point.getX() &&
+	else if (_seedPoints[clusterIndex].getX() == point.getX() &&
 		_seedPoints[clusterIndex].getY() == point.getY())
 		_seedPoints.erase(clusterIndex);
 }
@@ -117,7 +116,7 @@ std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex) const
 	return std::vector<OGRPoint>(neighbors.begin(), neighbors.end());
 }
 
-OGRPoint ClusterMap::center(GUInt32 clusterIndex) const
+OGRPoint ClusterMap::center3D(GUInt32 clusterIndex) const
 {
 	auto clusterPoints = points(clusterIndex);
 	int avgX = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
@@ -127,6 +126,17 @@ OGRPoint ClusterMap::center(GUInt32 clusterIndex) const
 	double avgZ = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
 	                              [](double value, OGRPoint& p) { return value + p.getZ(); }) / clusterPoints.size();
 	return OGRPoint(avgX, avgY, avgZ);
+}
+
+OGRPoint ClusterMap::center2D(GUInt32 clusterIndex) const
+{
+	auto clusterPoints = points(clusterIndex);
+	int avgX = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
+	                           [](int value, OGRPoint& p) { return value + p.getX(); }) / clusterPoints.size();
+	int avgY = std::accumulate(clusterPoints.begin(), clusterPoints.end(), 0,
+	                           [](int value, OGRPoint& p) { return value + p.getY(); }) / clusterPoints.size();
+
+	return OGRPoint(avgX, avgY);
 }
 
 OGRPoint ClusterMap::highestPoint(GUInt32 clusterIndex) const
@@ -240,6 +250,7 @@ void ClusterMap::mergeClusters(GUInt32 clusterA, GUInt32 clusterB)
 
 	// Remove merged cluster
 	_clusterIndexes.erase(fromCluster);
+	_seedPoints.erase(fromCluster);
 }
 
 void ClusterMap::removeCluster(GUInt32 clusterIndex)
@@ -250,6 +261,7 @@ void ClusterMap::removeCluster(GUInt32 clusterIndex)
 	for (const auto& point : _clusterIndexes[clusterIndex])
 		_clusterPoints.erase(point);
 	_clusterIndexes.erase(clusterIndex);
+	_seedPoints.erase(clusterIndex);
 }
 
 std::size_t ClusterMap::removeSmallClusters(unsigned int threshold)

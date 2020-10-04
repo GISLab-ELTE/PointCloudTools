@@ -16,7 +16,7 @@ class CentroidDistance : public DistanceCalculation
 public:
 	CentroidDistance(CloudTools::DEM::ClusterMap& AHN2clusterMap,
 	                 CloudTools::DEM::ClusterMap& AHN3clusterMap,
-	                 double maximumDistance = 9.0,
+	                 double maximumDistance = 10.0, // in units of resolution (e.g. with 0.5m resolution it is 5 meters)
 	                 Operation::ProgressType progress = nullptr)
 		: DistanceCalculation(AHN2clusterMap, AHN3clusterMap, maximumDistance, progress)
 	{
