@@ -117,11 +117,14 @@ void PreProcess::onExecute()
 	deleteResult("nosmall");
 
 	_progressMessage = "Remove small and deformed trees (" + _prefix + ")";
-	_progress(0, "Removing small and deformed trees.");
+	if (_progress)
+		_progress(0, "Removing small and deformed trees.");
 	_targetCluster.removeSmallClusters(removalRadius);
-	_progress(0.5, "Small clusters removed.");
+	if (_progress)
+		_progress(0.5, "Small clusters removed.");
 	removeDeformedClusters(_targetCluster);
-	_progress(1.0, "Deformed clusters removed.");
+	if (_progress)
+		_progress(1.0, "Deformed clusters removed.");
 	
 	writeClusterMapToFile((fs::path(_outputDir) / (_prefix + "_morphology.tif")).string());
 
@@ -180,9 +183,9 @@ void PreProcess::removeDeformedClusters(ClusterMap& clusterMap)
 		int sizeX = maxX - minX;
 		int sizeY = maxY - minY;
 
-		if (sizeX < sizeY * 0.6 ||
-			sizeY < sizeX * 0.6 ||
-			clusterMap.points(index).size() < sizeX * sizeY * 0.6)
+		if (sizeX < sizeY * 0.5 ||
+			sizeY < sizeX * 0.5 ||
+			clusterMap.points(index).size() < sizeX * sizeY * 0.5)
 		{
 			// Cluster is deformed, so remove.
 			clusterMap.removeCluster(index);
