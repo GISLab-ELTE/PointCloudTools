@@ -34,6 +34,7 @@ The repository in consisted of 9 projects altogether.
 - **AHN.Buildings.Aggregate:** Computes aggregative change of volume for administrative units.
 - **AHN.Buildings.Verify:** Verifies detected building changes against reference files.
 - **AHN.Vegetation:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in the vegetation (trees).
+- **AHN.Vegetation.Verify:** Verifies detected trees changes against reference files.
 
 
 How to build
@@ -96,6 +97,7 @@ ahn_buildings_agg
 ahn_buildings_ver
 ahn_buildings_mpi
 ahn_vegetation
+ahn_vegetation_ver
 ```
 Get usage information and available arguments with the `-h` flag.
 
