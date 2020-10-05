@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 
+#include <CloudTools.Common/Helper.h>
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 
@@ -20,9 +21,10 @@ public:
 	std::vector<OGRPoint> seedPoints;
 
 public:
-	double maxVerticalDistance = 14.0;
-	double maxHorizontalDistance = 12.0;
-	double increaseVerticalDistance = 1.0;
+	double maxVerticalDistance = 14.0; // in meters
+	double maxHorizontalDistance = 12.0; // in units of resolution (e.g. with 0.5m resolution it is 6 meters)
+	double initialVerticalDistance = 2.0;  // in meters
+	double increaseVerticalDistance = 2.0;  // in meters
 
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
@@ -63,19 +65,6 @@ public:
 	CloudTools::DEM::ClusterMap& clusterMap();
 
 private:
-	struct PointComparator
-	{
-		bool operator()(const OGRPoint& a, const OGRPoint& b) const
-		{
-			if (a.getX() < b.getX())
-				return true;
-			else if (a.getX() > b.getX())
-				return false;
-			else
-				return a.getY() < b.getY();
-		}
-	};
-
 	CloudTools::DEM::ClusterMap clusters;
 
 	/// <summary>
@@ -83,7 +72,7 @@ private:
 	/// </summary>
 	void initialize();
 
-	std::set<OGRPoint, PointComparator> expandCluster(GUInt32 index, double vertical);
+	std::set<OGRPoint, CloudTools::PointComparator> expandCluster(GUInt32 index, double verticalThreshold);
 };
 } // Vegetation
 } // AHN

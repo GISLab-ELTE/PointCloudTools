@@ -23,7 +23,7 @@ public:
 
 	DistanceCalculation(const CloudTools::DEM::ClusterMap& AHN2clusterMap,
 	                    const CloudTools::DEM::ClusterMap& AHN3clusterMap,
-	                    double maximumDistance = 9.0,
+	                    double maximumDistance = 10.0, // in units of resolution (e.g. with 0.5m resolution it is 5 meters)
 	                    Operation::ProgressType progress = nullptr)
 		: AHN2ClusterMap(AHN2clusterMap), AHN3ClusterMap(AHN3clusterMap), maximumDistance(maximumDistance),
 		  progress(progress)

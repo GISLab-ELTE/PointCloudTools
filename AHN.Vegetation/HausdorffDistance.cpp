@@ -13,8 +13,9 @@ void HausdorffDistance::onExecute()
 	{
 		for (GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
 		{
-			auto c = AHN3ClusterMap.center(otherIndex);
-			double distance = AHN2ClusterMap.center(index).Distance(&c);
+			auto ahn3Center = AHN3ClusterMap.center2D(otherIndex);
+			auto ahn2Center = AHN2ClusterMap.center2D(index);
+			double distance = ahn2Center.Distance(&ahn3Center);
 			if (distance >= maximumDistance)
 				continue;
 
@@ -46,8 +47,9 @@ void HausdorffDistance::onExecute()
 	{
 		for (GUInt32 otherIndex : AHN2ClusterMap.clusterIndexes())
 		{
-			auto c = AHN2ClusterMap.center(otherIndex);
-			double distance = AHN3ClusterMap.center(index).Distance(&c);
+			auto ahn2Center = AHN2ClusterMap.center2D(otherIndex);
+			auto ahn3Center = AHN3ClusterMap.center2D(index);
+			double distance = ahn2Center.Distance(&ahn3Center);
 			if (distance >= maximumDistance)
 				continue;
 

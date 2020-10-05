@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <unordered_map>
-
-#include <boost/functional/hash/hash.hpp>
 
 #include <gdal.h>
 #include <ogr_geometry.h>
+
+#include <CloudTools.Common/Helper.h>
 
 #include "Helper.h"
 
@@ -20,36 +21,10 @@ namespace DEM
 class ClusterMap
 {
 private:
-	/// <summary>
-	/// Represents a (X, Y) point hashing functor for OGRPoint.
-	/// </summary>
-	struct PointHash
-	{
-		std::size_t operator()(const OGRPoint& p) const
-		{
-			std::size_t seed = 0;
-			auto h1 = std::hash<double>{}(p.getX());
-			auto h2 = std::hash<double>{}(p.getY());
-
-			boost::hash_combine(seed, h1);
-			boost::hash_combine(seed, h2);
-			return seed;
-		}
-	};
-
-	struct PointEqual
-	{
-		bool operator()(const OGRPoint& a, const OGRPoint& b) const
-		{
-			return a.getX() == b.getX() && a.getY() == b.getY();
-		}
-	};
-
-private:
-	std::unordered_map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
+	std::map<GUInt32, OGRPoint> _seedPoints;
+	std::map<GUInt32, std::vector<OGRPoint>> _clusterIndexes;
 	std::unordered_map<OGRPoint, GUInt32, PointHash, PointEqual> _clusterPoints;
 	GUInt32 _nextClusterIndex = 1;
-	std::unordered_map<GUInt32, OGRPoint> _seedPoints;
 	int _sizeX, _sizeY;
 
 public:
@@ -115,12 +90,20 @@ public:
 	std::vector<OGRPoint> neighbors(GUInt32 clusterIndex) const;
 
 	/// <summary>
-	/// Calculates the center of gravity (?) of a cluster by
+	/// Calculates the 3 dimensional center of gravity of a cluster by
 	/// taking the average of the coordinates of its points.
 	/// </summary>
 	/// <param name="clusterIndex">The index of the cluster.</param>
 	/// <returns>The center of gravity of the cluster.</returns>
-	OGRPoint center(GUInt32 clusterIndex) const;
+	OGRPoint center3D(GUInt32 clusterIndex) const;
+
+	/// <summary>
+	/// Calculates the 2 dimensional center of a cluster by
+	/// taking the average of the X and Y coordinates of its points.
+	/// </summary>
+	/// <param name="clusterIndex">The index of the cluster.</param>
+	/// <returns>The center of the cluster.</returns>
+	OGRPoint center2D(GUInt32 clusterIndex) const;
 
 	/// <summary>
 	/// Retrieves the point with the biggest Z coordinate in the cluster.
