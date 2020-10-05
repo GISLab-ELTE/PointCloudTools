@@ -8,7 +8,7 @@ Contains the **AHN Change Detector**, a toolset for change detection of the buil
 Dependencies
 ------------
 - [Boost Library](https://www.boost.org/), >=1.58 *(mandatory)*
-- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.1 *(mandatory)*
+- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.2 *(mandatory)*
 - MPI - Message Passing Interface<sup>2</sup> *(optional)*
   - Windows: [MS-MPI](https://msdn.microsoft.com/en-us/library/bb524831), >=7.1
   - Linux: [Open MPI](https://www.open-mpi.org/), >=1.10

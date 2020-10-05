@@ -25,7 +25,7 @@ else()
 endif()
 
 find_package(Boost 1.58 REQUIRED COMPONENTS filesystem program_options regex)
-find_package(GDAL 2.1 REQUIRED)
+find_package(GDAL 2.2 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(MPI)
 
