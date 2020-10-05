@@ -21,7 +21,7 @@ void MatrixTransformation::initialize()
 		if (!source.hasData()) return static_cast<float>(this->nodataValue);
 
 		float value = 0;
-		int counter = 0;
+		float counter = 0;
 		for(int i = -this->range(); i <= this->range(); ++i)
 			for(int j = -this->range(); j <= this->range(); ++j)
 				if (source.hasData(i, j))
