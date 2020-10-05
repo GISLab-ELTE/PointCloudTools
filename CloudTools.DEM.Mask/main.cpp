@@ -299,6 +299,7 @@ int main(int argc, char* argv[]) try
 	// Execute operation
 	mask->execute();
 	delete mask;
+	delete reporter;
 
 	// Remove temporary mask raster file
 	if (!vm.count("mask-raster"))

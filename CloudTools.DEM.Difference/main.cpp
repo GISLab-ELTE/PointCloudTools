@@ -202,6 +202,7 @@ int main(int argc, char* argv[]) try
 	comparison->execute();
 
 	delete comparison;
+	delete reporter;
 	return Success;
 }
 catch (std::exception &ex)
