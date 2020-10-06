@@ -103,11 +103,11 @@ void HausdorffDistance::onExecute()
 		progress(0.9f, "Lonely AHN2 clusters calculated.");
 
 	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
-		if (std::find_if(ahn2HausdorffDistances.begin(), ahn2HausdorffDistances.end(),
+		if (std::find_if(ahn3HausdorffDistances.begin(), ahn3HausdorffDistances.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
 			                 return item.first.second == index;
-		                 }) == ahn2HausdorffDistances.end())
+		                 }) == ahn3HausdorffDistances.end())
 			lonelyClustersAHN3.push_back(index);
 
 	if (progress)
