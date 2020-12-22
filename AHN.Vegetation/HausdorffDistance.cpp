@@ -136,7 +136,7 @@ void HausdorffDistance::onExecute()
       if (ahn3Key.count(ahn3) > 1)
       {
         auto iter = it;
-        while (iter->first == it->first)
+        while (iter != end && iter->first == it->first)
         {
           if (minPair.second.second > iter->second.second)
             minPair = *iter;
