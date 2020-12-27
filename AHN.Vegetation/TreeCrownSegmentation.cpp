@@ -93,9 +93,10 @@ void TreeCrownSegmentation::initialize()
 				}
 			}
 
-			currentVerticalDistance += increaseVerticalDistance;
+			if (currentVerticalDistance < maxVerticalDistance)
+				currentVerticalDistance = std::min(currentVerticalDistance + increaseVerticalDistance, maxVerticalDistance);
 		}
-		while (hasChanged && currentVerticalDistance <= maxVerticalDistance);
+		while (hasChanged || currentVerticalDistance < maxVerticalDistance);
 	};
 }
 
