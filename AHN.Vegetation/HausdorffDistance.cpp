@@ -6,6 +6,8 @@ namespace Vegetation
 {
 void HausdorffDistance::onExecute()
 {
+	progress(0.f, "Performig Hausdorff-distance based cluster pairing.");
+	
 	std::vector<double> distances;
 	double minDistance;
 

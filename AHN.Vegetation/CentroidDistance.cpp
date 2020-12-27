@@ -9,6 +9,8 @@ namespace Vegetation
 {
 void CentroidDistance::onExecute()
 {
+	progress(0.f, "Performig centroid distance based cluster pairing.");
+	
 	bool hasChanged;
 	do
 	{

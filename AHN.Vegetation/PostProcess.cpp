@@ -110,7 +110,7 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 		}
 
 		if (ioResult != CE_None)
-			throw std::runtime_error("Target write error occured.");
+			throw std::runtime_error("Target write error occurred.");
 	}
 
 	commonId = -3;
