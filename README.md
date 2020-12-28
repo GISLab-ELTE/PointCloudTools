@@ -1,4 +1,4 @@
-CloudTools
+PointCloudTools
 ============
 
 Massive airborne laser altimetry (ALS) point cloud and digital elevation model (DEM) processing library.  
@@ -40,7 +40,7 @@ The repository in consisted of 9 projects altogether.
 How to build
 ------------
 
-The project is continously built and tested on the following operating systems:
+The project is continuously built and tested on the following operating systems:
 - Windows 10
 - Ubuntu Linux 18.04 LTS and 20.04 LTS
 
