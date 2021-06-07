@@ -13,11 +13,30 @@ namespace CloudTools
 {
 namespace DEM
 {
+#pragma region Metadata
+bool Metadata::isOverlapping(const Metadata& other)
+{
+	double aLeft = this->originX();
+	double aRight = this->originX() + this->extentX();
+	double aTop = this->originY();
+	double aBottom = this->originY() - this->extentY();
+
+	double bLeft = other.originX();
+	double bRight = other.originX() + other.extentX();
+	double bTop = other.originY();
+	double bBottom = other.originY() - other.extentY();
+
+	return aLeft < bRight && aRight > bLeft && aTop > bBottom && aBottom < bTop;
+}
+#pragma endregion
+
 #pragma region VectorMetadata
 
 VectorMetadata::VectorMetadata(GDALDataset* dataset, const std::vector<std::string>& layerNames)
 {
-	std::vector<OGRLayer*> layers(layerNames.size());
+	std::vector<OGRLayer*> layers;
+	layers.reserve(layerNames.size());
+	
 	if (!layerNames.empty())
 	{
 		for (const std::string &layerName : layerNames)

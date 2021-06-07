@@ -30,6 +30,8 @@ public:
 	virtual double extentX() const = 0;
 	virtual double extentY() const = 0;
 	virtual const OGRSpatialReference& reference() const = 0;
+
+	bool isOverlapping(const Metadata&);
 };
 
 /// <summary>
