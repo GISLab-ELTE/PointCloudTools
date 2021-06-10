@@ -4,7 +4,7 @@
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -61,4 +61,4 @@ private:
 	void initialize();
 };
 } // Vegetation
-} // AHN
+} // CloudTools

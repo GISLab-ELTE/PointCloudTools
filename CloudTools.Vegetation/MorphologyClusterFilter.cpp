@@ -2,7 +2,7 @@
 
 #include "MorphologyClusterFilter.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -93,4 +93,4 @@ CloudTools::DEM::ClusterMap& MorphologyClusterFilter::target()
 	return this->_clusterMap;
 }
 } // Vegetation
-} // AHN
+} // CloudTools

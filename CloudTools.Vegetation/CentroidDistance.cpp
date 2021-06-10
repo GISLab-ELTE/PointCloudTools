@@ -3,7 +3,7 @@
 
 #include "CentroidDistance.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -15,53 +15,53 @@ void CentroidDistance::onExecute()
 	do
 	{
 		hasChanged = false;
-		std::multimap<GUInt32, std::pair<GUInt32, double>> ahn3Key;
+		std::multimap<GUInt32, std::pair<GUInt32, double>> bKey;
 
-		for (const GUInt32 index : AHN2ClusterMap.clusterIndexes())
+		for (const GUInt32 indexA : clusterMapA.clusterIndexes())
 		{
 			double dist = std::numeric_limits<double>::max();
 			GUInt32 i = -1;
 
 			if (std::find_if(closestClusters.begin(),
 			                 closestClusters.end(),
-			                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
+			                 [&indexA](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
 			                 {
-				                 return p.first.first == index;
+				                 return p.first.first == indexA;
 			                 })
 			    == closestClusters.end())
 			{
-				for (const GUInt32 otherIndex : AHN3ClusterMap.clusterIndexes())
+				for (const GUInt32 indexB : clusterMapB.clusterIndexes())
 				{
-					OGRPoint ahn2Center = AHN2ClusterMap.center2D(index);
-					OGRPoint ahn3Center = AHN3ClusterMap.center2D(otherIndex);
-					double newDist = ahn2Center.Distance(&ahn3Center);
+					OGRPoint centerA = clusterMapA.center2D(indexA);
+					OGRPoint centerB = clusterMapB.center2D(indexB);
+					double newDist = centerA.Distance(&centerB);
 					if (newDist < dist &&
 					    std::find_if(closestClusters.begin(),
 					                 closestClusters.end(),
-					                 [&otherIndex](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
+					                 [&indexB](const std::pair<std::pair<GUInt32, GUInt32>, double>& p)
 					                 {
-						                 return p.first.second == otherIndex;
+						                 return p.first.second == indexB;
 					                 })
 					    == closestClusters.end())
 					{
 						dist = newDist;
-						i = otherIndex;
+						i = indexB;
 					}
 				}
 
 				if (dist <= maximumDistance)
 				{
-					ahn3Key.insert(std::make_pair(i, std::make_pair(index, dist))); // AHN3 index is key
+					bKey.insert(std::make_pair(i, std::make_pair(indexA, dist))); // clusterMapB index is key
 				}
 			}
 		}
 
-		for (auto it = ahn3Key.begin(), end = ahn3Key.end();
-		     it != end; it = ahn3Key.upper_bound(it->first))
+		for (auto it = bKey.begin(), end = bKey.end();
+		     it != end; it = bKey.upper_bound(it->first))
 		{
-			GUInt32 ahn3 = it->first;
+			GUInt32 indexB = it->first;
 			std::pair<GUInt32, std::pair<GUInt32, double>> minPair = *it;
-			if (ahn3Key.count(ahn3) > 1)
+			if (bKey.count(indexB) > 1)
 			{
 				auto iter = it;
 				while (iter != end && iter->first == it->first)
@@ -82,27 +82,27 @@ void CentroidDistance::onExecute()
 	if (progress)
 		progress(0.8f, "Cluster map pairs calculated.");
 
-	for (GUInt32 index : AHN2ClusterMap.clusterIndexes())
+	for (GUInt32 index : clusterMapA.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
 			                 return item.first.first == index;
 		                 }) == closestClusters.end())
-			lonelyClustersAHN2.push_back(index);
+			lonelyClustersA.push_back(index);
 
 	if (progress)
-		progress(0.9f, "Lonely AHN2 clusters calculated.");
+		progress(0.9f, "Lonely A clusters calculated.");
 
-	for (GUInt32 index : AHN3ClusterMap.clusterIndexes())
+	for (GUInt32 index : clusterMapB.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
 		                 [&index](const std::pair<std::pair<GUInt32, GUInt32>, double>& item)
 		                 {
 			                 return item.first.second == index;
 		                 }) == closestClusters.end())
-			lonelyClustersAHN3.push_back(index);
+			lonelyClustersB.push_back(index);
 
 	if (progress)
-		progress(1.f, "Lonely AHN3 clusters calculated.");
+		progress(1.f, "Lonely B clusters calculated.");
 }
 } // Vegetation
-} // AHN
+} // CloudTools

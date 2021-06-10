@@ -3,7 +3,7 @@
 using namespace CloudTools;
 using namespace CloudTools::DEM;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -127,4 +127,4 @@ ClusterMap& TreeCrownSegmentation::clusterMap()
 	return this->clusters;
 }
 } // Vegetation
-} // AHN
+} // CloudTools

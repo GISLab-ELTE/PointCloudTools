@@ -8,7 +8,7 @@
 #include <CloudTools.DEM/ClusterMap.h>
 #include <CloudTools.DEM/DatasetCalculation.hpp>
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -75,4 +75,4 @@ private:
 	std::set<OGRPoint, CloudTools::PointComparator> expandCluster(GUInt32 index, double verticalThreshold);
 };
 } // Vegetation
-} // AHN
+} // CloudTools

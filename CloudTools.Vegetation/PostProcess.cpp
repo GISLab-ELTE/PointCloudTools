@@ -13,7 +13,7 @@
 
 using namespace CloudTools::DEM;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -61,7 +61,7 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 		commonId = ids.back();
 		ids.pop_back();
 
-		points = _clustersAHN2.points(elem.first.first);
+		points = _clustersA.points(elem.first.first);
 		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
@@ -75,7 +75,7 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 			                                                    0, 0));
 		}
 
-		points = _clustersAHN3.points(elem.first.second);
+		points = _clustersB.points(elem.first.second);
 		for (const auto& point : points)
 		{
 			ioResult = static_cast<CPLErr>(ioResult |
@@ -93,9 +93,9 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 	}
 
 	commonId = -2;
-	for (auto elem : distance->lonelyAHN2())
+	for (auto elem : distance->lonelyA())
 	{
-		points = _clustersAHN2.points(elem);
+		points = _clustersA.points(elem);
 		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
@@ -114,9 +114,9 @@ void PostProcess::writeClusterPairsToFile(const std::string& outPath, std::share
 	}
 
 	commonId = -3;
-	for (auto elem : distance->lonelyAHN3())
+	for (auto elem : distance->lonelyB())
 	{
-		points = _clustersAHN3.points(elem);
+		points = _clustersB.points(elem);
 		CPLErr ioResult = CE_None;
 		for (const auto& point : points)
 		{
@@ -142,48 +142,48 @@ void PostProcess::writeClusterHeightsToFile(const std::string& outPath, std::sha
 	std::map<std::pair<int, int>, float> heightMap;
 	for (const auto& elem : distance->closest())
 	{
-		float ahn2ClusterHeight = std::accumulate(
-			_clustersAHN2.points(elem.first.first).begin(),
-			_clustersAHN2.points(elem.first.first).end(), 0.0,
+		float clusterHeightA = std::accumulate(
+			_clustersA.points(elem.first.first).begin(),
+			_clustersA.points(elem.first.first).end(), 0.0,
 			[](float sum, const OGRPoint& point)
 			{
 				return sum + point.getZ();
 			});
 
-		float ahn3ClusterHeight = std::accumulate(
-			_clustersAHN3.points(elem.first.second).begin(),
-			_clustersAHN3.points(elem.first.second).end(), 0.0,
+		float clusterHeightB = std::accumulate(
+			_clustersB.points(elem.first.second).begin(),
+			_clustersB.points(elem.first.second).end(), 0.0,
 			[](float sum, const OGRPoint& point)
 			{
 				return sum + point.getZ();
 			});
 
-		float heightDiff = ahn3ClusterHeight - ahn2ClusterHeight;
+		float heightDiff = clusterHeightB - clusterHeightA;
 		float avgHeightDiff = heightDiff /
-		                      std::max(_clustersAHN2.points(elem.first.first).size(),
-		                               _clustersAHN3.points(elem.first.second).size());
+		                      std::max(_clustersA.points(elem.first.first).size(),
+		                               _clustersB.points(elem.first.second).size());
 
-		for (const OGRPoint& point : _clustersAHN2.points(elem.first.first))
+		for (const OGRPoint& point : _clustersA.points(elem.first.first))
 		{
 			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
 		}
 
-		for (const OGRPoint& point : _clustersAHN3.points(elem.first.second))
+		for (const OGRPoint& point : _clustersB.points(elem.first.second))
 		{
 			heightMap[std::make_pair(point.getX(), point.getY())] = avgHeightDiff;
 		}
 	}
 
 	SweepLineTransformation<float> heightWriter(
-		{_ahn2DSMInputPath, _ahn3DSMInputPath}, outPath, 0, nullptr, _progress);
+		{_dsmInputPathA, _dsmInputPathB}, outPath, 0, nullptr, _progress);
 
 	heightWriter.computation = [&heightWriter, &heightMap](int x, int y,
 	                                                        const std::vector<Window<float>>& sources)
 	{
-		const Window<float>& ahn2 = sources[0];
-		const Window<float>& ahn3 = sources[1];
+		const Window<float>& windowA = sources[0];
+		const Window<float>& windowB = sources[1];
 
-		if (!ahn2.hasData() || !ahn3.hasData())
+		if (!windowA.hasData() || !windowB.hasData())
 			return static_cast<float>(heightWriter.nodataValue);
 
 		auto index = std::make_pair(x, y);
@@ -198,11 +198,11 @@ void PostProcess::writeClusterHeightsToFile(const std::string& outPath, std::sha
 
 void PostProcess::onPrepare()
 {
-	if (_ahn2DSMInputPath.empty() || _ahn3DSMInputPath.empty())
+	if (_dsmInputPathA.empty() || _dsmInputPathB.empty())
 		throw std::runtime_error("Defining the surface DEM files is mandatory.");
 
 	// Read raster metadata
-	GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(_ahn2DSMInputPath.c_str(), GA_ReadOnly));
+	GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(_dsmInputPathA.c_str(), GA_ReadOnly));
 	_rasterMetadata = RasterMetadata(dataset);
 	GDALClose(dataset);
 
@@ -222,13 +222,13 @@ void PostProcess::onExecute()
 	if (_method == Hausdorff)
 	{
 		_progressMessage = "Hausdorff distance calculation to pair up clusters";
-		distance.reset(new HausdorffDistance(_clustersAHN2, _clustersAHN3));
+		distance.reset(new HausdorffDistance(_clustersA, _clustersB));
 	}
 
 	if (_method == Centroid)
 	{
 		_progressMessage = "Centroid (gravity) distance calculation to pair up clusters";
-		distance.reset(new CentroidDistance(_clustersAHN2, _clustersAHN3));
+		distance.reset(new CentroidDistance(_clustersA, _clustersB));
 	}
 
 	distance->progress = _progress;
@@ -236,21 +236,21 @@ void PostProcess::onExecute()
 	writeClusterPairsToFile((fs::path(_outputDir) / "cluster_pairs.tif").string(), distance);
 
 	std::cout << std::endl;
-	std::cout << "Total number of clusters in AHN2: " << _clustersAHN2.clusterIndexes().size() << std::endl;
-	std::cout << "Total number of clusters in AHN3: " << _clustersAHN3.clusterIndexes().size() << std::endl;
+	std::cout << "Total number of clusters in A: " << _clustersA.clusterIndexes().size() << std::endl;
+	std::cout << "Total number of clusters in B: " << _clustersB.clusterIndexes().size() << std::endl;
 	std::cout << "Pairs found: " << distance->closest().size() << std::endl;
-	std::cout << "Number of unpaired clusters in AHN2: " << distance->lonelyAHN2().size() << std::endl;
-	std::cout << "Number of unpaired clusters in AHN3: " << distance->lonelyAHN3().size() << std::endl;
+	std::cout << "Number of unpaired clusters in A: " << distance->lonelyA().size() << std::endl;
+	std::cout << "Number of unpaired clusters in B: " << distance->lonelyB().size() << std::endl;
 
-	VolumeDifference volumeDifference(_clustersAHN2, _clustersAHN3, distance);
+	VolumeDifference volumeDifference(_clustersA, _clustersB, distance);
 
-	std::cout << "AHN2 full volume: " << volumeDifference.ahn2_fullVolume << std::endl;
-	std::cout << "AHN3 full volume: " << volumeDifference.ahn3_fullVolume << std::endl;
-	std::cout << "AHN2 and AHN3 difference: " << (volumeDifference.ahn3_fullVolume - volumeDifference.ahn2_fullVolume)
+	std::cout << "A full volume: " << volumeDifference.fullVolumeA << std::endl;
+	std::cout << "B full volume: " << volumeDifference.fullVolumeB << std::endl;
+	std::cout << "A and B difference: " << (volumeDifference.fullVolumeB - volumeDifference.fullVolumeA)
 	          << std::endl;
 
 	_progressMessage = "Height map";
 	writeClusterHeightsToFile((fs::path(_outputDir) / "cluster_heights.tif").string(), distance);
 }
 } // Vegetation
-} // AHN
+} // CloudTools

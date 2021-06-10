@@ -1,6 +1,6 @@
 #include "InterpolateNoData.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -35,4 +35,4 @@ void InterpolateNoData::initialize()
 	};
 }
 } // Vegetation
-} // AHN
+} // CloudTools

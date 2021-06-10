@@ -6,20 +6,20 @@
 
 using namespace CloudTools::DEM;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
 class HeightDifference
 {
 public:
-	ClusterMap ahn2, ahn3;
+	ClusterMap clusterMapA, clusterMapB;
 	DistanceCalculation* distance;
 
-	HeightDifference(ClusterMap& ahn2_map,
-	                 ClusterMap& ahn3_map,
+	HeightDifference(ClusterMap& clusterMapA,
+	                 ClusterMap& clusterMapB,
 	                 DistanceCalculation* distance)
-		: ahn2(ahn2_map), ahn3(ahn3_map), distance(distance)
+		: clusterMapA(clusterMapA), clusterMapB(clusterMapB), distance(distance)
 	{
 		calculateDifference();
 	}
@@ -28,4 +28,4 @@ private:
 	void calculateDifference();
 };
 } // Vegetation
-} // AHN
+} // CloudTools

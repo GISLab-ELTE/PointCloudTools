@@ -2,10 +2,10 @@
 
 #include <map>
 
-#include "CloudTools.Common/Operation.h"
-#include "CloudTools.DEM/ClusterMap.h"
+#include <CloudTools.Common/Operation.h>
+#include <CloudTools.DEM/ClusterMap.h>
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -13,19 +13,19 @@ class DistanceCalculation : public CloudTools::Operation
 {
 public:
 	double maximumDistance;
-	CloudTools::DEM::ClusterMap AHN2ClusterMap;
-	CloudTools::DEM::ClusterMap AHN3ClusterMap;
+	CloudTools::DEM::ClusterMap clusterMapA;
+	CloudTools::DEM::ClusterMap clusterMapB;
 
 	/// <summary>
 	/// Callback function for reporting progress.
 	/// </summary>
 	ProgressType progress;
 
-	DistanceCalculation(const CloudTools::DEM::ClusterMap& AHN2clusterMap,
-	                    const CloudTools::DEM::ClusterMap& AHN3clusterMap,
+	DistanceCalculation(const CloudTools::DEM::ClusterMap& clusterMapA,
+	                    const CloudTools::DEM::ClusterMap& clusterMapB,
 	                    double maximumDistance = 10.0, // in units of resolution (e.g. with 0.5m resolution it is 5 meters)
 	                    Operation::ProgressType progress = nullptr)
-		: AHN2ClusterMap(AHN2clusterMap), AHN3ClusterMap(AHN3clusterMap), maximumDistance(maximumDistance),
+		: clusterMapA(clusterMapA), clusterMapB(clusterMapB), maximumDistance(maximumDistance),
 		  progress(progress)
 	{
 	}
@@ -35,14 +35,14 @@ public:
 		return closestClusters;
 	}
 
-	const std::vector<GUInt32>& lonelyAHN2() const
+	const std::vector<GUInt32>& lonelyA() const
 	{
-		return lonelyClustersAHN2;
+		return lonelyClustersA;
 	}
 
-	const std::vector<GUInt32>& lonelyAHN3() const
+	const std::vector<GUInt32>& lonelyB() const
 	{
-		return lonelyClustersAHN3;
+		return lonelyClustersB;
 	}
 
 	void onPrepare() override
@@ -50,8 +50,8 @@ public:
 
 protected:
 	std::map<std::pair<GUInt32, GUInt32>, double> closestClusters;
-	std::vector<GUInt32> lonelyClustersAHN2;
-	std::vector<GUInt32> lonelyClustersAHN3;
+	std::vector<GUInt32> lonelyClustersA;
+	std::vector<GUInt32> lonelyClustersB;
 };
 } // Vegetation
-} // AHN
+} // CloudTools

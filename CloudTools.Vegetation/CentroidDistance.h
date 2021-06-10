@@ -7,18 +7,18 @@
 
 #include "DistanceCalculation.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
 class CentroidDistance : public DistanceCalculation
 {
 public:
-	CentroidDistance(CloudTools::DEM::ClusterMap& AHN2clusterMap,
-	                 CloudTools::DEM::ClusterMap& AHN3clusterMap,
+	CentroidDistance(CloudTools::DEM::ClusterMap& clusterMapA,
+	                 CloudTools::DEM::ClusterMap& clusterMapB,
 	                 double maximumDistance = 10.0, // in units of resolution (e.g. with 0.5m resolution it is 5 meters)
 	                 Operation::ProgressType progress = nullptr)
-		: DistanceCalculation(AHN2clusterMap, AHN3clusterMap, maximumDistance, progress)
+		: DistanceCalculation(clusterMapA, clusterMapB, maximumDistance, progress)
 	{
 	}
 
@@ -26,4 +26,4 @@ private:
 	void onExecute() override;
 };
 } // Vegetation
-} // AHN
+} // CloudTools

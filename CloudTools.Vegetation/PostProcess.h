@@ -5,7 +5,7 @@
 
 #include "DistanceCalculation.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -34,12 +34,12 @@ protected:
 	std::string _progressMessage;
 
 public:
-	PostProcess(const std::string& ahn2DSMInputPath, const std::string& ahn3DSMInputPath,
-	            const CloudTools::DEM::ClusterMap& clusterMapAHN2, const CloudTools::DEM::ClusterMap& clusterMapAHN3,
+	PostProcess(const std::string& dsmInputPathA, const std::string& dsmInputPathB,
+	            const CloudTools::DEM::ClusterMap& clusterMapA, const CloudTools::DEM::ClusterMap& clusterMapB,
 	            const std::string& outputDir,
 	            DifferenceMethod method = DifferenceMethod::Centroid)
-		: _ahn2DSMInputPath(ahn2DSMInputPath), _ahn3DSMInputPath(ahn3DSMInputPath),
-		  _clustersAHN2(clusterMapAHN2), _clustersAHN3(clusterMapAHN3),
+		: _dsmInputPathA(dsmInputPathA), _dsmInputPathB(dsmInputPathB),
+		  _clustersA(clusterMapA), _clustersB(clusterMapB),
 		  _outputDir(outputDir),
 		  _method(method)
 	{
@@ -57,8 +57,8 @@ protected:
 	void onExecute() override;
 
 private:
-	std::string _ahn2DSMInputPath, _ahn3DSMInputPath;
-	CloudTools::DEM::ClusterMap _clustersAHN2, _clustersAHN3;
+	std::string _dsmInputPathA, _dsmInputPathB;
+	CloudTools::DEM::ClusterMap _clustersA, _clustersB;
 	std::string _outputDir;
 	DifferenceMethod _method;
 	CloudTools::DEM::RasterMetadata _rasterMetadata;
@@ -68,4 +68,4 @@ private:
 	void writeClusterHeightsToFile(const std::string& outPath, std::shared_ptr<DistanceCalculation> distance);
 };
 } // Vegetation
-} // AHN
+} // CloudTools

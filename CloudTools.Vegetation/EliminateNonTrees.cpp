@@ -1,6 +1,6 @@
 #include "EliminateNonTrees.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -17,4 +17,4 @@ void EliminateNonTrees::initialize()
 	};
 }
 } // Vegetation
-} // AHN
+} // CloudTools

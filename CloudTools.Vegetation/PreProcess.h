@@ -5,7 +5,7 @@
 #include <CloudTools.DEM/Metadata.h>
 #include <CloudTools.DEM/ClusterMap.h>
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -116,4 +116,4 @@ private:
 	void writeClusterMapToFile(const std::string& outPath);
 };
 } // Vegetation
-} // AHN
+} // CloudTools

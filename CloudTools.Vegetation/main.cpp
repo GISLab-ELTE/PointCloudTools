@@ -19,26 +19,26 @@ namespace fs = boost::filesystem;
 
 using namespace CloudTools::IO;
 using namespace CloudTools::DEM;
-using namespace AHN::Vegetation;
+using namespace CloudTools::Vegetation;
 
 int main(int argc, char* argv[])
 {
-	std::string AHN3DTMinputPath;
-	std::string AHN3DSMinputPath;
-	std::string AHN2DSMinputPath;
-	std::string AHN2DTMinputPath;
+	std::string dtmInputPathA;
+	std::string dsmInputPathA;
+	std::string dtmInputPathB;
+	std::string dsmInputPathB;
 	std::string outputDir = fs::current_path().string();
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
 	desc.add_options()
-		("ahn3-dtm-input-path,t", po::value<std::string>(&AHN3DTMinputPath), "AHN3 DTM input path")
-		("ahn3-dsm-input-path,s", po::value<std::string>(&AHN3DSMinputPath), "AHN3 DSM input path")
-		("ahn2-dtm-input-path,y", po::value<std::string>(&AHN2DTMinputPath), "AHN2 DTM input path")
-		("ahn2-dsm-input-path,x", po::value<std::string>(&AHN2DSMinputPath), "AHN2 DSM input path")
+		("dsm-input-path-A,x", po::value<std::string>(&dsmInputPathA), "Epoch-A DSM input path")
+		("dtm-input-path-A,y", po::value<std::string>(&dtmInputPathA), "Epoch-A DTM input path")
+		("dsm-input-path-B,s", po::value<std::string>(&dsmInputPathB), "Epoch-B DSM input path")
+		("dtm-input-path-B,t", po::value<std::string>(&dtmInputPathB), "Epoch-B DTM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
 		("hausdorff-distance", "use Hausdorff-distance")
-		("parallel,p", "parallel execution for AHN-2 and AHN-3")
+		("parallel,p", "parallel execution for A & B epochs")
 		("debug,d", "keep intermediate results on disk after progress")
 		("verbose,v", "verbose output")
 		("quiet,q", "suppress progress output")
@@ -51,42 +51,42 @@ int main(int argc, char* argv[])
 	// Argument validation
 	if (vm.count("help"))
 	{
-		std::cout << "Compares an AHN-2 and AHN-3 tile pair and filters out changes in vegetation." << std::endl;
+		std::cout << "Compares DEMs of same area from different epochs and filters out changes in vegetation." << std::endl;
 		std::cout << desc << std::endl;
 		return Success;
 	}
 
 	bool argumentError = false;
-	if (!vm.count("ahn3-dsm-input-path"))
+	if (!vm.count("dsm-input-path-B"))
 	{
-		std::cerr << "AHN-3 surface input file is mandatory." << std::endl;
+		std::cerr << "Epoch-B surface input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
-	if (!vm.count("ahn3-dtm-input-path"))
+	if (!vm.count("dtm-input-path-B"))
 	{
-		std::cerr << "AHN-3 terrain input file is mandatory." << std::endl;
+		std::cerr << "Epoch-B terrain input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
-	if (!vm.count("ahn2-dsm-input-path"))
+	if (!vm.count("dsm-input-path-A"))
 	{
-		std::cerr << "AHN-2 surface input file is mandatory." << std::endl;
+		std::cerr << "Epoch-A surface input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
-	if (!vm.count("ahn2-dtm-input-path"))
+	if (!vm.count("dtm-input-path-A"))
 	{
-		std::cerr << "AHN-2 terrain input file is mandatory." << std::endl;
+		std::cerr << "Epoch-A terrain input file is mandatory." << std::endl;
 		argumentError = true;
 	}
 
-	if (!fs::exists(AHN3DSMinputPath))
+	if (!fs::exists(dsmInputPathB))
 	{
 		std::cerr << "The surface input file does not exist." << std::endl;
 		argumentError = true;
 	}
-	if (!fs::exists(AHN3DTMinputPath))
+	if (!fs::exists(dtmInputPathB))
 	{
 		std::cerr << "The terrain input file does not exist." << std::endl;
 		argumentError = true;
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 	                     : static_cast<Reporter*>(new BarReporter());
 
 	if (!vm.count("quiet"))
-		std::cout << "=== AHN Vegetation Filter ===" << std::endl;
+		std::cout << "=== DEM Vegetation Filter ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
 
@@ -136,34 +136,34 @@ int main(int argc, char* argv[])
 	};
 
 	// Create preprocessors
-	PreProcess ahn2PreProcess("ahn2", AHN2DTMinputPath, AHN2DSMinputPath, outputDir);
-	PreProcess ahn3PreProcess("ahn3", AHN3DTMinputPath, AHN3DSMinputPath, outputDir);
+	PreProcess preProcessA("a", dtmInputPathA, dsmInputPathA, outputDir);
+	PreProcess preProcessB("b", dtmInputPathB, dsmInputPathB, outputDir);
 
-	ahn2PreProcess.debug = vm.count("debug");
-	ahn3PreProcess.debug = vm.count("debug");
+	preProcessA.debug = vm.count("debug");
+	preProcessB.debug = vm.count("debug");
 
 	if (!vm.count("quiet"))
 	{
 		if (!vm.count("parallel"))
-			ahn2PreProcess.progress = ahn3PreProcess.progress = progress;
+			preProcessA.progress = preProcessB.progress = progress;
 		else
 			std::cout << "No progress display for preprocessors in parallel mode." << std::endl;
 	}
 
 	// Execute preprocess operations
-	auto ahn2Future = std::async(
-		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &ahn2PreProcess, false);
+	auto futureA = std::async(
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &preProcessA, false);
 
-	auto ahn3Future = std::async(
-		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &ahn3PreProcess, false);
+	auto futureB = std::async(
+		vm.count("parallel") ? std::launch::async : std::launch::deferred, &PreProcess::execute, &preProcessB, false);
 
-	ahn2Future.wait();
-	ahn3Future.wait();
+	futureA.wait();
+	futureB.wait();
 
 	// Create the postprocessor
 	PostProcess postProcess(
-		AHN2DSMinputPath, AHN3DSMinputPath,
-		ahn2PreProcess.target(), ahn3PreProcess.target(),
+		dsmInputPathA, dsmInputPathB,
+		preProcessA.target(), preProcessB.target(),
 		outputDir,
 		vm.count("hausdorff-distance")
 		? PostProcess::DifferenceMethod::Hausdorff

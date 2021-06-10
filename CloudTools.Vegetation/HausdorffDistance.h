@@ -8,18 +8,18 @@
 
 #include "DistanceCalculation.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
 class HausdorffDistance : public DistanceCalculation
 {
 public:
-	HausdorffDistance(CloudTools::DEM::ClusterMap& AHN2clusterMap,
-	                  CloudTools::DEM::ClusterMap& AHN3clusterMap,
+	HausdorffDistance(CloudTools::DEM::ClusterMap& clusterMapA,
+	                  CloudTools::DEM::ClusterMap& clusterMapB,
 	                  double maximumDistance = 16.0, // in units of resolution (e.g. with 0.5m resolution it is 8 meters)
 	                  Operation::ProgressType progress = nullptr)
-		: DistanceCalculation(AHN2clusterMap, AHN3clusterMap, maximumDistance, progress)
+		: DistanceCalculation(clusterMapA, clusterMapB, maximumDistance, progress)
 	{
 	}
 
@@ -30,16 +30,11 @@ public:
 	std::map<std::pair<GUInt32, GUInt32>, double> distances() const;
 
 private:
-	std::map<std::pair<GUInt32, GUInt32>, double> ahn2HausdorffDistances;
-	std::map<std::pair<GUInt32, GUInt32>, double> ahn3HausdorffDistances;
+	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistancesA;
+	std::map<std::pair<GUInt32, GUInt32>, double> hausdorffDistancesB;
 
 	void onExecute() override;
-
-	const float threshold = 0.33f;
-
-	void naiveDist();
 	void randomizePoints();
-	void earlyBreakDist();
 };
 } // Vegetation
-} // AHN
+} // CloudTools

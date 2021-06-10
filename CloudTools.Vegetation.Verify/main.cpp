@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Program
-	std::cout << "=== AHN Vegetation Filter Verifier ===" << std::endl;
+	std::cout << "=== Epoch Vegetation Filter Verifier ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
 

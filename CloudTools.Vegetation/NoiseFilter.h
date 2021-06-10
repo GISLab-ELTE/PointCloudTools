@@ -4,7 +4,7 @@
 
 #include <CloudTools.DEM/SweepLineTransformation.hpp>
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -40,4 +40,4 @@ public:
 	NoiseFilter& operator=(const NoiseFilter&) = delete;
 };
 } // Vegetation
-} // AHN
+} // CloudTools

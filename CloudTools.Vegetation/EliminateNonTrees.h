@@ -1,11 +1,11 @@
 #pragma once
 
-#include "CloudTools.Common/Operation.h"
-#include "CloudTools.DEM/SweepLineTransformation.hpp"
+#include <CloudTools.Common/Operation.h>
+#include <CloudTools.DEM/SweepLineTransformation.hpp>
 
 using namespace CloudTools::DEM;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -54,4 +54,4 @@ private:
 	void initialize();
 };
 } // Vegetation
-} // AHN
+} // CloudTools

@@ -2,7 +2,7 @@ PointCloudTools
 ============
 
 Massive airborne laser altimetry (ALS) point cloud and digital elevation model (DEM) processing library.  
-Contains the **AHN Change Detector**, a toolset for change detection of the built-up area and vegetation based on the study dataset: [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
+The toolset supports change detection of the built-up area and vegetation, tested primarily on the study dataset [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
 
 
 Dependencies
@@ -29,12 +29,12 @@ The repository in consisted of 9 projects altogether.
 - **CloudTools.DEM.Mask:** Transforms a vector filter mask into a raster filter mask and/or applies the latter on a DEM.
 - **CloudTools.Common:** Reporting and I/O management.
 - **AHN.Buildings:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in buildings.
-- **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallely and filters out changes in buildings.
-- **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
+- **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallelly and filters out changes in buildings.
+- **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallelly (through MPI) and filters out changes in buildings.
 - **AHN.Buildings.Aggregate:** Computes aggregative change of volume for administrative units.
 - **AHN.Buildings.Verify:** Verifies detected building changes against reference files.
-- **AHN.Vegetation:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in the vegetation (trees).
-- **AHN.Vegetation.Verify:** Verifies detected trees changes against reference files.
+- **CloudTools.Vegetation:** Compares DEMs of same area of same area from different epochs and filters out changes in vegetation (trees).
+- **CloudTools.Vegetation.Verify:** Verifies detected trees changes against reference files.
 
 
 How to build
@@ -96,8 +96,8 @@ ahn_buildings_par
 ahn_buildings_agg
 ahn_buildings_ver
 ahn_buildings_mpi
-ahn_vegetation
-ahn_vegetation_ver
+vegetation
+vegetation_ver
 ```
 Get usage information and available arguments with the `-h` flag.
 

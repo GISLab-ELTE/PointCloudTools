@@ -16,7 +16,7 @@
 using namespace CloudTools::DEM;
 using namespace CloudTools::IO;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -299,4 +299,4 @@ Result* PreProcess::createResult(const std::string& name, bool isFinal)
 		return new TemporaryFileResult(fs::path(_outputDir) / filename);
 }
 } // Vegetation
-} // AHN
+} // CloudTools

@@ -1,22 +1,22 @@
 #include "HeightDifference.h"
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
 void HeightDifference::calculateDifference()
 {
 	std::map<std::pair<GUInt32, GUInt32>, double> differences;
-	OGRPoint ahn2Highest, ahn3Highest;
+	OGRPoint highestA, highestB;
 	double diff;
 	for (const auto& elem : distance->closest())
 	{
-		ahn2Highest = ahn2.highestPoint(elem.first.first);
-		ahn3Highest = ahn3.highestPoint(elem.first.second);
+		highestA = clusterMapA.highestPoint(elem.first.first);
+		highestB = clusterMapB.highestPoint(elem.first.second);
 
-		diff = ahn3Highest.getZ() - ahn2Highest.getZ();
+		diff = highestB.getZ() - highestA.getZ();
 		differences.insert(std::make_pair(elem.first, diff));
 	}
 }
 } // Vegetation
-} // AHN
+} // CloudTools

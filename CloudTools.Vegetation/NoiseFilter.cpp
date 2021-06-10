@@ -7,7 +7,7 @@
 
 using namespace CloudTools::DEM;
 
-namespace AHN
+namespace CloudTools
 {
 namespace Vegetation
 {
@@ -44,4 +44,4 @@ NoiseFilter::NoiseFilter(GDALDataset* sourceDataset,
 	this->nodataValue = 0;
 }
 } // Vegetation
-} // AHN
+} // CloudTools
