@@ -1,3 +1,5 @@
+#include <random>
+
 #include "HausdorffDistance.h"
 
 namespace AHN
@@ -7,6 +9,8 @@ namespace Vegetation
 void HausdorffDistance::onExecute()
 {
 	progress(0.f, "Performig Hausdorff-distance based cluster pairing.");
+
+	randomizePoints();
 
 	// AHN2 -> AHN3
 	for (const GUInt32 ahn2Index : AHN2ClusterMap.clusterIndexes())
@@ -192,6 +196,13 @@ GUInt32 HausdorffDistance::closestCluster(GUInt32 index)
 std::map<std::pair<GUInt32, GUInt32>, double> HausdorffDistance::distances() const
 {
 	return ahn2HausdorffDistances;
+}
+
+
+void HausdorffDistance::randomizePoints()
+{
+	AHN2ClusterMap.shuffle();
+	AHN3ClusterMap.shuffle();
 }
 } // Vegetation
 } // AHN

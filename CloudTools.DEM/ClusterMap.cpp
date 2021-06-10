@@ -279,5 +279,17 @@ std::size_t ClusterMap::removeSmallClusters(unsigned int threshold)
 	}
 	return removedIndexes.size();
 }
+
+void ClusterMap::shuffle()
+{
+
+	for (auto& item : _clusterIndexes)
+	{
+		std::shuffle(item.second.begin(), item.second.end(), engine);
+	}
+}
+
+std::random_device ClusterMap::rd;
+std::mt19937 ClusterMap::engine = std::mt19937(ClusterMap::rd());
 } // DEM
 } // CloudTools

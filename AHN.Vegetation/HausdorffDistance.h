@@ -34,6 +34,12 @@ private:
 	std::map<std::pair<GUInt32, GUInt32>, double> ahn3HausdorffDistances;
 
 	void onExecute() override;
+
+	const float threshold = 0.33f;
+
+	void naiveDist();
+	void randomizePoints();
+	void earlyBreakDist();
 };
 } // Vegetation
 } // AHN
