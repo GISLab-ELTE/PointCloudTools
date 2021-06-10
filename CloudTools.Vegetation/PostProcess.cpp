@@ -236,17 +236,17 @@ void PostProcess::onExecute()
 	writeClusterPairsToFile((fs::path(_outputDir) / "cluster_pairs.tif").string(), distance);
 
 	std::cout << std::endl;
-	std::cout << "Total number of clusters in A: " << _clustersA.clusterIndexes().size() << std::endl;
-	std::cout << "Total number of clusters in B: " << _clustersB.clusterIndexes().size() << std::endl;
+	std::cout << "Total number of clusters in Epoch-A: " << _clustersA.clusterIndexes().size() << std::endl;
+	std::cout << "Total number of clusters in Epoch-B: " << _clustersB.clusterIndexes().size() << std::endl;
 	std::cout << "Pairs found: " << distance->closest().size() << std::endl;
-	std::cout << "Number of unpaired clusters in A: " << distance->lonelyA().size() << std::endl;
-	std::cout << "Number of unpaired clusters in B: " << distance->lonelyB().size() << std::endl;
+	std::cout << "Number of unpaired clusters in Epoch-A: " << distance->lonelyA().size() << std::endl;
+	std::cout << "Number of unpaired clusters in Epoch-B: " << distance->lonelyB().size() << std::endl;
 
 	VolumeDifference volumeDifference(_clustersA, _clustersB, distance);
 
-	std::cout << "A full volume: " << volumeDifference.fullVolumeA << std::endl;
-	std::cout << "B full volume: " << volumeDifference.fullVolumeB << std::endl;
-	std::cout << "A and B difference: " << (volumeDifference.fullVolumeB - volumeDifference.fullVolumeA)
+	std::cout << "Epoch-A full volume: " << volumeDifference.fullVolumeA << std::endl;
+	std::cout << "Epoch-B full volume: " << volumeDifference.fullVolumeB << std::endl;
+	std::cout << "Epoch-A and B difference: " << (volumeDifference.fullVolumeB - volumeDifference.fullVolumeA)
 	          << std::endl;
 
 	_progressMessage = "Height map";

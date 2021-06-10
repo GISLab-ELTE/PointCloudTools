@@ -45,7 +45,7 @@ void HausdorffDistance::onExecute()
 
 	// TODO: add intermediate reporting into above loop
 	if (progress)
-		progress(0.35f, "A to B distances calculated.");
+		progress(0.35f, "Epoch-A to B distances calculated.");
 
 	// B -> A
 	for (const GUInt32 indexB : clusterMapB.clusterIndexes())
@@ -80,7 +80,7 @@ void HausdorffDistance::onExecute()
 
 	// TODO: add intermediate reporting into above loop
 	if (progress)
-		progress(0.7f, "B to A distances calculated.");
+		progress(0.7f, "Epoch-B to A distances calculated.");
 
 	bool hasConflict;
 	do
@@ -167,7 +167,7 @@ void HausdorffDistance::onExecute()
 			lonelyClustersA.push_back(indexA);
 
 	if (progress)
-		progress(0.9f, "Lonely A clusters calculated.");
+		progress(0.9f, "Lonely Epoch-A clusters calculated.");
 
 	for (GUInt32 indexB : clusterMapB.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
@@ -178,7 +178,7 @@ void HausdorffDistance::onExecute()
 			lonelyClustersB.push_back(indexB);
 
 	if (progress)
-		progress(1.f, "Lonely B clusters calculated.");
+		progress(1.f, "Lonely Epoch-B clusters calculated.");
 }
 
 GUInt32 HausdorffDistance::closestCluster(GUInt32 index)

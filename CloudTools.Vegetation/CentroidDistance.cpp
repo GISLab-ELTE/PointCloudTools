@@ -9,7 +9,7 @@ namespace Vegetation
 {
 void CentroidDistance::onExecute()
 {
-	progress(0.f, "Performig centroid distance based cluster pairing.");
+	progress(0.f, "Performing centroid distance based cluster pairing.");
 	
 	bool hasChanged;
 	do
@@ -91,7 +91,7 @@ void CentroidDistance::onExecute()
 			lonelyClustersA.push_back(index);
 
 	if (progress)
-		progress(0.9f, "Lonely A clusters calculated.");
+		progress(0.9f, "Lonely Epoch-A clusters calculated.");
 
 	for (GUInt32 index : clusterMapB.clusterIndexes())
 		if (std::find_if(closestClusters.begin(), closestClusters.end(),
@@ -102,7 +102,7 @@ void CentroidDistance::onExecute()
 			lonelyClustersB.push_back(index);
 
 	if (progress)
-		progress(1.f, "Lonely B clusters calculated.");
+		progress(1.f, "Lonely Epoch-B clusters calculated.");
 }
 } // Vegetation
 } // CloudTools
