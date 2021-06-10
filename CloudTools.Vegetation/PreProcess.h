@@ -97,6 +97,47 @@ private:
 	CloudTools::DEM::RasterMetadata _targetMetadata;
 	CloudTools::DEM::ClusterMap _targetCluster;
 
+	/// <summary>
+	/// Applies blurring convolution. 3x3 Gaussian kernel.
+	/// </summary>
+	/// <remarks>
+	/// Kernel matrix:
+	/// [ 1 2 1
+	///   2 4 2
+	///   1 2 1 ]
+	/// </remarks>
+	/// <param name="sourceDataset">The source dataset of the matrix transformation.</param>
+	/// <param name="targetPath">The target file of the  matrix transformation.</param>
+	GDALDataset* blur3x3Middle4(GDALDataset* sourceDataset, const std::string& targetPath);
+
+	/// <summary>
+	/// Applies blurring convolution. 3x3 Gaussian kernel.
+	/// </summary>
+	/// <remarks>
+	/// Kernel matrix:
+	/// [ 1  3 1
+	///   3 12 3
+	///   1  3 1 ]
+	/// </remarks>
+	/// <param name="sourceDataset">The source dataset of the matrix transformation.</param>
+	/// <param name="targetPath">The target file of the  matrix transformation.</param>
+	GDALDataset* blur3x3Middle12(GDALDataset* sourceDataset, const std::string& targetPath);
+
+	/// <summary>
+	/// Applies blurring convolution. 5x5 Gaussian kernel.
+	/// </summary>
+	/// <remarks>
+	/// Kernel matrix:
+	/// [ 1  4  6  4 1
+	///   4 16 24 16 4
+	///   6 24 36 24 6
+	///   4 16 24 16 4
+	///   1  4  6  4 1 ]
+	/// </remarks>
+	/// <param name="sourceDataset">The source dataset of the matrix transformation.</param>
+	/// <param name="targetPath">The target file of the  matrix transformation.</param>
+	GDALDataset* blur5x5Middle36(GDALDataset* sourceDataset, const std::string& targetPath);
+
 	std::vector<OGRPoint> collectSeedPoints(GDALDataset* target);
 
 	/// <summary>

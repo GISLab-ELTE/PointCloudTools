@@ -49,18 +49,9 @@ void PreProcess::onExecute()
 	_progressMessage = "Matrix transformation (" + _prefix + ")";
 	newResult("antialias");
 	{
-		MatrixTransformation filter(result("CHM").dataset, result("antialias").path(), 1, _progress);
-		filter.setMatrix(0, 0, 4); // middle
-		filter.setMatrix(0, -1, 2); // sides
-		filter.setMatrix(0, 1, 2);
-		filter.setMatrix(-1, 0, 2);
-		filter.setMatrix(1, 0, 2);
-		filter.setMatrix(-1, -1, 1); // corners
-		filter.setMatrix(1, -1, 1);
-		filter.setMatrix(-1, 1, 1);
-		filter.setMatrix(1, 1, 1);
-		filter.execute();
-		result("antialias").dataset = filter.target();
+		result("antialias").dataset = this->blur3x3Middle4(result("CHM").dataset, result("antialias").path());
+		//result("antialias").dataset = this->blur3x3Middle12(result("CHM").dataset, result("antialias").path());
+		//result("antialias").dataset = this->blur5x5Middle36(result("CHM").dataset, result("antialias").path());
 	}
 	deleteResult("CHM");
 
@@ -138,6 +129,68 @@ void PreProcess::onExecute()
 		}
 		writePointsToFile(clusterPoints, (fs::path(_outputDir) / (_prefix + "_clusterpoints.json")).string());
 	}
+}
+
+GDALDataset* PreProcess::blur3x3Middle4(GDALDataset* sourceDataset, const std::string& targetPath)
+{
+	MatrixTransformation filter(sourceDataset, targetPath, 1, _progress);
+	filter.setMatrix(0, 0, 4); // middle
+	filter.setMatrix(0, -1, 2); // sides
+	filter.setMatrix(0, 1, 2);
+	filter.setMatrix(-1, 0, 2);
+	filter.setMatrix(1, 0, 2);
+	filter.setMatrix(-1, -1, 1); // corners
+	filter.setMatrix(1, -1, 1);
+	filter.setMatrix(-1, 1, 1);
+	filter.setMatrix(1, 1, 1);
+
+	filter.execute();
+	return filter.target();
+}
+GDALDataset* PreProcess::blur3x3Middle12(GDALDataset* sourceDataset, const std::string& targetPath)
+{
+	MatrixTransformation filter(sourceDataset, targetPath, 1, _progress);
+	filter.setMatrix(0, 0, 12); // middle
+	filter.setMatrix(0, -1, 3); // sides
+	filter.setMatrix(0, 1, 3);
+	filter.setMatrix(-1, 0, 3);
+	filter.setMatrix(1, 0, 3);
+	filter.setMatrix(-1, -1, 1); // corners
+	filter.setMatrix(1, -1, 1);
+	filter.setMatrix(-1, 1, 1);
+	filter.setMatrix(1, 1, 1);
+
+	filter.execute();
+	return filter.target();
+}
+
+GDALDataset* PreProcess::blur5x5Middle36(GDALDataset* sourceDataset, const std::string& targetPath)
+{
+	MatrixTransformation filter(sourceDataset, targetPath, 2, _progress);
+	for (int i = -2; i <= 2; ++i)
+	{
+		for (int j = -2; j <= -2; ++j)
+		{
+			if (i % 2 == 0 && j % 2 == 0)
+				filter.setMatrix(i, j, 1); // corners
+			else if (i == 0 && j == 0)
+				filter.setMatrix(i, j, 36); // middle
+			else if (std::abs(i) == 1 && std::abs(j) == 2 ||
+			         std::abs(i) == 2 && std::abs(j) == 1)
+				filter.setMatrix(i, j, 4);
+			else if (std::abs(i) == 0 && std::abs(j) == 1 ||
+			         std::abs(i) == 1 && std::abs(j) == 0)
+				filter.setMatrix(i, j, 24);
+			else if (std::abs(i) == 2 && j == 0 ||
+			         std::abs(j) == 2 && i == 0)
+				filter.setMatrix(i, j, 6);
+			else if (std::abs(i) == 1 && std::abs(j) == 1)
+				filter.setMatrix(i, j, 16);
+		}
+	}
+
+	filter.execute();
+	return filter.target();
 }
 
 std::vector<OGRPoint> PreProcess::collectSeedPoints(GDALDataset* target)
