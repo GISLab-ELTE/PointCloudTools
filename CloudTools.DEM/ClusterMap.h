@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <random>
 
 #include <gdal.h>
 #include <ogr_geometry.h>
@@ -171,6 +172,15 @@ public:
 	/// <param name="threshold">The minimum threshold of size to keep a cluster.</param>
 	/// <returns>The number of removed clusters.</returns>
 	std::size_t removeSmallClusters(unsigned int threshold);
+
+	/// <summary>
+	/// Shuffles the points in the clusters in a randomized order.
+	/// </summary>
+	void shuffle();
+
+private:
+	static std::random_device rd;
+	static std::mt19937 engine;
 };
 } // DEM
 } // CloudTools
