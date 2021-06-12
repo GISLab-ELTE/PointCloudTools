@@ -36,8 +36,8 @@ echo.
   echo  ahn_buildings_agg
   echo  ahn_buildings_ver
   echo  ahn_buildings_mpi
-  echo  ahn_vegetation
-  echo  ahn_vegetation_ver
+  echo  vegetation
+  echo  vegetation_ver
   echo.
   cmd.exe /k ""
 ) else (
