@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) try
 	}
 
 	// Program
-	std::cout << "=== Epoch Vegetation Filter Verifier ===" << std::endl;
+	std::cout << "=== DEM Vegetation Filter Verifier ===" << std::endl;
 	std::clock_t clockStart = std::clock();
 	auto timeStart = std::chrono::high_resolution_clock::now();
 
@@ -211,6 +211,19 @@ int main(int argc, char* argv[]) try
 		OGRFeature::DestroyFeature(feature);
 	}
 
+	// Create CRS transformation (if required)
+	if (!referenceMetadata.reference().IsSame(&inputMetadata.reference()))
+	{
+		if (vm.count("verbose"))
+			std::cout << "Reprojection between input and reference dataset required." << std::endl;
+		
+		transformation = OGRCreateCoordinateTransformation(
+			&referenceMetadata.reference(), &inputMetadata.reference());
+
+		if (transformation == nullptr)
+			throw std::runtime_error("Coordinate reference transformation failure.");
+	}
+
 	// Read reference trees
 	std::vector<Tree> referenceTrees;
 	while ((feature = referenceLayer->GetNextFeature()) != nullptr)
@@ -225,23 +238,26 @@ int main(int argc, char* argv[]) try
 
 		if (year >= minYear && year <= maxYear && radius >= minRadius)
 		{
-			transformation = OGRCreateCoordinateTransformation(
-				&referenceMetadata.reference(), &inputMetadata.reference());
-
 			double x = point->getX();
 			double y = point->getY();
-			if (transformation == nullptr || !transformation->Transform(1, &x, &y))
-				throw std::runtime_error("Coordinate reference transformation failure.");
+			
+			if (transformation != nullptr)
+			{
+				if (!transformation->Transform(1, &x, &y))
+					throw std::runtime_error("Coordinate reference transformation failure.");
+			}
 
 			OGRPoint transformedPoint(x, y);
 			if (transformedPoint.Within(inputBoundingBox))
 				referenceTrees.push_back(Tree{transformedPoint, year, radius});
 
-			delete transformation;
 		}
 
 		OGRFeature::DestroyFeature(feature);
 	}
+
+	if (transformation != nullptr)
+		delete transformation;
 
 	if (vm.count("verbose"))
 		std::cout << "Reference tree count (considered): " << referenceTrees.size() << std::endl;
@@ -289,7 +305,7 @@ int main(int argc, char* argv[]) try
 	std::cout << std::endl
 	          << "Verification completed!" << std::endl
 	          << std::endl << std::fixed << std::setprecision(2)
-	          << "[Main statistic]" << std::endl
+	          << "[Basic statistic]" << std::endl
 	          << "Reference trees matched: " << matched.size() << std::endl
 	          << "Reference trees failed: " << missed.size() << std::endl
 	          << "Match ratio: " << ((100.f * matched.size()) / (referenceTrees.size())) << "%" << std::endl
@@ -299,7 +315,13 @@ int main(int argc, char* argv[]) try
 	                                                     0.0, [](double sum, const Tree& tree)
 	                                                     {
 		                                                     return sum + tree.radius;
-	                                                     })) / missed.size()) << std::endl;
+	                                                     })) / missed.size()) << std::endl
+	          << std::endl
+	          << "[Advanced statistic]" << std::endl
+	          << "Extraction rate: " << ((100.f * inputTrees.size()) / referenceTrees.size()) << "%" << std::endl
+	          << "Matching rate: " << ((100.f * matched.size()) / (referenceTrees.size())) << "%" << std::endl
+	          << "Commission rate: " << ((100.f * (inputTrees.size() - matched.size())) / referenceTrees.size()) << "%" << std:: endl
+	          << "Omission rate: " << ((100.f * missed.size()) / (referenceTrees.size())) << "%" << std::endl;
 
 	// Execution time measurement
 	std::clock_t clockEnd = std::clock();
