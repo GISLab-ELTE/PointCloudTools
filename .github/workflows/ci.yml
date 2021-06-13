@@ -16,6 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Update package repository
+      run: sudo apt-get update
       
     - name: Install required packages
       run: sudo apt-get install libboost-all-dev libgdal-dev libopenmpi-dev
