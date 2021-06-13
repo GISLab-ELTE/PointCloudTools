@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) try
 	          << "[Advanced statistic]" << std::endl
 	          << "Extraction rate: " << ((100.f * inputTrees.size()) / referenceTrees.size()) << "%" << std::endl
 	          << "Matching rate: " << ((100.f * matched.size()) / (referenceTrees.size())) << "%" << std::endl
-	          << "Commission rate: " << ((100.f * (inputTrees.size() - matched.size())) / referenceTrees.size()) << "%" << std:: endl
+	          << "Commission rate: " << ((100.f * (inputTrees.size() - matched.size())) / inputTrees.size()) << "%" << std:: endl
 	          << "Omission rate: " << ((100.f * missed.size()) / (referenceTrees.size())) << "%" << std::endl;
 
 	// Execution time measurement
