@@ -74,6 +74,8 @@ You may specify the `/property:Configuration=<value>` flag to set the project co
 
 The project supports Visual Studio's CMake integration, you may create a `CMakeSettings.json` file based on the given sample (`CMakeSettings.json.sample`) and use the multi-configuration *Ninja* generator to compile against x86 or x64 architectures.
 
+For more detailed instructions, see the [Quick Start for Windows](WINDOWS_QUICK_START.md) guide.
+
 ### On Linux
 
 Using CMake with the *Unix Makefiles* generator it will construct [GNU Makefiles](https://www.gnu.org/software/make/) as a build system. Then a simple `make` command is sufficient for compilation.  
