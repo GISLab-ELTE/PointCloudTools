@@ -41,10 +41,10 @@ How to build
 ------------
 
 The project is continuously built and tested on the following operating systems:
-- Windows 10
-- Ubuntu Linux 18.04 LTS and 20.04 LTS
+- Windows 10/11
+- Ubuntu Linux 18.04 LTS, 20.04 LTS and 22.04 LTS
 
-It was furthermore tested to work on *Windows 7* and *Ubuntu Linux 16.04 LTS*, but these distributions are not officially supported anymore.
+*Remark:* It was furthermore tested to work on *Windows 7* and *Ubuntu Linux 16.04 LTS*, but these distributions are not officially supported anymore.
 Please note that on *Ubuntu 16.04*, the building of the GDAL dependency from source is needed to meet the version requirement.
 
 The repository utilizes the [CMake](https://cmake.org/) cross-platform build system. To generate the build environment, run CMake:
