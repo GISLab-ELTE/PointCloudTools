@@ -16,6 +16,10 @@ namespace Buildings
 class ContourFiltering : public CloudTools::Operation
 {
 public:
+	int subsequenceLength_monotonic = 20;
+	int subsequenceLength_straight = 40;
+	float minRatio_monotonic = 5. / 6;
+
 	/// <summary>
 	/// Initializes a new instance of the class.
 	/// </summary>
@@ -28,10 +32,6 @@ public:
 	/// </summary>
 	/// <returns>The remaining contours.</returns>
 	std::vector<std::vector<cv::Point> >& getContours();
-
-	int subsequenceLength_monotonic = 20;
-	int subsequenceLength_straight = 40;
-	float minRatio_monotonic = 5. / 6;
 
 protected:
 	/// <summary>

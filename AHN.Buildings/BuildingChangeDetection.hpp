@@ -65,7 +65,7 @@ void BuildingChangeDetection::initialize()
 				float ahn3H = this->sourceData(3, i, j);
 				auto pair = std::make_pair(ahn2, ahn3);
 
-				if ((ahn2 > 0 || ahn3 > 0) && ahn2H < 10000 && ahn3H < 10000)
+				if ((ahn2 > 0 || ahn3 > 0) && ahn2H < 10000 && ahn3H < 10000) // todo: refactor magical constant
 				{
 					stat[pair].second += (1. / (stat[pair].first + 1)) * (ahn3H - ahn2H - stat[pair].second);
 				}

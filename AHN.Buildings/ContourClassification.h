@@ -18,19 +18,6 @@ namespace Buildings
 class ContourClassification: public CloudTools::Operation
 {
 public:
-	/// <summary>
-	/// Initializes a new instance of the class.
-	/// </summary>
-	/// <param name="contours">The input contours.</param>
-	ContourClassification(const std::vector<std::vector<std::vector<cv::Point> > >& contours) : _contours(contours)
-	{ }
-
-	/// <summary>
-	/// Retrieves the output contours of the operation.
-	/// </summary>
-	/// <returns>The contours denoting buildings.</returns>
-	std::vector<std::vector<cv::Point> >& getContours();
-
 	int closurePixelDifference = 5;
 	float similarAngleThreshold = M_PI / 18;
 	int chainingPixelDifference = 15;
@@ -43,6 +30,19 @@ public:
 	float avgSegmentPixels = 15;
 	float minChainingRatio = 3. / 4;
 	int maxChainingPixelError = 20;
+
+	/// <summary>
+	/// Initializes a new instance of the class.
+	/// </summary>
+	/// <param name="contours">The input contours.</param>
+	ContourClassification(const std::vector<std::vector<std::vector<cv::Point> > >& contours) : _contours(contours)
+	{ }
+
+	/// <summary>
+	/// Retrieves the output contours of the operation.
+	/// </summary>
+	/// <returns>The contours denoting buildings.</returns>
+	std::vector<std::vector<cv::Point> >& getContours();
 
 protected:
 	/// <summary>

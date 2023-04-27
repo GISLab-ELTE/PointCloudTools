@@ -18,6 +18,11 @@ namespace Buildings
 class ContourSimplification: public CloudTools::Operation
 {
 public:
+	int maxSegmentEndpointPixelDifference = 7;
+	int maxSegmentNormDifference = 10;
+	float minRatio_identicalPoints = 1. / 2;
+	float similarAngleThreshold = M_PI / 16;
+
 	/// <summary>
 	/// Initializes a new instance of the class.
 	/// </summary>
@@ -30,11 +35,6 @@ public:
 	/// </summary>
 	/// <returns>The initial contours without redundancy.</returns>
 	std::vector<std::vector<std::vector<cv::Point> > >& getContours();
-
-	int maxSegmentEndpointPixelDifference = 7;
-	int maxSegmentNormDifference = 10;
-	float minRatio_identicalPoints = 1. / 2;
-	float similarAngleThreshold = M_PI / 16;
 
 protected:
 	/// <summary>

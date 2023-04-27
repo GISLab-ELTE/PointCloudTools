@@ -20,6 +20,10 @@ namespace Buildings
 class ContourDetection : public CloudTools::DEM::DatasetCalculation<float>
 {
 public:
+	int smoothingFilterKernelSize = 3;
+	int cannyUpperThreshold;
+	int cannyThresholdRatio = 3;
+
 	/// <summary>
 	/// Initializes a new instance of the class. Loads input metadata and defines computation.
 	/// </summary>
@@ -52,10 +56,6 @@ public:
 	/// </summary>
 	/// <returns>The detected contours.</returns>
 	std::vector<std::vector<cv::Point> >& getContours();
-
-	int smoothingFilterKernelSize = 3;
-	int cannyUpperThreshold;
-	int cannyThresholdRatio = 3;
 
 private:
 	std::vector<std::vector<cv::Point> > _contours;

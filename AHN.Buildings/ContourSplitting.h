@@ -16,6 +16,8 @@ namespace Buildings
 class ContourSplitting: public CloudTools::Operation
 {
 public:
+	int minStraightSegmentLength = 5;
+
 	/// <summary>
 	/// Initializes a new instance of the class.
 	/// </summary>
@@ -28,8 +30,6 @@ public:
 	/// </summary>
 	/// <returns>The straight contour segments for each initial contour.</returns>
 	std::vector<std::vector<std::vector<cv::Point> > >& getContours();
-
-	int minStraightSegmentLength = 5;
 
 protected:
 	/// <summary>
