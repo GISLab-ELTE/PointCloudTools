@@ -1,4 +1,5 @@
 #include <numeric>
+#include <random>
 
 #include <gdal_priv.h>
 #include <ogrsf_frmts.h>
@@ -314,7 +315,7 @@ void PreProcess::writeClusterMapToFile(const std::string& outPath)
 	int numberOfClusters = _targetCluster.clusterIndexes().size();
 	std::vector<int> ids(numberOfClusters);
 	std::iota(ids.begin(), ids.end(), 0);
-	std::random_shuffle(ids.begin(), ids.end());
+	std::shuffle(ids.begin(), ids.end(), std::default_random_engine(0));
 
 	for (GUInt32 index : _targetCluster.clusterIndexes())
 	{

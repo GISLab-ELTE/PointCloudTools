@@ -7,11 +7,12 @@ The toolset supports change detection of the built-up area and vegetation, teste
 
 Dependencies
 ------------
-- [Boost Library](https://www.boost.org/), >=1.58 *(mandatory)*
-- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.2 *(mandatory)*
+- [Boost Library](https://www.boost.org/), >=1.71 *(mandatory)*
+- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=3.0 *(mandatory)*
+- [OpenCV](https://opencv.org/), >=4.2 *(mandatory)*
 - MPI - Message Passing Interface<sup>2</sup> *(optional)*
-  - Windows: [MS-MPI](https://msdn.microsoft.com/en-us/library/bb524831), >=7.1
-  - Linux: [Open MPI](https://www.open-mpi.org/), >=1.10
+  - Windows: [MS-MPI](https://learn.microsoft.com/en-us/message-passing-interface/microsoft-mpi), >=10.1.2
+  - Linux: [Open MPI](https://www.open-mpi.org/), >=4.0.3
 
 For Windows operating systems binary releases are available to simply install the above defined libraries.  
 For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements.
@@ -42,10 +43,7 @@ How to build
 
 The project is continuously built and tested on the following operating systems:
 - Windows 10/11
-- Ubuntu Linux 18.04 LTS, 20.04 LTS and 22.04 LTS
-
-*Remark:* It was furthermore tested to work on *Windows 7* and *Ubuntu Linux 16.04 LTS*, but these distributions are not officially supported anymore.
-Please note that on *Ubuntu 16.04*, the building of the GDAL dependency from source is needed to meet the version requirement.
+- Ubuntu 20.04 LTS and 22.04 LTS
 
 The repository utilizes the [CMake](https://cmake.org/) cross-platform build system. To generate the build environment, run CMake:
 ```bash

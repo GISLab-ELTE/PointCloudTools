@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
+        os: [ubuntu-20.04, ubuntu-22.04]
     
     runs-on: ${{ matrix.os }}
 
@@ -21,7 +21,7 @@ jobs:
       run: sudo apt-get update
       
     - name: Install required packages
-      run: sudo apt-get install libboost-all-dev libgdal-dev libopenmpi-dev
+      run: sudo apt-get install libboost-all-dev libgdal-dev libopencv-dev libopenmpi-dev
       
     - name: Create build environment
       run: cmake -E make_directory ${{runner.workspace}}/build

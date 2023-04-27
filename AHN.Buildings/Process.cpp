@@ -20,8 +20,14 @@
 #include <CloudTools.DEM/Filters/ClusterFilter.hpp>
 #include <CloudTools.DEM/Filters/MorphologyFilter.hpp>
 #include "Process.h"
+#include "BuildingChangeDetection.hpp"
 #include "BuildingExtraction.h"
-#include "BuildingFilter.h"
+#include "ContourDetection.h"
+#include "ContourFiltering.h"
+#include "ContourSplitting.h"
+#include "ContourSimplification.h"
+#include "ContourClassification.h"
+#include "ContourConvexHullRasterizer.h"
 #include "Comparison.h"
 
 using namespace CloudTools::DEM;
@@ -66,7 +72,7 @@ void Process::onExecute()
 	// Building filtering / extraction
 	newResult("buildings-ahn2");
 	newResult("buildings-ahn3");
-	if(_ahn2TerrainDataset && _ahn3TerrainDataset)
+	if (_ahn2TerrainDataset && _ahn3TerrainDataset)
 	{
 		_progressMessage = "Building extraction / AHN-2";
 		{
@@ -96,36 +102,86 @@ void Process::onExecute()
 	}
 	else
 	{
-		_progressMessage = "Building filtering / AHN-2";
+		_progressMessage = "Building segmentation / AHN-2";
 		{
-			BuildingFilter filter(_ahn2SurfaceDataset,
-				result("buildings-ahn2").path(), _progress);
-			configure(filter);
+			ContourDetection cd(_ahn2SurfaceDataset, _progress);
+			cd.execute();
 
-			filter.execute();
-			result("buildings-ahn2").dataset = filter.target();
+			ContourFiltering cf(cd.getContours());
+			cf.execute();
+
+			ContourSplitting cs(cf.getContours());
+			cs.execute();
+
+			ContourSimplification cs2(cs.getContours());
+			cs2.execute();
+
+			ContourClassification cc(cs2.getContours());
+			cc.execute();
+
+			ContourConvexHullRasterizer cr(_ahn2SurfaceDataset, cc.getContours(), result("buildings-ahn2").path(), _progress);
+			configure(cr);
+			cr.execute();
+			result("buildings-ahn2").dataset = cr.target();
 		}
 
-		_progressMessage = "Building filtering / AHN-3";
+		_progressMessage = "Building segmentation / AHN-3";
 		{
-			BuildingFilter filter(_ahn3SurfaceDataset,
-				result("buildings-ahn3").path(), _progress);
-			if (_ahn2SurfaceDataset == _ahn3SurfaceDataset)
-				filter.bands = { 2 };
-			configure(filter);
+			ContourDetection cd(_ahn3SurfaceDataset, _progress);
+			cd.execute();
 
-			filter.execute();
-			result("buildings-ahn3").dataset = filter.target();
+			ContourFiltering cf(cd.getContours());
+			cf.execute();
+
+			ContourSplitting cs(cf.getContours());
+			cs.execute();
+
+			ContourSimplification cs2(cs.getContours());
+			cs2.execute();
+
+			ContourClassification cc(cs2.getContours());
+			cc.execute();
+
+			ContourConvexHullRasterizer cr(_ahn3SurfaceDataset, cc.getContours(), result("buildings-ahn3").path(), _progress);
+			configure(cr);
+			cr.execute();
+			result("buildings-ahn3").dataset = cr.target();
 		}
+
+		_progressMessage = "Segmentation based change detection";
+		newResult("changes");
+		{
+			BuildingChangeDetection comp(result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+				                         _ahn2SurfaceDataset, _ahn3SurfaceDataset,
+				                         result("changes").path(), _progress);
+			configure(comp);
+			comp.execute();
+			result("changes").dataset = comp.target();
+		}
+
+		_progressMessage = "Writing results";
+		newResult("segmented", true);
+		{
+			// GTiff creation options
+			char** params = nullptr;
+			params = CSLSetNameValue(params, "COMPRESS", "DEFLATE");
+
+			// Copy results to disk or VSI
+			GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+			result("segmented").dataset = driver->CreateCopy(result("segmented").path().c_str(), result("changes").dataset,
+				                                             false, params, gdalProgress, static_cast<void*>(this));
+			CSLDestroy(params);
+		}
+		deleteResult("changes");
 	}
 
 	// Create basic changeset
 	_progressMessage = "Creating changeset";
 	newResult("changeset");
 	{
-		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset, 
-							  result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
-		                      result("changeset").path(), _progress);
+		Comparison comparison(_ahn2SurfaceDataset, _ahn3SurfaceDataset,
+			                  result("buildings-ahn2").dataset, result("buildings-ahn3").dataset,
+			                  result("changeset").path(), _progress);
 		comparison.minimumThreshold = 1.f;
 		comparison.spatialReference = "EPSG:28992"; // The SRS is given slightly differently for some AHN-2 tiles (but not all).
 		if (_ahn2TerrainDataset && _ahn3TerrainDataset &&
@@ -222,7 +278,7 @@ void Process::onExecute()
 		// Copy results to disk or VSI
 		GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 		result("").dataset = driver->CreateCopy(result("").path().c_str(), result("majority").dataset,
-		                                         false, params, gdalProgress, static_cast<void*>(this));
+			                                    false, params, gdalProgress, static_cast<void*>(this));
 		CSLDestroy(params);
 	}
 	deleteResult("majority");
@@ -361,7 +417,7 @@ StreamedProcess::~StreamedProcess()
 		VSIFCloseL(_streamInputFile);
 		VSIUnlink(StreamInputPath);
 	}
-	if(_buffer)
+	if (_buffer)
 	{
 		delete _buffer;
 	}

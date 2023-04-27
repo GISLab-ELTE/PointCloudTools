@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(CloudTools)
 
 # Set a default build type if none was specified
@@ -12,7 +12,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -24,13 +24,15 @@ else()
     add_compile_options(-pedantic -Wall -Wno-unknown-pragmas -Wno-reorder)
 endif()
 
-find_package(Boost 1.58 REQUIRED COMPONENTS filesystem program_options regex)
-find_package(GDAL 2.2 REQUIRED)
+find_package(Boost 1.71 REQUIRED COMPONENTS filesystem program_options regex)
+find_package(GDAL 3.0 REQUIRED)
+find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 find_package(Threads REQUIRED)
 find_package(MPI)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${GDAL_INCLUDE_DIR})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 if(MSVC)
     link_directories(${Boost_LIBRARY_DIRS})
@@ -38,6 +40,7 @@ else()
     link_libraries(${Boost_LIBRARIES})
 endif()
 link_libraries(${GDAL_LIBRARY})
+link_libraries(${OpenCV_LIBS})
 
 add_subdirectory(CloudTools.Common)
 add_subdirectory(CloudTools.DEM)
