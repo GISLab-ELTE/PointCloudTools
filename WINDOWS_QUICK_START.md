@@ -23,6 +23,23 @@ https://www.gisinternals.com/release.php
 Select a recent version matching your Visual Studio / MSVC version.  
 64 bit version is preferred to be installed, but the 32 bit version can also be installed if required.
 
+### Install OpenCV
+
+Download the official prebuilt OpenCV binaries for Windows from their website:  
+https://opencv.org/releases/
+
+Select a recent version (minimum requirement is 4.2).  
+The downloadable executable is a self-extracting archive, which you can extract at any preferred location.
+
+*Note:* for more recent versions, only the 64 bit version of OpenCV is shipped in this self-extracting archive, but that should be preferred anyway.
+
+### Install MS-MPI *(optional)*
+
+Download the official prebuilt binaries for Microsoft's implementation of the MPI library  from the follwoing website:  
+https://learn.microsoft.com/en-us/message-passing-interface/microsoft-mpi
+
+For development, you especially need to install the SDK, execute the `msmpisdk.msi` file.
+
 
 ## Set up environment variables
 
@@ -36,8 +53,13 @@ used in your system.
 | `GDAL_BIN`   | C:\Programs\GDAL\3.6.2\bin;C:\Programs\GDAL\3.6.2\bin\gdal\apps |
 | `GDAL_DATA`  | C:\Programs\GDAL\3.6.2\bin\gdal-data |
 | `GDAL_DRIVER_PATH` | C:\Programs\GDAL\3.6.2\bin\gdal\plugins |
+| `PROJ_LIB`   | C:\Programs\GDAL\3.6.2\bin\proj6\share |
+| `OpenCV_DIR` | C:\Programs\OpenCV\build |
+| `MPI_HOME`   | C:\Program Files (x86)\Microsoft SDKs\MPI |
 
-Also add the directories of the `GDAL_BIN` variables to the `PATH` environment variable.
+Also add the GDAL and the OpenCV binary directories to the `PATH` environment variable, as these will be linked dynamically:
+ - add the paths in the `GDAL_BIN` variable;
+ - add the OpenCV binary directory (e.g. `C:\Programs\OpenCV\build\x64\vc16\bin`).
 
 
 ## Build *PointCloudTools* from command Line
