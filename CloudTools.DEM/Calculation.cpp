@@ -1,14 +1,10 @@
 #include <algorithm>
 #include <cmath>
-#include <functional>
 #include <stdexcept>
 
 #include <ogr_spatialref.h>
-#include <boost/filesystem.hpp>
 
 #include "Calculation.h"
-
-namespace fs = boost::filesystem;
 
 namespace CloudTools
 {

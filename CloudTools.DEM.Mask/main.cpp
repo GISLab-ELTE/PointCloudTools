@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) try
 
 	std::string maskVectorPath;
 	std::vector<std::string> maskLayers;
-	std::string maskRasterPath = (fs::current_path() / std::tmpnam(nullptr)).replace_extension("tif").string();
+	std::string maskRasterPath = (fs::current_path() / fs::unique_path()).replace_extension("tif").string();
 	short maskValue;
 
 	// Read console arguments
@@ -299,6 +299,7 @@ int main(int argc, char* argv[]) try
 	// Execute operation
 	mask->execute();
 	delete mask;
+	delete reporter;
 
 	// Remove temporary mask raster file
 	if (!vm.count("mask-raster"))

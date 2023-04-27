@@ -1,22 +1,23 @@
-CloudTools
+PointCloudTools
 ============
 
 Massive airborne laser altimetry (ALS) point cloud and digital elevation model (DEM) processing library.  
-Contains the **AHN Building Change Detector**, a toolset for change detection of the built-up area based on the study dataset: [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
+The toolset supports change detection of the built-up area and vegetation, tested primarily on the study dataset [AHN - Actueel Hoogtebestand Nederland](http://www.ahn.nl/).
 
 
 Dependencies
 ------------
-- [Boost Library](https://www.boost.org/), >=1.60 *(mandatory)*
-- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/), >=2.1 *(mandatory)*
-- MPI - Message Passing Interface *(optional)*
+- [Boost Library](https://www.boost.org/), >=1.58 *(mandatory)*
+- [GDAL - Geospatial Data Abstraction Library](http://www.gdal.org/)<sup>1</sup>, >=2.2 *(mandatory)*
+- MPI - Message Passing Interface<sup>2</sup> *(optional)*
   - Windows: [MS-MPI](https://msdn.microsoft.com/en-us/library/bb524831), >=7.1
   - Linux: [Open MPI](https://www.open-mpi.org/), >=1.10
 
 For Windows operating systems binary releases are available to simply install the above defined libraries.  
-For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements. Otherwise building the dependencies from source is recommended.
+For Linux operating systems installing from the standard (or other) package repository is a convenient solution if the available versions meet the requirements.
 
-The MPI dependency is required for the `AHN.Buildings.MPI` project to evaluate in a HPC environment.
+<sup>1</sup> GDAL must be compiled with [GEOS](https://trac.osgeo.org/geos/) support enabled.  
+<sup>2</sup> MPI dependency is required only for the `AHN.Buildings.MPI` project to evaluate in a HPC environment.
 
 
 Structure
@@ -28,19 +29,23 @@ The repository in consisted of 9 projects altogether.
 - **CloudTools.DEM.Mask:** Transforms a vector filter mask into a raster filter mask and/or applies the latter on a DEM.
 - **CloudTools.Common:** Reporting and I/O management.
 - **AHN.Buildings:** Compares an AHN-2 and AHN-3 tile pair and filters out changes in buildings.
-- **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallely and filters out changes in buildings.
-- **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallely (through MPI) and filters out changes in buildings.
+- **AHN.Buildings.Parallel:** Compares pairs of AHN-2 and AHN-3 tiles parallelly and filters out changes in buildings.
+- **AHN.Buildings.MPI:** Compares pairs of AHN-2 and AHN-3 tiles parallelly (through MPI) and filters out changes in buildings.
 - **AHN.Buildings.Aggregate:** Computes aggregative change of volume for administrative units.
 - **AHN.Buildings.Verify:** Verifies detected building changes against reference files.
+- **CloudTools.Vegetation:** Compares DEMs of same area of same area from different epochs and filters out changes in vegetation (trees).
+- **CloudTools.Vegetation.Verify:** Verifies detected trees changes against reference files.
 
 
 How to build
 ------------
 
-The project was built and tested on the following operating systems:
-- Windows 10
-- Windows 7
-- Ubuntu Linux 16.04 LTS
+The project is continuously built and tested on the following operating systems:
+- Windows 10/11
+- Ubuntu Linux 18.04 LTS, 20.04 LTS and 22.04 LTS
+
+*Remark:* It was furthermore tested to work on *Windows 7* and *Ubuntu Linux 16.04 LTS*, but these distributions are not officially supported anymore.
+Please note that on *Ubuntu 16.04*, the building of the GDAL dependency from source is needed to meet the version requirement.
 
 The repository utilizes the [CMake](https://cmake.org/) cross-platform build system. To generate the build environment, run CMake:
 ```bash
@@ -69,6 +74,8 @@ You may specify the `/property:Configuration=<value>` flag to set the project co
 
 The project supports Visual Studio's CMake integration, you may create a `CMakeSettings.json` file based on the given sample (`CMakeSettings.json.sample`) and use the multi-configuration *Ninja* generator to compile against x86 or x64 architectures.
 
+For more detailed instructions, see the [Quick Start for Windows](WINDOWS_QUICK_START.md) guide.
+
 ### On Linux
 
 Using CMake with the *Unix Makefiles* generator it will construct [GNU Makefiles](https://www.gnu.org/software/make/) as a build system. Then a simple `make` command is sufficient for compilation.  
@@ -91,8 +98,20 @@ ahn_buildings_par
 ahn_buildings_agg
 ahn_buildings_ver
 ahn_buildings_mpi
+vegetation
+vegetation_ver
 ```
 Get usage information and available arguments with the `-h` flag.
 
 *Note:* since the GDAL library is linked dynamically, some environment variables (`GDAL_BIN`, `GDAL_DATA` and `GDAL_DRIVER_PATH`) must be configured to execute the above binaries. Set them correctly in your OS account or in the active shell.  
 On Windows you may create a `Shell.config.cmd` file based on the given sample (`Shell.config.cmd.sample`) and run the `Shell.bat` preconfigured environment at the installation location.
+
+Contributing
+------------
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on coding conventions.
+
+License
+------------
+
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.

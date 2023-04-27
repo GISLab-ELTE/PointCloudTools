@@ -2,6 +2,7 @@ include_directories(../)
 
 add_library(dem
 	Calculation.cpp Calculation.h
+	Creation.cpp Creation.h
 	Transformation.cpp Transformation.h
 	Color.cpp Color.h
 	Helper.cpp Helper.h
@@ -18,4 +19,5 @@ add_library(dem
 	Filters/MorphologyFilter.hpp
 	Filters/NoiseFilter.hpp
 	Comparers/Difference.hpp
-	Algorithms/HierachicalClustering.hpp)
+	Algorithms/HierachicalClustering.hpp
+	Algorithms/MatrixTransformation.cpp Algorithms/MatrixTransformation.h)

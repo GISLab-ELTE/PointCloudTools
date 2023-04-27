@@ -1,22 +1,32 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(CloudTools)
 
 # Set a default build type if none was specified
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
-    set(CMAKE_BUILD_TYPE "${DEFAULT_BUUILD_TYPE}" CACHE
+    set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE
         STRING "Choose the type of build." FORCE)
     # Set the possible values of build type for cmake-gui
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
         "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Boost 1.60 REQUIRED COMPONENTS filesystem program_options regex)
-find_package(GDAL 2.1 REQUIRED)
-find_package(OpenCV REQUIRED) # TODO: specify version
+if(MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # add most warnings
+    add_compile_options(-pedantic -Wall -Wno-unknown-pragmas -Wno-reorder)
+endif()
+
+find_package(Boost 1.71 REQUIRED COMPONENTS filesystem program_options regex)
+find_package(GDAL 3.0 REQUIRED)
+find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 find_package(Threads REQUIRED)
 find_package(MPI)
 
@@ -40,6 +50,8 @@ add_subdirectory(AHN.Buildings)
 add_subdirectory(AHN.Buildings.Parallel)
 add_subdirectory(AHN.Buildings.Aggregate)
 add_subdirectory(AHN.Buildings.Verify)
+add_subdirectory(CloudTools.Vegetation)
+add_subdirectory(CloudTools.Vegetation.Verify)
 
 if(MPI_CXX_FOUND)
     add_subdirectory(AHN.Buildings.MPI)

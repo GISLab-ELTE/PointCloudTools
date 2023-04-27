@@ -1,25 +1,29 @@
-# Default image (https://hub.docker.com/_/php/)
-image: ubuntu:18.04
-
-variables:
-  TZ: "Europe/Budapest"
-
 stages:
   - build
+
+variables:
+  # No interactive timezone dialog for tzdata
+  DEBIAN_FRONTEND: noninteractive
 
 before_script:
   - apt-get update -yqq
   - apt-get install -yqq build-essential cmake
-  - apt-get install -yqq libboost-all-dev libgdal-dev
+  - apt-get install -yqq libboost-all-dev libgdal-dev libopencv-dev
   - apt-get install -yqq libopenmpi-dev
-  - ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-  - apt-get install -yqq libopencv-dev
 
 # Build
-build:
+.build:
   stage: build
   script:
     - mkdir -p build
     - cd build
     - cmake ..
     - make
+
+build_focal:
+  extends: .build
+  image: ubuntu:20.04
+
+build_jammy:
+  extends: .build
+  image: ubuntu:22.04

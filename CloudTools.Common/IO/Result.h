@@ -7,9 +7,9 @@
 
 namespace fs = boost::filesystem;
 
-namespace AHN
+namespace CloudTools
 {
-namespace Buildings
+namespace IO
 {
 /// <summary>
 /// Represents a result object.
@@ -55,8 +55,8 @@ public:
 	Result(const Result&) = delete;
 	Result& operator=(const Result&) = delete;
 
-	Result(Result&& other);
-	Result& operator=(Result&& other);
+	Result(Result&& other) noexcept;
+	Result& operator=(Result&& other) noexcept;
 
 	/// <summary>
 	/// Gets the path.
@@ -90,11 +90,11 @@ struct PermanentFileResult : Result
 	PermanentFileResult(const PermanentFileResult&) = delete;
 	PermanentFileResult& operator=(const PermanentFileResult&) = delete;
 
-	PermanentFileResult(PermanentFileResult&& other)
+	PermanentFileResult(PermanentFileResult&& other) noexcept
 		: Result(std::move(other))
 	{ }
 
-	PermanentFileResult& operator=(PermanentFileResult&& other)
+	PermanentFileResult& operator=(PermanentFileResult&& other) noexcept
 	{
 		*this = std::move(other);
 		return *this;
@@ -128,11 +128,11 @@ struct TemporaryFileResult : PermanentFileResult
 	TemporaryFileResult(const TemporaryFileResult&) = delete;
 	TemporaryFileResult& operator=(const TemporaryFileResult&) = delete;
 
-	TemporaryFileResult(TemporaryFileResult&& other)
+	TemporaryFileResult(TemporaryFileResult&& other) noexcept
 		: PermanentFileResult(std::move(other))
 	{ }
 
-	TemporaryFileResult& operator=(TemporaryFileResult&& other)
+	TemporaryFileResult& operator=(TemporaryFileResult&& other) noexcept
 	{
 		*this = std::move(other);
 		return *this;
@@ -168,11 +168,11 @@ struct VirtualResult : Result
 	VirtualResult(const VirtualResult&) = delete;
 	VirtualResult& operator=(const VirtualResult&) = delete;
 
-	VirtualResult(VirtualResult&& other)
+	VirtualResult(VirtualResult&& other) noexcept
 		: Result(std::move(other))
 	{ }
 
-	VirtualResult& operator=(VirtualResult&& other)
+	VirtualResult& operator=(VirtualResult&& other) noexcept
 	{
 		*this = std::move(other);
 		return *this;
@@ -196,15 +196,15 @@ struct MemoryResult : Result
 	MemoryResult(const MemoryResult&) = delete;
 	MemoryResult& operator=(const MemoryResult&) = delete;
 
-	MemoryResult(MemoryResult&& other)
+	MemoryResult(MemoryResult&& other) noexcept
 		: Result(std::move(other))
 	{ }
 
-	MemoryResult& operator=(MemoryResult&& other)
+	MemoryResult& operator=(MemoryResult&& other) noexcept
 	{
 		*this = std::move(other);
 		return *this;
 	}
 };
-} // Buildings
-} // AHN
+} // IO
+} // CloudTools

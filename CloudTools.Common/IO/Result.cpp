@@ -2,9 +2,9 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-namespace AHN
+namespace CloudTools
 {
-namespace Buildings
+namespace IO
 {
 #pragma region Result
 
@@ -14,7 +14,7 @@ Result::~Result()
 		GDALClose(dataset);
 }
 
-Result::Result(Result&& other)
+Result::Result(Result&& other) noexcept
 {
 	_path = other._path;
 	dataset = other.dataset;
@@ -23,7 +23,7 @@ Result::Result(Result&& other)
 	other.dataset = nullptr;
 }
 
-Result& Result::operator=(Result&& other)
+Result& Result::operator=(Result&& other) noexcept
 {
 	if (this == &other)
 		return *this;
@@ -72,5 +72,5 @@ VirtualResult::~VirtualResult()
 }
 
 #pragma endregion
-} // Buildings
-} // AHN
+} // IO
+} // CloudTools

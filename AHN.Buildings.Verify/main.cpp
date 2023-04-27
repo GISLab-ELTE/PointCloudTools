@@ -143,11 +143,16 @@ int main(int argc, char* argv[]) try
 		if (fs::is_regular_file(ahnFile->status()) &&
 			boost::regex_match(ahnFile->path().filename().string(), ahnRegex))
 		{
+			// Open AHN tile
 			fs::path ahnPath = ahnFile->path();
+			GDALDataset* ahnDataset = static_cast<GDALDataset*>(GDALOpen(ahnPath.string().c_str(), GA_ReadOnly));
+			if (ahnDataset == nullptr)
+				throw std::runtime_error("Error at opening the AHN tile.");
+			RasterMetadata ahnMetadata(ahnDataset);	
+			
+			// Look for reference files
 			std::vector<std::string> listReferences;
 			std::vector<std::string> listLayers;
-
-			// Look for reference files
 			for (unsigned int i = 0; i < fileReferences.size(); ++i)
 			{
 				listReferences.push_back(fileReferences[i]);
@@ -160,12 +165,6 @@ int main(int argc, char* argv[]) try
 			// Look for files in reference directories
 			for (unsigned int i = 0; i < dirReferences.size(); ++i)
 			{
-				// Criteria: file must have AHN group number in name
-				boost::smatch groupMatch;
-				if (!boost::regex_search(ahnFile->path().string(), groupMatch, boost::regex("[[:digit:]]{2}")))
-					throw std::runtime_error("Unable to deduce the group number from AHN tile filename.");
-
-				boost::regex groupRegex(".*" + groupMatch.str() + "[^_]*");
 				boost::regex referenceRegex(".*");
 				if (dirPatterns.size() > i)
 					referenceRegex.assign(dirPatterns[i]);
@@ -175,23 +174,36 @@ int main(int argc, char* argv[]) try
 					++referenceFile)
 				{
 					if (fs::is_regular_file(referenceFile->status()) &&
-						boost::regex_match(referenceFile->path().stem().string(), groupRegex) &&
 						boost::regex_match(referenceFile->path().filename().string(), referenceRegex))
 					{
-						listReferences.push_back(referenceFile->path().string());
-						if (dirLayers.size() > i)
-							listLayers.push_back(dirLayers[i]);
-						else
-							listLayers.push_back(std::string());
+						// Open reference file and read metadata
+						GDALDataset* referenceDataset = static_cast<GDALDataset*>(GDALOpenEx(referenceFile->path().string().c_str(), GDAL_OF_VECTOR | GDAL_OF_READONLY, nullptr, nullptr, nullptr));
+						if (referenceDataset == nullptr)
+							throw std::runtime_error("Error at opening a reference file.");
+						
+						try
+						{
+							VectorMetadata referenceMetadata(referenceDataset, dirLayers.size() > i ? std::vector<std::string> { dirLayers[i] } : std::vector<std::string>{});
+
+							// Add to list if overlapping with AHN tile
+							if (referenceMetadata.isOverlapping(ahnMetadata))
+							{
+								listReferences.push_back(referenceFile->path().string());
+								if (dirLayers.size() > i)
+									listLayers.push_back(dirLayers[i]);
+								else
+									listLayers.push_back(std::string());
+							}
+						}
+						catch (std::invalid_argument&)
+						{
+							// specified layer not available
+						}
+
+						GDALClose(referenceDataset);
 					}
 				}
 			}
-
-			// Open AHN tile
-			GDALDataset* ahnDataset = static_cast<GDALDataset*>(GDALOpen(ahnPath.string().c_str(), GA_ReadOnly));
-			if (ahnDataset == nullptr)
-				throw std::runtime_error("Error at opening the AHN tile.");
-			RasterMetadata ahnMetadata(ahnDataset);
 
 			std::vector<GDALDataset*> references;
 			references.reserve(listReferences.size());

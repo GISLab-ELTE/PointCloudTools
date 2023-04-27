@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) try
 	std::string outputDir = fs::current_path().string();
 	std::string colorFile;
 	std::string pattern = "[[:digit:]]{2}[[:alpha:]]{2}[[:digit:]]";
-	short maxJobs = std::thread::hardware_concurrency();
+	unsigned short maxJobs = std::thread::hardware_concurrency();
 
 	// Read console arguments
 	po::options_description desc("Allowed options");
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) try
 		("color-file", po::value<std::string>(&colorFile),
 		 "map file for color relief; see:\n"
 		 "http://www.gdal.org/gdaldem.html")
-		("jobs,j", po::value<short>(&maxJobs)->default_value(maxJobs),
+		("jobs,j", po::value<unsigned short>(&maxJobs)->default_value(maxJobs),
 		 "number of maximum jobs to execute simultaneously")
 		("help,h", "produce help message");
 

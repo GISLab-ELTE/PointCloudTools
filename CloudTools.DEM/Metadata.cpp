@@ -2,6 +2,7 @@
 #include <ostream>
 #include <algorithm>
 #include <stdexcept>
+#include <mutex>
 
 #include <ogrsf_frmts.h>
 
@@ -12,11 +13,30 @@ namespace CloudTools
 {
 namespace DEM
 {
+#pragma region Metadata
+bool Metadata::isOverlapping(const Metadata& other)
+{
+	double aLeft = this->originX();
+	double aRight = this->originX() + this->extentX();
+	double aTop = this->originY();
+	double aBottom = this->originY() - this->extentY();
+
+	double bLeft = other.originX();
+	double bRight = other.originX() + other.extentX();
+	double bTop = other.originY();
+	double bBottom = other.originY() - other.extentY();
+
+	return aLeft < bRight && aRight > bLeft && aTop > bBottom && aBottom < bTop;
+}
+#pragma endregion
+
 #pragma region VectorMetadata
 
 VectorMetadata::VectorMetadata(GDALDataset* dataset, const std::vector<std::string>& layerNames)
 {
-	std::vector<OGRLayer*> layers(layerNames.size());
+	std::vector<OGRLayer*> layers;
+	layers.reserve(layerNames.size());
+	
 	if (!layerNames.empty())
 	{
 		for (const std::string &layerName : layerNames)
@@ -166,7 +186,16 @@ RasterMetadata::RasterMetadata(GDALDataset* dataset)
 	setGeoTransform(geoTransform);
 
 	// Retrieving spatial reference system
-	_reference = OGRSpatialReference(dataset->GetProjectionRef());
+	// For some strange reason the GetProjectionRef() method below is not thread safe (at least for GeoTiff files),
+	// it segfaults when called on multiple datasets parallelly, even for different files.
+	// TODO: fix this (tested on GDAL 2.2.3, Ubuntu 18.04)
+	// Error message: Read of file /usr/share/gdal/2.2/pcs.csv failed
+	//                Segmentation fault
+	static std::mutex mutex;
+	mutex.lock();
+	const char* wkt = dataset->GetProjectionRef();
+	mutex.unlock();
+	_reference = OGRSpatialReference(wkt);
 }
 
 RasterMetadata::RasterMetadata(const RasterMetadata& other)
