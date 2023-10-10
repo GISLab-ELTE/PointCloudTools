@@ -23,6 +23,8 @@ https://www.gisinternals.com/release.php
 Select a recent version matching your Visual Studio / MSVC version.  
 64 bit version is preferred to be installed, but the 32 bit version can also be installed if required.
 
+*Note:* There is two separate download links. You have to download both *Compiled binaries* AND *Compiled libraries and headers*, then extract them to the same folder.
+
 ### Install OpenCV
 
 Download the official prebuilt OpenCV binaries for Windows from their website:  
