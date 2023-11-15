@@ -13,12 +13,19 @@ add_executable(vegetation
 	DistanceCalculation.h
 	HeightDifference.h HeightDifference.cpp
 	PreProcess.cpp PreProcess.h
-	PostProcess.cpp PostProcess.h)
+	PostProcess.cpp PostProcess.h
+		BuildingFacadeSeedRemoval.hpp
+	RiverMask.hpp)
 
 target_link_libraries(vegetation
+	PRIVATE ${PDAL_LIBRARIES}
 	dem
 	common
 	Threads::Threads)
+
+target_include_directories(vegetation PRIVATE
+		${PDAL_INCLUDE_DIRS}
+		${PDAL_INCLUDE_DIRS}/pdal)
 
 install(TARGETS vegetation
 	DESTINATION ${CMAKE_INSTALL_PREFIX})

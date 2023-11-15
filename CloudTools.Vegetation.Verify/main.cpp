@@ -306,9 +306,12 @@ int main(int argc, char* argv[]) try
 	          << "Verification completed!" << std::endl
 	          << std::endl << std::fixed << std::setprecision(2)
 	          << "[Basic statistic]" << std::endl
+			  << "Detected trees: " << inputTrees.size() << std::endl
 	          << "Reference trees matched: " << matched.size() << std::endl
 	          << "Reference trees failed: " << missed.size() << std::endl
 	          << "Match ratio: " << ((100.f * matched.size()) / (referenceTrees.size())) << "%" << std::endl
+			  << "False Positives: " << inputTrees.size() - matched.size()
+			  << "  " << ((100.f * (inputTrees.size()-matched.size())) / (inputTrees.size())) << "%" <<std::endl
 	          << std::endl
 	          << "[Miss statistic]" << std::endl
 	          << "Average radius: " << ((std::accumulate(missed.begin(), missed.end(),

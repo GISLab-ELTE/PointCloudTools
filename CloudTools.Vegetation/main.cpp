@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
 		("dtm-input-path-B,t", po::value<std::string>(&dtmInputPathB), "Epoch-B DTM input path")
 		("output-dir,o", po::value<std::string>(&outputDir)->default_value(outputDir), "result directory path")
 		("hausdorff-distance", "use Hausdorff-distance")
+		("srm", "removes trees possibly to close to buildings")
 		("parallel,p", "parallel execution for A & B epochs")
 		("debug,d", "keep intermediate results on disk after progress")
 		("verbose,v", "verbose output")
@@ -136,8 +137,14 @@ int main(int argc, char* argv[])
 	};
 
 	// Create preprocessors
-	PreProcess preProcessA("a", dtmInputPathA, dsmInputPathA, outputDir);
-	PreProcess preProcessB("b", dtmInputPathB, dsmInputPathB, outputDir);
+	PreProcess preProcessA("a", dtmInputPathA, dsmInputPathA, outputDir,
+						   vm.count("srm")
+						   ? PreProcess::ProcessingMethod::SeedRemoval
+						   : PreProcess::ProcessingMethod::Standard);
+	PreProcess preProcessB("b", dtmInputPathB, dsmInputPathB, outputDir,
+						   vm.count("srm")
+						   ? PreProcess::ProcessingMethod::SeedRemoval
+						   : PreProcess::ProcessingMethod::Standard);
 
 	preProcessA.debug = vm.count("debug");
 	preProcessB.debug = vm.count("debug");
