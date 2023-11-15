@@ -1,9 +1,14 @@
 stages:
   - build
+  - test
 
 variables:
   # No interactive timezone dialog for tzdata
   DEBIAN_FRONTEND: noninteractive
+
+# SAST
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 before_script:
   - apt-get update -yqq
@@ -27,3 +32,6 @@ build_focal:
 build_jammy:
   extends: .build
   image: ubuntu:22.04
+
+sast:
+  stage: test
