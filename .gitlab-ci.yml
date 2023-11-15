@@ -8,7 +8,7 @@ variables:
 
 # SAST
 include:
-  - template: Security/SAST.gitlab-ci.yml
+  - template: Jobs/SAST.gitlab-ci.yml
 
 # Build
 .build:
@@ -31,6 +31,3 @@ build_focal:
 build_jammy:
   extends: .build
   image: ubuntu:22.04
-
-sast:
-  stage: test
