@@ -10,15 +10,14 @@ variables:
 include:
   - template: Security/SAST.gitlab-ci.yml
 
-before_script:
-  - apt-get update -yqq
-  - apt-get install -yqq build-essential cmake
-  - apt-get install -yqq libboost-all-dev libgdal-dev libopencv-dev
-  - apt-get install -yqq libopenmpi-dev
-
 # Build
 .build:
   stage: build
+  before_script:
+    - apt-get update -yqq
+    - apt-get install -yqq build-essential cmake
+    - apt-get install -yqq libboost-all-dev libgdal-dev libopencv-dev
+    - apt-get install -yqq libopenmpi-dev
   script:
     - mkdir -p build
     - cd build
