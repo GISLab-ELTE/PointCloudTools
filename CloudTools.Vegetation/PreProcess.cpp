@@ -13,6 +13,8 @@
 #include "InterpolateNoData.h"
 #include "TreeCrownSegmentation.h"
 #include "MorphologyClusterFilter.h"
+#include "RiverMask.hpp"
+#include "BuildingFacadeSeedRemoval.hpp"
 
 using namespace CloudTools::DEM;
 using namespace CloudTools::IO;
@@ -38,13 +40,36 @@ void PreProcess::onPrepare()
 
 void PreProcess::onExecute()
 {
-	_progressMessage = "Creating CHM (" + _prefix + ")";
-	newResult("CHM");
+	if(_processingMethod == PreProcess::SeedRemoval)
 	{
-		Difference<float> comparison({_dtmInputPath, _dsmInputPath}, result("CHM").path(), _progress);
-		comparison.execute();
-		result("CHM").dataset = comparison.target();
-		_targetMetadata = comparison.targetMetadata();
+		_progressMessage = "Creating River Map (" + _prefix + ")";
+		newResult("RM");
+		{
+			RiverMask<float> riverMap({_dtmInputPath, _dsmInputPath}, result("RM").path(), _progress);
+			riverMap.execute();
+			result("RM").dataset = riverMap.target();
+			_targetMetadata = riverMap.targetMetadata();
+		}
+
+		_progressMessage = "Creating CHM (" + _prefix + ")";
+		newResult("CHM");
+		{
+			auto dsm = static_cast<GDALDataset*>(GDALOpen(_dsmInputPath.c_str(), GA_ReadOnly));
+			Difference<float> comparison({{result("RM").dataset},
+			                              {dsm}}, result("CHM").path(), _progress);
+			comparison.execute();
+			result("CHM").dataset = comparison.target();
+			_targetMetadata = comparison.targetMetadata();
+		}
+	} else {
+		_progressMessage = "Creating CHM (" + _prefix + ")";
+		newResult("CHM");
+		{
+			Difference<float> comparison({_dtmInputPath, _dsmInputPath}, result("CHM").path(), _progress);
+			comparison.execute();
+			result("CHM").dataset = comparison.target();
+			_targetMetadata = comparison.targetMetadata();
+		}
 	}
 
 	_progressMessage = "Matrix transformation (" + _prefix + ")";
@@ -76,7 +101,16 @@ void PreProcess::onExecute()
 	_progressMessage = "Seed points collection (" + _prefix + ")";
 	std::vector<OGRPoint> seedPoints = collectSeedPoints(result("interpol").dataset);
 	if (debug)
+	{
 		writePointsToFile(seedPoints, (fs::path(_outputDir) / (_prefix + "_seedpoints.json")).string());
+	}
+
+	if(_processingMethod == PreProcess::SeedRemoval)
+	{
+		_progressMessage = "Seed Removal(" + _prefix + ")";
+		::BuildingFacadeSeedRemoval<float> seedRemoval(seedPoints, {_dtmInputPath, _dsmInputPath}, _progress);
+		seedRemoval.execute();
+	}
 
 	_progressMessage = "Tree crown segmentation (" + _prefix + ")";
 	{

@@ -12,6 +12,11 @@ namespace Vegetation
 class PreProcess : public CloudTools::Operation, protected CloudTools::IO::ResultCollection
 {
 public:
+	enum ProcessingMethod
+	{
+		Standard,
+		SeedRemoval
+	};
 	/// <summary>
 	/// Callback function for reporting progress.
 	/// </summary>
@@ -51,11 +56,13 @@ public:
 	PreProcess(const std::string& prefix,
 	           const std::string& dtmInputPath,
 	           const std::string& dsmInputPath,
-	           const std::string& outputDir)
+	           const std::string& outputDir,
+			   const ProcessingMethod processingMethod = ProcessingMethod::Standard)
 		: _prefix(prefix),
 		  _dtmInputPath(dtmInputPath),
 		  _dsmInputPath(dsmInputPath),
-		  _outputDir(outputDir)
+		  _outputDir(outputDir),
+		  _processingMethod(processingMethod)
 	{
 	}
 
@@ -93,6 +100,8 @@ protected:
 	CloudTools::IO::Result* createResult(const std::string& name, bool isFinal = false) override;
 
 private:
+	ProcessingMethod _processingMethod;
+
 	std::string _prefix, _dtmInputPath, _dsmInputPath, _outputDir;
 	CloudTools::DEM::RasterMetadata _targetMetadata;
 	CloudTools::DEM::ClusterMap _targetCluster;
