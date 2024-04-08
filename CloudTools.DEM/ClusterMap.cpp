@@ -91,9 +91,6 @@ void ClusterMap::removePoint(GUInt32 clusterIndex, int x, int y)
 
 	if (_clusterIndexes[clusterIndex].empty())
 		removeCluster(clusterIndex);
-	else if (_seedPoints[clusterIndex].getX() == point.getX() &&
-		_seedPoints[clusterIndex].getY() == point.getY())
-		_seedPoints.erase(clusterIndex);
 }
 
 std::vector<OGRPoint> ClusterMap::neighbors(GUInt32 clusterIndex) const
