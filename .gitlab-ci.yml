@@ -31,3 +31,36 @@ build_focal:
 build_jammy:
   extends: .build
   image: ubuntu:22.04
+
+# Code Quality with CodeChecker
+cq_codecheker:
+  stage: test
+  image: tmselte/evaluator:cpp-ubuntu-22.04
+  extends: .build
+  script:
+    - mkdir -p build
+    - cd build
+    - cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+    - cd ..
+    # Analyze the project
+    - >
+      CodeChecker analyze
+      --analyzers clangsa clang-tidy cppcheck
+      --ctu
+      -o ./reports
+      ./build/compile_commands.json
+    # Create the report file
+    - >
+      CodeChecker parse 
+      --trim-path-prefix $(pwd)
+      -e codeclimate
+      -i .gitlab/codechecker_skip.lst
+      ./reports > gl-code-quality-report.json || true
+    # Note: 'CodeChecker parse' would return a non-zero exit code when any issues found
+    - test -f gl-code-quality-report.json
+  artifacts:
+    expose_as: Code Quality Report
+    reports:
+      codequality: gl-code-quality-report.json
+    paths: [gl-code-quality-report.json]
+    expire_in: 2 weeks
