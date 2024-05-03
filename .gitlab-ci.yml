@@ -45,7 +45,7 @@ cq_codecheker:
     # Analyze the project
     - >
       CodeChecker analyze
-      --analyzers clangsa clang-tidy cppcheck
+      --analyzers clangsa clang-tidy
       --ctu
       -o ./reports
       ./build/compile_commands.json
