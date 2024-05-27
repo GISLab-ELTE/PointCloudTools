@@ -59,6 +59,8 @@ used in your system.
 | `OpenCV_DIR` | C:\Programs\OpenCV\build |
 | `MPI_HOME`   | C:\Program Files (x86)\Microsoft SDKs\MPI |
 
+*Note:* for newer GDAL versions 3.8+, there is a `proj9` folder instead of `proj6`, which should be used.
+
 Also add the GDAL and the OpenCV binary directories to the `PATH` environment variable, as these will be linked dynamically:
  - add the paths in the `GDAL_BIN` variable;
  - add the OpenCV binary directory (e.g. `C:\Programs\OpenCV\build\x64\vc16\bin`).
